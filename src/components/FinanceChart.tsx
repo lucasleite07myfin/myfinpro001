@@ -1,0 +1,182 @@
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  LineChart, 
+  Line, 
+  PieChart, 
+  Pie, 
+  Cell,
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  Legend 
+} from 'recharts';
+import { formatCurrency, formatMonth } from '@/utils/formatters';
+import { MonthlyFinanceData, Transaction } from '@/types/finance';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { PieChart as PieChartIcon, LineChart as LineChartIcon } from 'lucide-react';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import TooltipHelper from '@/components/TooltipHelper';
+import { tooltipContent } from '@/data/tooltipContent';
+
+interface FinanceChartProps {
+  data: MonthlyFinanceData[];
+  transactions: Transaction[];
+}
+
+// Cores para o gráfico de pizza
+const COLORS = [
+  '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', 
+  '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+];
+
+const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
+  const [chartType, setChartType] = useState<'line' | 'pie'>('line');
+
+  // Formatar dados para o gráfico de linha
+  const lineChartData = data.map(item => ({
+    name: formatMonth(item.month),
+    Receitas: item.incomeTotal,
+    Despesas: item.expenseTotal,
+  }));
+
+  // Calcular as despesas por categoria para o gráfico de pizza
+  const expensesByCategory: Record<string, number> = {};
+  
+  // Filtrar apenas as despesas
+  const expenseTransactions = transactions.filter(t => t.type === 'expense');
+  
+  // Somar os valores por categoria
+  expenseTransactions.forEach(transaction => {
+    if (!expensesByCategory[transaction.category]) {
+      expensesByCategory[transaction.category] = 0;
+    }
+    expensesByCategory[transaction.category] += transaction.amount;
+  });
+  
+  // Converter para o formato de dados do gráfico de pizza
+  const pieChartData = Object.entries(expensesByCategory).map(([category, amount]) => ({
+    name: category,
+    value: amount
+  }));
+  
+  // Ordenar do maior para o menor
+  pieChartData.sort((a, b) => b.value - a.value);
+
+  const CustomLineTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-card p-4 shadow-md rounded-md border border-neutral-200 dark:border-border">
+          <p className="font-semibold dark:text-white">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={`item-${index}`} style={{ color: entry.color }}>
+              {entry.name}: {formatCurrency(entry.value)}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const CustomPieTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      const total = pieChartData.reduce((sum, item) => sum + item.value, 0);
+      const percentage = ((data.value / total) * 100).toFixed(1);
+      
+      return (
+        <div className="bg-white dark:bg-card p-4 shadow-md rounded-md border border-neutral-200 dark:border-border">
+          <p className="font-semibold dark:text-white">{data.name}</p>
+          <p style={{ color: data.color }}>{formatCurrency(data.value)}</p>
+          <p style={{ color: data.color }}>{percentage}% do total</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <TooltipProvider>
+      <Card className="w-full">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-lg">
+            {chartType === 'line' ? 'Evolução Financeira (12 meses)' : 'Despesas por Categoria'}
+          </CardTitle>
+          <ToggleGroup type="single" value={chartType} onValueChange={(value) => value && setChartType(value as 'line' | 'pie')}>
+            <TooltipHelper content="Visualizar gráfico de linha">
+              <ToggleGroupItem value="line" aria-label="Gráfico de Linha">
+                <LineChartIcon className="h-4 w-4" />
+              </ToggleGroupItem>
+            </TooltipHelper>
+            <TooltipHelper content="Visualizar gráfico de pizza">
+              <ToggleGroupItem value="pie" aria-label="Gráfico de Pizza">
+                <PieChartIcon className="h-4 w-4" />
+              </ToggleGroupItem>
+            </TooltipHelper>
+          </ToggleGroup>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              {chartType === 'line' ? (
+                <LineChart
+                  data={lineChartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" />
+                  <YAxis
+                    tickFormatter={(value) => `R$ ${value / 1000}k`}
+                  />
+                  <Tooltip content={<CustomLineTooltip />} />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Receitas" 
+                    stroke="#22c55e" 
+                    strokeWidth={2} 
+                    dot={{ r: 4 }} 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Despesas" 
+                    stroke="#ef4444" 
+                    strokeWidth={2} 
+                    dot={{ r: 4 }} 
+                  />
+                </LineChart>
+              ) : (
+                <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    nameKey="name"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomPieTooltip />} />
+                  <Legend />
+                </PieChart>
+              )}
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
+  );
+};
+
+export default FinanceChart;

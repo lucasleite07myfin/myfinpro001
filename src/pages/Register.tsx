@@ -1,0 +1,314 @@
+
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from '@/hooks/use-toast';
+import { validateCPF, validateCNPJ } from '@/utils/documentValidator';
+
+// Schema for registration validation
+const registerSchema = z.object({
+  name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres'),
+  email: z.string().email('Por favor, insira um e-mail válido'),
+  document: z.string().min(1, 'Este campo é obrigatório'),
+  password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
+  confirmPassword: z.string().min(8, 'A confirmação de senha é obrigatória'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'As senhas não coincidem',
+  path: ['confirmPassword'],
+});
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
+
+const Register = () => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [userType, setUserType] = useState<'personal' | 'business'>('personal');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+
+  // Initialize the form
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      document: '',
+      password: '',
+      confirmPassword: '',
+    },
+  });
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  const generateStrongPassword = () => {
+    const length = 16;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+    let password = "";
+    
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      password += charset[randomIndex];
+    }
+    
+    form.setValue('password', password);
+    form.setValue('confirmPassword', password);
+    setShowPassword(true);
+    setShowConfirmPassword(true);
+    
+    toast({
+      title: 'Senha forte gerada',
+      description: 'Uma senha forte foi gerada e preenchida para você.',
+    });
+  };
+
+  const onSubmit = (values: RegisterFormValues) => {
+    // Validate document based on user type
+    let isValid = true;
+    
+    if (userType === 'personal' && !validateCPF(values.document)) {
+      toast({
+        title: 'CPF inválido',
+        description: 'Por favor, verifique o CPF informado.',
+        variant: 'destructive',
+      });
+      isValid = false;
+    } else if (userType === 'business' && !validateCNPJ(values.document)) {
+      toast({
+        title: 'CNPJ inválido',
+        description: 'Por favor, verifique o CNPJ informado.',
+        variant: 'destructive',
+      });
+      isValid = false;
+    }
+
+    if (isValid) {
+      setIsSubmitting(true);
+      
+      // Simulate API call
+      setTimeout(() => {
+        console.log('Registration attempt:', { ...values, userType });
+        
+        toast({
+          title: 'Cadastro realizado',
+          description: 'Sua conta foi criada com sucesso!',
+        });
+        
+        setIsSubmitting(false);
+        // Navigate to login page after successful registration
+        navigate('/login');
+      }, 1500);
+    }
+  };
+
+  // Label and placeholder based on user type
+  const getDocumentLabel = () => {
+    return userType === 'personal' ? 'CPF' : 'CNPJ';
+  };
+
+  const getDocumentPlaceholder = () => {
+    return userType === 'personal' ? '000.000.000-00' : '00.000.000/0000-00';
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="space-y-1">
+          <div className="flex justify-center mb-6">
+            <img src="/lovable-uploads/3ac31d22-79b8-44f6-b7ba-5baf7d682784.png" alt="MyFin Pro Logo" className="h-16" />
+          </div>
+          <CardTitle className="text-2xl font-bold text-center">Cadastro</CardTitle>
+          <CardDescription className="text-center">
+            Crie sua conta para começar a usar o MyFin Pro
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent>
+          <Tabs value={userType} onValueChange={(v) => setUserType(v as 'personal' | 'business')} className="mb-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="personal">Pessoa Física</TabsTrigger>
+              <TabsTrigger value="business">Pessoa Jurídica</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{userType === 'personal' ? 'Nome completo' : 'Nome da empresa'}</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          <User className="h-4 w-4" />
+                        </span>
+                        <Input
+                          placeholder={userType === 'personal' ? 'João da Silva' : 'Empresa LTDA'}
+                          className="pl-10"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>E-mail</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          <Mail className="h-4 w-4" />
+                        </span>
+                        <Input
+                          placeholder="exemplo@email.com"
+                          className="pl-10"
+                          type="email"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="document"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{getDocumentLabel()}</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          <User className="h-4 w-4" />
+                        </span>
+                        <Input
+                          placeholder={getDocumentPlaceholder()}
+                          className="pl-10"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          <Lock className="h-4 w-4" />
+                        </span>
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Senha"
+                          className="pl-10 pr-10"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={togglePasswordVisibility}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </FormControl>
+                    <div className="flex justify-between items-center mt-1">
+                      <FormMessage />
+                      <button
+                        type="button"
+                        onClick={generateStrongPassword}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Sugerir senha forte
+                      </button>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirmar senha</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          <Lock className="h-4 w-4" />
+                        </span>
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirme sua senha"
+                          className="pl-10 pr-10"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={toggleConfirmPasswordVisibility}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+        
+        <CardFooter className="flex justify-center">
+          <div className="text-center">
+            <span className="text-muted-foreground text-sm">Já possui uma conta?</span>{' '}
+            <Link to="/login" className="text-sm text-primary hover:underline">
+              Faça login
+            </Link>
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
+  );
+};
+
+export default Register;
