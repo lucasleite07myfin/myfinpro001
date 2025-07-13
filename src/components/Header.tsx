@@ -57,6 +57,7 @@ const Header: React.FC = () => {
   useEffect(() => {
     console.log('Header - Current mode:', mode);
     console.log('Header - Current path:', currentPath);
+    console.log('Header - Tab value for comparison:', currentPath);
   }, [mode, currentPath]);
   const handleTabChange = (value: string) => {
     navigate(value);
