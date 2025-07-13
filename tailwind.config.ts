@@ -69,6 +69,7 @@ export default {
 				// Cores personalizadas para o app financeiro
 				income: '#10b981', // Verde para receitas
 				expense: '#ef4444', // Vermelho para despesas
+				'royal-blue': 'hsl(var(--royal-blue))', // Laranja para abas ativas
 				neutral: {
 					50: '#f8fafc',
 					100: '#f1f5f9',
