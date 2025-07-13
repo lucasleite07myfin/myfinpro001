@@ -36,8 +36,8 @@
     --income: 142 70% 45%;
     --expense: 0 84% 60%;
     
-    /* Royal blue for active tabs */
-    --royal-blue: 225 73% 57%;
+    /* Orange for active tabs */
+    --royal-blue: 25 95% 53%;
 
     --radius: 0.5rem;
 
@@ -92,8 +92,8 @@
     --income: 142 70% 45%;
     --expense: 0 84% 60%;
     
-    /* Royal blue for active tabs in dark mode */
-    --royal-blue: 225 73% 65%;
+    /* Orange for active tabs in dark mode */
+    --royal-blue: 25 95% 58%;
     
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%; /* Brighter text for better contrast */
