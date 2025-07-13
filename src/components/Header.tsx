@@ -127,9 +127,9 @@ const Header: React.FC = () => {
           
           <div className={`w-full md:w-auto ${menuOpen ? 'block' : 'hidden md:block'}`}>
             <Tabs value={currentPath} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="w-full grid grid-cols-2 md:flex md:w-auto gap-1 md:gap-0 rounded-none bg-slate-200">
+              <TabsList className="w-full grid grid-cols-2 md:flex md:w-auto gap-1 md:gap-0 rounded-none bg-muted">
                 <TooltipHelper content={tooltipContent.navigation.dashboard}>
-                  <TabsTrigger value="/" className="flex-1 md:flex-none bg-slate-900 hover:bg-slate-800 text-slate-50">
+                  <TabsTrigger value="/" className="flex-1 md:flex-none">
                     Dashboard
                   </TabsTrigger>
                 </TooltipHelper>
