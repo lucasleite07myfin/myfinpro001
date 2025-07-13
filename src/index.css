@@ -240,3 +240,16 @@
 .dark .text-expense-force {
   color: #ef4444 !important; /* Red for expense in dark mode */
 }
+
+/* Force orange color for active tabs */
+[data-state="active"] {
+  background-color: hsl(25, 95%, 53%) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark [data-state="active"] {
+  background-color: hsl(25, 95%, 58%) !important;
+  color: white !important;
+}
