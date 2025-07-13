@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -10,17 +9,10 @@ import { useBusiness } from '@/contexts/BusinessContext';
 import ThemeToggle from './ThemeToggle';
 import AlertsBellIcon from './AlertsBellIcon';
 import { AlertLog } from '@/types/alerts';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import TooltipHelper from './TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
-
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,35 +27,29 @@ const Header: React.FC = () => {
 
   // Mock alerts data
   useEffect(() => {
-    const mockAlerts: AlertLog[] = [
-      {
-        id: '1',
-        alert_rule_id: 'rule1',
-        message: 'Você já gastou 85% do seu orçamento de Alimentação este mês',
-        triggered_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        read: false,
-        owner: 'user1'
-      },
-      {
-        id: '2',
-        alert_rule_id: 'rule2',
-        message: 'Transação incomum detectada: R$ 1.500 em Eletrônicos',
-        triggered_at: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        read: false,
-        owner: 'user1'
-      }
-    ];
-    
+    const mockAlerts: AlertLog[] = [{
+      id: '1',
+      alert_rule_id: 'rule1',
+      message: 'Você já gastou 85% do seu orçamento de Alimentação este mês',
+      triggered_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      read: false,
+      owner: 'user1'
+    }, {
+      id: '2',
+      alert_rule_id: 'rule2',
+      message: 'Transação incomum detectada: R$ 1.500 em Eletrônicos',
+      triggered_at: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      read: false,
+      owner: 'user1'
+    }];
     setAlerts(mockAlerts);
     setUnreadCount(mockAlerts.filter(alert => !alert.read).length);
   }, []);
-
   const handleMarkAsRead = (id: string) => {
-    setAlerts(prev => 
-      prev.map(alert => 
-        alert.id === id ? { ...alert, read: true } : alert
-      )
-    );
+    setAlerts(prev => prev.map(alert => alert.id === id ? {
+      ...alert,
+      read: true
+    } : alert));
     setUnreadCount(prev => Math.max(0, prev - 1));
   };
 
@@ -72,28 +58,22 @@ const Header: React.FC = () => {
     console.log('Header - Current mode:', mode);
     console.log('Header - Current path:', currentPath);
   }, [mode, currentPath]);
-  
   const handleTabChange = (value: string) => {
     navigate(value);
     setMenuOpen(false);
   };
-  
   const handleLogoClick = () => {
     navigate('/welcome');
   };
-  
   const handleProfileClick = () => {
     navigate('/profile');
   };
-  
   const handleLogout = () => {
     // In a real app, you would clear auth tokens/session here
     console.log('User logged out');
     navigate('/login');
   };
-  
-  return (
-    <TooltipProvider>
+  return <TooltipProvider>
       <header className="w-full bg-background border-b border-border shadow-sm sticky top-0 z-10">
         <div className="container mx-auto py-3 md:py-4 px-4 flex flex-col md:flex-row justify-between items-center">
           <div className="flex w-full md:w-auto justify-between items-center mb-3 md:mb-0">
@@ -112,11 +92,7 @@ const Header: React.FC = () => {
             
             <div className="flex items-center gap-2">
               {/* Alerts Bell Icon */}
-              <AlertsBellIcon 
-                alerts={alerts}
-                unreadCount={unreadCount}
-                onMarkAsRead={handleMarkAsRead}
-              />
+              <AlertsBellIcon alerts={alerts} unreadCount={unreadCount} onMarkAsRead={handleMarkAsRead} />
               
               {/* User Profile Dropdown */}
               <TooltipHelper content={tooltipContent.header.profile}>
@@ -151,9 +127,9 @@ const Header: React.FC = () => {
           
           <div className={`w-full md:w-auto ${menuOpen ? 'block' : 'hidden md:block'}`}>
             <Tabs value={currentPath} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="w-full grid grid-cols-2 md:flex md:w-auto gap-1 md:gap-0">
+              <TabsList className="w-full grid grid-cols-2 md:flex md:w-auto gap-1 md:gap-0 rounded-none bg-slate-200">
                 <TooltipHelper content={tooltipContent.navigation.dashboard}>
-                  <TabsTrigger value="/" className="flex-1 md:flex-none">
+                  <TabsTrigger value="/" className="flex-1 md:flex-none bg-slate-900 hover:bg-slate-800 text-slate-50">
                     Dashboard
                   </TabsTrigger>
                 </TooltipHelper>
@@ -186,48 +162,37 @@ const Header: React.FC = () => {
                 </TooltipHelper>
                 
                 {/* Saúde tab only appears in personal mode */}
-                {mode === 'personal' && (
-                  <TooltipHelper content="Acompanhe métricas de saúde financeira">
+                {mode === 'personal' && <TooltipHelper content="Acompanhe métricas de saúde financeira">
                     <TabsTrigger value="/saude-financeira" className="flex-1 md:flex-none">
                       Saúde
                     </TabsTrigger>
-                  </TooltipHelper>
-                )}
+                  </TooltipHelper>}
                 
-                {mode === 'business' && 
-                  <TooltipHelper content={tooltipContent.navigation.fluxoCaixa}>
+                {mode === 'business' && <TooltipHelper content={tooltipContent.navigation.fluxoCaixa}>
                     <TabsTrigger value="/fluxo-caixa" className="flex-1 md:flex-none">
                       Fluxo de Caixa
                     </TabsTrigger>
-                  </TooltipHelper>
-                }
-                {mode === 'business' && 
-                  <TooltipHelper content={tooltipContent.navigation.fornecedores}>
+                  </TooltipHelper>}
+                {mode === 'business' && <TooltipHelper content={tooltipContent.navigation.fornecedores}>
                     <TabsTrigger value="/fornecedores" className="flex-1 md:flex-none flex items-center">
                       Fornecedores
                     </TabsTrigger>
-                  </TooltipHelper>
-                }
-                {mode === 'business' && 
-                  <TooltipHelper content={tooltipContent.navigation.investimentos}>
+                  </TooltipHelper>}
+                {mode === 'business' && <TooltipHelper content={tooltipContent.navigation.investimentos}>
                     <TabsTrigger value="/investimentos" className="flex-1 md:flex-none">
                       Investimentos
                     </TabsTrigger>
-                  </TooltipHelper>
-                }
-                {mode === 'business' && 
-                  <TooltipHelper content={tooltipContent.navigation.dre}>
+                  </TooltipHelper>}
+                {mode === 'business' && <TooltipHelper content={tooltipContent.navigation.dre}>
                     <TabsTrigger value="/dre" className="flex-1 md:flex-none flex items-center">
                       <ChartBar className="h-3 w-3 mr-1" /> DRE
                     </TabsTrigger>
-                  </TooltipHelper>
-                }
+                  </TooltipHelper>}
               </TabsList>
             </Tabs>
           </div>
         </div>
       </header>
-    </TooltipProvider>
-  );
+    </TooltipProvider>;
 };
 export default Header;
