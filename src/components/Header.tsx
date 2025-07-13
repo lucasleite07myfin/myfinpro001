@@ -76,7 +76,7 @@ const Header: React.FC = () => {
   return <TooltipProvider>
       <header className="w-full bg-background border-b border-border shadow-sm sticky top-0 z-10">
         <div className="container mx-auto py-3 md:py-4 px-4 flex flex-col md:flex-row justify-between items-center">
-          <div className="flex w-full md:w-auto justify-between items-center mb-3 md:mb-0">
+          <div className="flex w-full md:w-auto justify-between items-center mb-3 md:mb-0 mx-[23px] px-[37px]">
             <TooltipHelper content={tooltipContent.header.logo}>
               <div className="flex items-center cursor-pointer" onClick={handleLogoClick}>
                 <img src="/lovable-uploads/3ac31d22-79b8-44f6-b7ba-5baf7d682784.png" alt="MyFin Pro Logo" className="h-12 md:h-16 mr-3" />
