@@ -391,79 +391,119 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Adicionar Transação</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto bg-background border shadow-lg">
+          <DialogHeader className="border-b pb-4 mb-6">
+            <DialogTitle className="text-xl font-semibold text-foreground">
+              Adicionar Transação
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Preencha os detalhes da transação abaixo.
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs value={selectedTab} onValueChange={value => setSelectedTab(value as 'regular' | 'recurring' | 'goal' | 'investment')} className="w-full mb-4">
-            <TabsList className="grid grid-cols-4 w-full">
+          <Tabs value={selectedTab} onValueChange={value => setSelectedTab(value as 'regular' | 'recurring' | 'goal' | 'investment')} className="w-full">
+            <TabsList className="grid grid-cols-4 w-full bg-muted/30 p-1 rounded-lg">
               <TooltipHelper content={tooltipContent.modals.transactionTypes.regular} delayDuration={500}>
-                <TabsTrigger value="regular" className="text-center text-xs md:text-sm">Transação</TabsTrigger>
+                <TabsTrigger 
+                  value="regular" 
+                  className="text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  Transação
+                </TabsTrigger>
               </TooltipHelper>
               <TooltipHelper content={tooltipContent.modals.transactionTypes.recurring} delayDuration={500}>
-                <TabsTrigger value="recurring" className="text-center text-xs md:text-sm flex items-center justify-center gap-1">
+                <TabsTrigger 
+                  value="recurring" 
+                  className="text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
                   Recorrente
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TabsTrigger>
               </TooltipHelper>
               <TooltipHelper content={tooltipContent.modals.transactionTypes.goal} delayDuration={500}>
-                <TabsTrigger value="goal" className="text-center text-xs md:text-sm flex items-center justify-center gap-1">
+                <TabsTrigger 
+                  value="goal" 
+                  className="text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
                   Metas
                 </TabsTrigger>
               </TooltipHelper>
               <TooltipHelper content={tooltipContent.modals.transactionTypes.investment} delayDuration={500}>
-                <TabsTrigger value="investment" className="text-center text-xs md:text-sm flex items-center justify-center gap-1">
+                <TabsTrigger 
+                  value="investment" 
+                  className="text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
                   Investir
                 </TabsTrigger>
               </TooltipHelper>
             </TabsList>
             
             {/* Transação Regular */}
-            <TabsContent value="regular">
-              <form onSubmit={handleSubmitRegular}>
-                <Tabs defaultValue="income" value={transactionType} onValueChange={value => setTransactionType(value as TransactionType)} className="w-full mb-4">
-                  <TabsList className="grid grid-cols-2 w-full">
-                    <TabsTrigger value="income" className="text-center">Receita</TabsTrigger>
-                    <TabsTrigger value="expense" className="text-center">Despesa</TabsTrigger>
+            <TabsContent value="regular" className="mt-6">
+              <form onSubmit={handleSubmitRegular} className="space-y-6">
+                <Tabs defaultValue="income" value={transactionType} onValueChange={value => setTransactionType(value as TransactionType)} className="w-full">
+                  <TabsList className="grid grid-cols-2 w-full bg-muted/30 p-1 rounded-lg">
+                    <TabsTrigger 
+                      value="income" 
+                      className="font-medium data-[state=active]:bg-income/10 data-[state=active]:text-income data-[state=active]:shadow-sm"
+                    >
+                      Receita
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="expense" 
+                      className="font-medium data-[state=active]:bg-expense/10 data-[state=active]:text-expense data-[state=active]:shadow-sm"
+                    >
+                      Despesa
+                    </TabsTrigger>
                   </TabsList>
                 </Tabs>
                 
-                <div className="grid gap-4 py-4">
+                <div className="space-y-4">
                   <TooltipHelper content={tooltipContent.modals.fields.date} delayDuration={500}>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="date" className="text-right">
+                    <div className="space-y-2">
+                      <Label htmlFor="date" className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
                         Data
                       </Label>
-                      <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} className="col-span-3" required />
+                      <Input 
+                        id="date" 
+                        type="date" 
+                        value={date} 
+                        onChange={e => setDate(e.target.value)} 
+                        className="bg-background border-border focus:ring-2 focus:ring-primary/20" 
+                        required 
+                      />
                     </div>
                   </TooltipHelper>
                   
                   <TooltipHelper content={tooltipContent.modals.fields.description} delayDuration={500}>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="description" className="text-right">
+                    <div className="space-y-2">
+                      <Label htmlFor="description" className="text-sm font-medium text-foreground">
                         Descrição
                       </Label>
-                      <Input id="description" value={description} onChange={e => setDescription(e.target.value)} className="col-span-3" required />
+                      <Input 
+                        id="description" 
+                        value={description} 
+                        onChange={e => setDescription(e.target.value)} 
+                        className="bg-background border-border focus:ring-2 focus:ring-primary/20" 
+                        placeholder="Digite uma descrição para a transação" 
+                        required 
+                      />
                     </div>
                   </TooltipHelper>
                   
                   <TooltipHelper content={tooltipContent.modals.fields.category} delayDuration={500}>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="category" className="text-right">
+                    <div className="space-y-2">
+                      <Label htmlFor="category" className="text-sm font-medium text-foreground">
                         Categoria
                       </Label>
                       <Select value={category} onValueChange={setCategory} required>
-                        <SelectTrigger className="col-span-3">
+                        <SelectTrigger className="bg-background border-border focus:ring-2 focus:ring-primary/20">
                           <SelectValue placeholder="Selecione uma categoria" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-background border shadow-lg">
                           <SelectGroup>
                             {categories.map(cat => (
-                              <SelectItem key={cat} value={cat}>
+                              <SelectItem key={cat} value={cat} className="hover:bg-muted/50">
                                 {cat.startsWith('Outros:') ? cat.substring(7) : cat}
                               </SelectItem>
                             ))}
@@ -475,38 +515,53 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
                   {showCustomCategory && (
                     <TooltipHelper content={tooltipContent.modals.fields.customCategory} delayDuration={500}>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="customCategory" className="text-right">
-                          Especificar
+                      <div className="space-y-2">
+                        <Label htmlFor="customCategory" className="text-sm font-medium text-foreground">
+                          Especificar categoria personalizada
                         </Label>
-                        <Input id="customCategory" value={customCategory} onChange={e => setCustomCategory(e.target.value)} placeholder="Descreva a categoria personalizada" className="col-span-3" />
+                        <Input 
+                          id="customCategory" 
+                          value={customCategory} 
+                          onChange={e => setCustomCategory(e.target.value)} 
+                          placeholder="Digite o nome da categoria" 
+                          className="bg-background border-border focus:ring-2 focus:ring-primary/20" 
+                        />
                       </div>
                     </TooltipHelper>
                   )}
                   
                   <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="amount" className="text-right">
+                    <div className="space-y-2">
+                      <Label htmlFor="amount" className="text-sm font-medium text-foreground">
                         Valor (R$)
                       </Label>
-                      <Input id="amount" value={formattedAmount} onChange={e => handleAmountChange(e, 'regular')} className="col-span-3 font-mono" placeholder="R$ 0,00" required />
+                      <Input 
+                        id="amount" 
+                        value={formattedAmount} 
+                        onChange={e => handleAmountChange(e, 'regular')} 
+                        className="bg-background border-border focus:ring-2 focus:ring-primary/20 font-mono text-lg" 
+                        placeholder="R$ 0,00" 
+                        required 
+                      />
                     </div>
                   </TooltipHelper>
                   
                   <TooltipHelper content={tooltipContent.modals.fields.paymentMethod} delayDuration={500}>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="paymentMethod" className="text-right">
+                    <div className="space-y-2">
+                      <Label htmlFor="paymentMethod" className="text-sm font-medium text-foreground">
                         Forma de Pagamento
                       </Label>
                       <Select value={paymentMethod} onValueChange={value => setPaymentMethod(value as PaymentMethod)}>
-                        <SelectTrigger className="col-span-3">
+                        <SelectTrigger className="bg-background border-border focus:ring-2 focus:ring-primary/20">
                           <SelectValue placeholder="Selecione uma forma de pagamento" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-background border shadow-lg">
                           <SelectGroup>
-                            {Object.entries(PAYMENT_METHODS).map(([key, value]) => <SelectItem key={key} value={key}>
+                            {Object.entries(PAYMENT_METHODS).map(([key, value]) => (
+                              <SelectItem key={key} value={key} className="hover:bg-muted/50">
                                 {value}
-                              </SelectItem>)}
+                              </SelectItem>
+                            ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
@@ -514,12 +569,17 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   </TooltipHelper>
                 </div>
                 
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                <DialogFooter className="border-t pt-4 mt-6">
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="hover:bg-muted/50">
                     Cancelar
                   </Button>
                   <TooltipHelper content={tooltipContent.forms.submit} delayDuration={500}>
-                    <Button type="submit">Salvar</Button>
+                    <Button 
+                      type="submit" 
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
+                    >
+                      Salvar Transação
+                    </Button>
                   </TooltipHelper>
                 </DialogFooter>
               </form>
