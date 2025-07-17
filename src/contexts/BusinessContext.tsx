@@ -1,11 +1,11 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { Transaction, RecurringExpense, Goal, Asset, Liability, MonthlyFinanceData } from '@/types/finance';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Transaction, RecurringExpense, Goal, Asset, Liability, MonthlyFinanceData, PaymentMethod } from '@/types/finance';
 import { Investment } from '@/components/AddInvestmentModal';
 import { Supplier } from '@/types/supplier';
 import { toast } from 'sonner';
 import { getCurrentMonth } from '@/utils/formatters';
+import { supabase } from '@/integrations/supabase/client';
 
 // Add Investment to the interface
 interface BusinessContextType {
@@ -105,15 +105,201 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   const [monthlyData, setMonthlyData] = useState<MonthlyFinanceData[]>(generateMonthlyData());
   const [currentMonth, setCurrentMonth] = useState(getCurrentMonth());
   const [companyName, setCompanyName] = useState('Minha Empresa');
+  const [loading, setLoading] = useState(true);
   
   // New state variables for investments
   const [investments, setInvestments] = useState<Investment[]>([]);
 
+  // Carregar dados do Supabase
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Carregar todos os dados em paralelo
+      const [
+        transactionsResult,
+        recurringResult,
+        goalsResult,
+        assetsResult,
+        suppliersResult,
+        liabilitiesResult,
+        monthlyResult
+      ] = await Promise.all([
+        supabase.from('transactions').select('*').eq('user_id', user.id),
+        supabase.from('recurring_expenses').select('*').eq('user_id', user.id),
+        supabase.from('goals').select('*').eq('user_id', user.id),
+        supabase.from('assets').select('*').eq('user_id', user.id),
+        supabase.from('suppliers').select('*').eq('user_id', user.id),
+        supabase.from('liabilities').select('*').eq('user_id', user.id),
+        supabase.from('monthly_finance_data').select('*').eq('user_id', user.id)
+      ]);
+
+      if (transactionsResult.data) {
+        const formattedTransactions = transactionsResult.data.map(t => ({
+          id: t.id,
+          date: new Date(t.date),
+          description: t.description,
+          category: t.category,
+          amount: Number(t.amount),
+          type: t.type as 'income' | 'expense',
+          paymentMethod: t.payment_method as PaymentMethod,
+          source: t.source,
+          isRecurringPayment: t.is_recurring_payment || false,
+          isGoalContribution: t.is_goal_contribution || false,
+          isInvestmentContribution: t.is_investment_contribution || false,
+          goalId: t.goal_id,
+          investmentId: t.investment_id,
+          recurringExpenseId: t.recurring_expense_id
+        }));
+        setTransactions(formattedTransactions);
+      }
+
+      if (recurringResult.data) {
+        const formattedExpenses = recurringResult.data.map(e => ({
+          id: e.id,
+          description: e.description,
+          category: e.category,
+          amount: Number(e.amount),
+          dueDay: e.due_day,
+          paymentMethod: e.payment_method as PaymentMethod,
+          repeatMonths: e.repeat_months,
+          monthlyValues: (e.monthly_values as Record<string, number>) || {},
+          isPaid: e.is_paid || false,
+          paidMonths: (e.paid_months as string[]) || [],
+          createdAt: new Date(e.created_at || new Date())
+        }));
+        setRecurringExpenses(formattedExpenses);
+      }
+
+      if (goalsResult.data) {
+        const formattedGoals = goalsResult.data.map(g => ({
+          id: g.id,
+          name: g.name,
+          targetAmount: Number(g.target_amount),
+          currentAmount: Number(g.current_amount || 0),
+          targetDate: new Date(g.target_date),
+          savingLocation: g.saving_location
+        }));
+        setGoals(formattedGoals);
+      }
+
+      if (assetsResult.data) {
+        const formattedAssets = assetsResult.data.map(a => ({
+          id: a.id,
+          name: a.name,
+          type: a.type,
+          value: Number(a.value),
+          evaluationDate: a.evaluation_date ? new Date(a.evaluation_date) : null,
+          acquisitionValue: a.acquisition_value ? Number(a.acquisition_value) : undefined,
+          acquisitionDate: a.acquisition_date ? new Date(a.acquisition_date) : null,
+          insured: a.insured || false,
+          wallet: a.wallet,
+          symbol: a.symbol,
+          notes: a.notes,
+          location: a.location,
+          lastUpdated: a.last_updated ? new Date(a.last_updated) : null,
+          lastPriceBrl: a.last_price_brl ? Number(a.last_price_brl) : undefined,
+          quantity: a.quantity ? Number(a.quantity) : undefined
+        }));
+        setAssets(formattedAssets);
+      }
+
+      if (suppliersResult.data) {
+        const formattedSuppliers = suppliersResult.data.map(s => ({
+          id: s.id,
+          name: s.name,
+          document: s.document,
+          stateRegistration: s.state_registration,
+          isCompany: s.is_company,
+          productType: s.product_type,
+          otherProductType: s.other_product_type,
+          contactPerson: s.contact_person,
+          email: s.email,
+          phone: s.phone,
+          address: s.address as any,
+          bankInfo: s.bank_info as any,
+          paymentTerms: s.payment_terms,
+          notes: s.notes,
+          createdAt: new Date(s.created_at || new Date()),
+          updatedAt: new Date(s.updated_at || new Date())
+        }));
+        setSuppliers(formattedSuppliers);
+      }
+
+      if (liabilitiesResult.data) {
+        const formattedLiabilities = liabilitiesResult.data.map(l => ({
+          id: l.id,
+          name: l.name,
+          type: l.type,
+          value: Number(l.value)
+        }));
+        setLiabilities(formattedLiabilities);
+      }
+
+      if (monthlyResult.data) {
+        const formattedMonthly = monthlyResult.data.map(m => ({
+          month: m.month,
+          incomeTotal: Number(m.income_total),
+          expenseTotal: Number(m.expense_total)
+        }));
+        setMonthlyData(formattedMonthly);
+      }
+
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Transaction functions
-  const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
-    setTransactions(prev => [...prev, { ...transaction, id: uuidv4() }]);
-    toast.success('Transação adicionada com sucesso!');
-    updateMonthlyData();
+  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          date: transaction.date.toISOString().split('T')[0],
+          description: transaction.description,
+          category: transaction.category,
+          amount: transaction.amount,
+          type: transaction.type,
+          payment_method: transaction.paymentMethod,
+          source: transaction.source,
+          is_recurring_payment: transaction.isRecurringPayment || false,
+          is_goal_contribution: transaction.isGoalContribution || false,
+          is_investment_contribution: transaction.isInvestmentContribution || false,
+          goal_id: transaction.goalId,
+          investment_id: transaction.investmentId,
+          recurring_expense_id: transaction.recurringExpenseId
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newTransaction = {
+        ...transaction,
+        id: data.id,
+        date: new Date(data.date)
+      };
+
+      setTransactions(prev => [...prev, newTransaction]);
+      toast.success('Transação adicionada com sucesso!');
+      updateMonthlyData();
+    } catch (error) {
+      console.error('Erro ao adicionar transação:', error);
+      toast.error('Erro ao adicionar transação');
+    }
   };
 
   const updateTransaction = (transaction: Transaction) => {
@@ -129,17 +315,50 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   };
 
   // Recurring expense functions
-  const addRecurringExpense = (expense: Omit<RecurringExpense, 'id' | 'isPaid' | 'paidMonths' | 'createdAt'>) => {
-    const newExpense: RecurringExpense = {
-      ...expense,
-      id: uuidv4(),
-      isPaid: false,
-      paidMonths: [],
-      createdAt: new Date(),
-      repeatMonths: expense.repeatMonths || 12
-    };
-    setRecurringExpenses(prev => [...prev, newExpense]);
-    toast.success('Despesa fixa adicionada com sucesso!');
+  const addRecurringExpense = async (expense: Omit<RecurringExpense, 'id' | 'isPaid' | 'paidMonths' | 'createdAt'>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data, error } = await supabase
+        .from('recurring_expenses')
+        .insert({
+          user_id: user.id,
+          description: expense.description,
+          category: expense.category,
+          amount: expense.amount,
+          due_day: expense.dueDay,
+          payment_method: expense.paymentMethod,
+          repeat_months: expense.repeatMonths || 12,
+          monthly_values: {},
+          is_paid: false,
+          paid_months: []
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newExpense: RecurringExpense = {
+        id: data.id,
+        description: expense.description,
+        category: expense.category,
+        amount: expense.amount,
+        dueDay: expense.dueDay,
+        paymentMethod: expense.paymentMethod,
+        repeatMonths: expense.repeatMonths || 12,
+        monthlyValues: {},
+        isPaid: false,
+        paidMonths: [],
+        createdAt: new Date(data.created_at)
+      };
+
+      setRecurringExpenses(prev => [...prev, newExpense]);
+      toast.success('Despesa fixa adicionada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao adicionar despesa recorrente:', error);
+      toast.error('Erro ao adicionar despesa recorrente');
+    }
   };
 
   const updateRecurringExpense = (expense: RecurringExpense) => {
@@ -262,8 +481,41 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   };
 
   // Goal functions
-  const addGoal = (goal: Omit<Goal, 'id'>) => {
-    setGoals(prev => [...prev, { ...goal, id: uuidv4() }]);
+  const addGoal = async (goal: Omit<Goal, 'id'>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data, error } = await supabase
+        .from('goals')
+        .insert({
+          user_id: user.id,
+          name: goal.name,
+          target_amount: goal.targetAmount,
+          current_amount: goal.currentAmount || 0,
+          target_date: goal.targetDate.toISOString().split('T')[0],
+          saving_location: goal.savingLocation
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newGoal: Goal = {
+        id: data.id,
+        name: goal.name,
+        targetAmount: goal.targetAmount,
+        currentAmount: goal.currentAmount || 0,
+        targetDate: goal.targetDate,
+        savingLocation: goal.savingLocation
+      };
+
+      setGoals(prev => [...prev, newGoal]);
+      toast.success('Meta adicionada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao adicionar meta:', error);
+      toast.error('Erro ao adicionar meta');
+    }
   };
 
   const updateGoal = (goal: Goal) => {
@@ -292,8 +544,58 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   };
 
   // Asset functions
-  const addAsset = (asset: Omit<Asset, 'id'>) => {
-    setAssets(prev => [...prev, { ...asset, id: uuidv4() }]);
+  const addAsset = async (asset: Omit<Asset, 'id'>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data, error } = await supabase
+        .from('assets')
+        .insert({
+          user_id: user.id,
+          name: asset.name,
+          type: asset.type,
+          value: asset.value,
+          evaluation_date: asset.evaluationDate?.toISOString().split('T')[0],
+          acquisition_value: asset.acquisitionValue,
+          acquisition_date: asset.acquisitionDate?.toISOString().split('T')[0],
+          insured: asset.insured || false,
+          wallet: asset.wallet,
+          symbol: asset.symbol,
+          notes: asset.notes,
+          location: asset.location,
+          last_price_brl: asset.lastPriceBrl,
+          quantity: asset.quantity
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newAsset: Asset = {
+        id: data.id,
+        name: asset.name,
+        type: asset.type,
+        value: asset.value,
+        evaluationDate: asset.evaluationDate,
+        acquisitionValue: asset.acquisitionValue,
+        acquisitionDate: asset.acquisitionDate,
+        insured: asset.insured || false,
+        wallet: asset.wallet,
+        symbol: asset.symbol,
+        notes: asset.notes,
+        location: asset.location,
+        lastUpdated: new Date(),
+        lastPriceBrl: asset.lastPriceBrl,
+        quantity: asset.quantity
+      };
+
+      setAssets(prev => [...prev, newAsset]);
+      toast.success('Ativo adicionado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao adicionar ativo:', error);
+      toast.error('Erro ao adicionar ativo');
+    }
   };
 
   const updateAsset = (asset: Asset) => {
@@ -311,14 +613,59 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   };
 
   // Supplier functions
-  const addSupplier = (supplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newSupplier = { 
-      ...supplier, 
-      id: uuidv4(), 
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    setSuppliers(prev => [...prev, newSupplier]);
+  const addSupplier = async (supplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data, error } = await supabase
+        .from('suppliers')
+        .insert({
+          user_id: user.id,
+          name: supplier.name,
+          document: supplier.document,
+          state_registration: supplier.stateRegistration,
+          is_company: supplier.isCompany,
+          product_type: supplier.productType,
+          other_product_type: supplier.otherProductType,
+          contact_person: supplier.contactPerson,
+          email: supplier.email,
+          phone: supplier.phone,
+          address: supplier.address,
+          bank_info: supplier.bankInfo,
+          payment_terms: supplier.paymentTerms,
+          notes: supplier.notes
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newSupplier: Supplier = {
+        id: data.id,
+        name: supplier.name,
+        document: supplier.document,
+        stateRegistration: supplier.stateRegistration,
+        isCompany: supplier.isCompany,
+        productType: supplier.productType,
+        otherProductType: supplier.otherProductType,
+        contactPerson: supplier.contactPerson,
+        email: supplier.email,
+        phone: supplier.phone,
+        address: supplier.address,
+        bankInfo: supplier.bankInfo,
+        paymentTerms: supplier.paymentTerms,
+        notes: supplier.notes,
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at)
+      };
+
+      setSuppliers(prev => [...prev, newSupplier]);
+      toast.success('Fornecedor adicionado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao adicionar fornecedor:', error);
+      toast.error('Erro ao adicionar fornecedor');
+    }
   };
 
   const updateSupplier = (supplier: Supplier) => {
@@ -344,9 +691,37 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   };
 
   // Liability functions
-  const addLiability = (liability: Omit<Liability, 'id'>) => {
-    setLiabilities(prev => [...prev, { ...liability, id: uuidv4() }]);
-    toast.success('Passivo adicionado com sucesso!');
+  const addLiability = async (liability: Omit<Liability, 'id'>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data, error } = await supabase
+        .from('liabilities')
+        .insert({
+          user_id: user.id,
+          name: liability.name,
+          type: liability.type,
+          value: liability.value
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newLiability: Liability = {
+        id: data.id,
+        name: liability.name,
+        type: liability.type,
+        value: liability.value
+      };
+
+      setLiabilities(prev => [...prev, newLiability]);
+      toast.success('Passivo adicionado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao adicionar passivo:', error);
+      toast.error('Erro ao adicionar passivo');
+    }
   };
 
   const editLiability = (liability: Liability) => {
@@ -359,9 +734,10 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     toast.success('Passivo excluído com sucesso!');
   };
 
-  // Functions for managing investments
+  // Functions for managing investments (mantendo local por enquanto)
   const addInvestment = (investment: Investment) => {
-    setInvestments(prev => [...prev, { ...investment, id: uuidv4() }]);
+    const id = Date.now().toString(); // ID temporário
+    setInvestments(prev => [...prev, { ...investment, id }]);
   };
 
   const updateInvestment = (investment: Investment) => {

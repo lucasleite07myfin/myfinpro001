@@ -1,6 +1,7 @@
 import React from 'react';
 import { PiggyBank, CreditCard, ArrowDown, ArrowUp } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
+import EmptyState from '@/components/EmptyState';
 import StatsCard from '@/components/StatsCard';
 import FinanceChart from '@/components/FinanceChart';
 import MonthSelector from '@/components/MonthSelector';
@@ -130,7 +131,16 @@ const Dashboard: React.FC = () => {
           <h2 className="text-base md:text-lg font-semibold text-neutral-700 dark:text-white mb-3 md:mb-4">Transações Recentes</h2>
           <TooltipHelper content={tooltipContent.dashboard.transactionsTable}>
             <div>
-              <TransactionsTable transactions={recentTransactions} />
+              {recentTransactions.length === 0 ? (
+                <EmptyState
+                  title="Nenhuma transação encontrada"
+                  description="Comece adicionando suas primeiras receitas e despesas para acompanhar suas finanças."
+                  actionLabel="Adicionar Transação"
+                  onAction={() => {/* Implementar navegação para adicionar transação */}}
+                />
+              ) : (
+                <TransactionsTable transactions={recentTransactions} />
+              )}
             </div>
           </TooltipHelper>
         </div>
