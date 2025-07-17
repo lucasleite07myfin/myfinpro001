@@ -433,7 +433,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         Data
                       </Label>
-                      <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} className="bg-background border-border focus:ring-2 focus:ring-primary/20" required />
+                      <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} required className="border-border focus:ring-2 focus:ring-primary/20 bg-slate-300" />
                     </div>
                   </TooltipHelper>
                   
