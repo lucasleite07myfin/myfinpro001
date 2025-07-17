@@ -248,7 +248,7 @@
 }
 
 /* Force navy blue color for active tabs */
-[data-state="active"] {
+[data-state="inactive"] {
   background-color: hsl(var(--navy-blue)) !important;
   color: white !important;
   font-weight: 600 !important;
