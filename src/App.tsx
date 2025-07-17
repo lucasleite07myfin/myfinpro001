@@ -3,22 +3,19 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { FinanceProvider } from "./contexts/FinanceContext";
 import { BusinessProvider } from "./contexts/BusinessContext";
-import { AppModeProvider, useAppMode } from "./contexts/AppModeContext";
+import { AppModeProvider } from "./contexts/AppModeContext";
+import { useAuth } from "@/hooks/useAuth";
 
-import Welcome from "./pages/Welcome";
 import Index from "./pages/Index";
 import Incomes from "./pages/Incomes";
 import Expenses from "./pages/Expenses";
 import Goals from "./pages/Goals";
 import Patrimony from "./pages/Patrimony";
 import Profile from "./pages/Profile";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import ForgotPassword from "./pages/ForgotPassword";
-import Register from "./pages/Register";
+import Auth from "./pages/Auth";
 
 // New intelligent features pages
 import Alerts from "./pages/Alerts";
@@ -41,59 +38,55 @@ const queryClient = new QueryClient({
   },
 });
 
+// Componente de proteção de rotas
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 // Component to handle mode-based routing
 const ModeRoutes = () => {
-  const { mode } = useAppMode();
-
   return (
     <TooltipProvider>
-      {mode === 'business' ? (
+      <FinanceProvider>
         <BusinessProvider>
           <Routes>
-            <Route path="/" element={<BusinessDashboard />} />
-            <Route path="/receitas" element={<Incomes />} />
-            <Route path="/despesas" element={<Expenses />} />
-            <Route path="/metas" element={<Goals />} />
-            <Route path="/patrimonio" element={<Patrimony />} />
-            <Route path="/fluxo-caixa" element={<CashFlow />} />
-            <Route path="/investimentos" element={<Investments />} />
-            <Route path="/dre" element={<DRE />} />
-            <Route path="/fornecedores" element={<Suppliers />} />
-            <Route path="/alertas" element={<Alerts />} />
-            <Route path="/saude-financeira" element={<FinancialHealth />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/receitas" element={<ProtectedRoute><Incomes /></ProtectedRoute>} />
+            <Route path="/despesas" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+            <Route path="/metas" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
+            <Route path="/patrimonio" element={<ProtectedRoute><Patrimony /></ProtectedRoute>} />
+            <Route path="/alertas" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
+            <Route path="/saude-financeira" element={<ProtectedRoute><FinancialHealth /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            
+            {/* Business routes */}
+            <Route path="/fluxo-caixa" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
+            <Route path="/investimentos" element={<ProtectedRoute><Investments /></ProtectedRoute>} />
+            <Route path="/dre" element={<ProtectedRoute><DRE /></ProtectedRoute>} />
+            <Route path="/fornecedores" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
           </Routes>
         </BusinessProvider>
-      ) : (
-        <FinanceProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/receitas" element={<Incomes />} />
-            <Route path="/despesas" element={<Expenses />} />
-            <Route path="/metas" element={<Goals />} />
-            <Route path="/patrimonio" element={<Patrimony />} />
-            <Route path="/alertas" element={<Alerts />} />
-            <Route path="/saude-financeira" element={<FinancialHealth />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </FinanceProvider>
-      )}
+      </FinanceProvider>
     </TooltipProvider>
   );
 };
-
-// Wrap the Welcome component with both providers
-const WelcomeWithProviders = () => (
-  <BusinessProvider>
-    <FinanceProvider>
-      <TooltipProvider>
-        <Welcome />
-      </TooltipProvider>
-    </FinanceProvider>
-  </BusinessProvider>
-);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -103,10 +96,7 @@ const App = () => (
       <AppModeProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/welcome" element={<WelcomeWithProviders />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="/*" element={<ModeRoutes />} />
           </Routes>
         </BrowserRouter>
