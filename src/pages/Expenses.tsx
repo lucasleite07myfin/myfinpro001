@@ -288,7 +288,7 @@ const Expenses: React.FC = () => {
       );
     } else if (transaction.isInvestmentContribution) {
       return (
-        <Badge variant="outline" className="flex items-center gap-1 bg-orange-500/10">
+        <Badge variant="outline" className="flex items-center gap-1 bg-primary-action/10">
           <TrendingUp className="h-3 w-3" />
           <span>Investimento</span>
         </Badge>

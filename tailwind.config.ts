@@ -67,9 +67,10 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				// Cores personalizadas para o app financeiro
-				income: '#10b981', // Verde para receitas
-				expense: '#ef4444', // Vermelho para despesas
-				'royal-blue': 'hsl(var(--royal-blue))', // Laranja para abas ativas
+				income: 'hsl(var(--income))', // Verde para receitas
+				expense: 'hsl(var(--expense))', // Vermelho para despesas
+				'navy-blue': 'hsl(var(--navy-blue))', // Azul marinho para abas ativas
+				'primary-action': 'hsl(var(--primary-action))', // Ação primária
 				neutral: {
 					50: '#f8fafc',
 					100: '#f1f5f9',
