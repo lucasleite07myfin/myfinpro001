@@ -36,8 +36,8 @@
     --income: 142 70% 45%;
     --expense: 0 84% 60%;
     
-    /* Orange for active tabs */
-    --royal-blue: 25 95% 53%;
+    /* Primary action color */
+    --primary-action: 142 70% 45%;
 
     --radius: 0.5rem;
 

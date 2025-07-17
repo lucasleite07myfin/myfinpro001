@@ -391,9 +391,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto bg-background border shadow-lg">
-          <DialogHeader className="border-b pb-4 mb-6">
-            <DialogTitle className="text-xl font-semibold text-foreground">
+        <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto bg-card border-border shadow-lg">
+          <DialogHeader className="border-b border-border pb-4 mb-6">
+            <DialogTitle className="text-xl font-semibold text-card-foreground">
               Adicionar Transação
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
@@ -402,11 +402,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           </DialogHeader>
           
           <Tabs value={selectedTab} onValueChange={value => setSelectedTab(value as 'regular' | 'recurring' | 'goal' | 'investment')} className="w-full">
-            <TabsList className="grid grid-cols-4 w-full bg-muted/30 p-1 rounded-lg">
+            <TabsList className="grid grid-cols-4 w-full bg-muted p-1 rounded-lg">
               <TooltipHelper content={tooltipContent.modals.transactionTypes.regular} delayDuration={500}>
                 <TabsTrigger 
                   value="regular" 
-                  className="text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="text-xs md:text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm"
                 >
                   Transação
                 </TabsTrigger>
@@ -414,7 +414,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <TooltipHelper content={tooltipContent.modals.transactionTypes.recurring} delayDuration={500}>
                 <TabsTrigger 
                   value="recurring" 
-                  className="text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="text-xs md:text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm"
                 >
                   Recorrente
                 </TabsTrigger>
@@ -422,7 +422,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <TooltipHelper content={tooltipContent.modals.transactionTypes.goal} delayDuration={500}>
                 <TabsTrigger 
                   value="goal" 
-                  className="text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="text-xs md:text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm"
                 >
                   Metas
                 </TabsTrigger>
@@ -430,7 +430,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <TooltipHelper content={tooltipContent.modals.transactionTypes.investment} delayDuration={500}>
                 <TabsTrigger 
                   value="investment" 
-                  className="text-xs md:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="text-xs md:text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm"
                 >
                   Investir
                 </TabsTrigger>
@@ -441,16 +441,16 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             <TabsContent value="regular" className="mt-6">
               <form onSubmit={handleSubmitRegular} className="space-y-6">
                 <Tabs defaultValue="income" value={transactionType} onValueChange={value => setTransactionType(value as TransactionType)} className="w-full">
-                  <TabsList className="grid grid-cols-2 w-full bg-muted/30 p-1 rounded-lg">
+                  <TabsList className="grid grid-cols-2 w-full bg-muted p-1 rounded-lg">
                     <TabsTrigger 
                       value="income" 
-                      className="font-medium data-[state=active]:bg-income/10 data-[state=active]:text-income data-[state=active]:shadow-sm"
+                      className="font-medium data-[state=active]:bg-card data-[state=active]:text-green-700 data-[state=active]:shadow-sm"
                     >
                       Receita
                     </TabsTrigger>
                     <TabsTrigger 
                       value="expense" 
-                      className="font-medium data-[state=active]:bg-expense/10 data-[state=active]:text-expense data-[state=active]:shadow-sm"
+                      className="font-medium data-[state=active]:bg-card data-[state=active]:text-red-700 data-[state=active]:shadow-sm"
                     >
                       Despesa
                     </TabsTrigger>
