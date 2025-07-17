@@ -414,13 +414,13 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             
             {/* Transação Regular */}
             <TabsContent value="regular" className="mt-6">
-              <form onSubmit={handleSubmitRegular} className="space-y-6 bg-slate-50">
+              <form onSubmit={handleSubmitRegular} className="space-y-6 bg-card">
                 <Tabs defaultValue="income" value={transactionType} onValueChange={value => setTransactionType(value as TransactionType)} className="w-full">
                   <TabsList className="grid grid-cols-2 w-full bg-muted p-1 rounded-lg">
-                    <TabsTrigger value="income" className="font-medium data-[state=active]:bg-card data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
+                    <TabsTrigger value="income" className="font-medium data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground">
                       Receita
                     </TabsTrigger>
-                    <TabsTrigger value="expense" className="font-medium data-[state=active]:bg-card data-[state=active]:text-red-700 data-[state=active]:shadow-sm">
+                    <TabsTrigger value="expense" className="font-medium data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground">
                       Despesa
                     </TabsTrigger>
                   </TabsList>
@@ -433,7 +433,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         Data
                       </Label>
-                      <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} required className="border-border focus:ring-2 focus:ring-primary/20 bg-slate-300" />
+                      <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} required className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2" />
                     </div>
                   </TooltipHelper>
                   
@@ -442,7 +442,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                       <Label htmlFor="description" className="text-sm font-medium text-foreground">
                         Descrição
                       </Label>
-                      <Input id="description" value={description} onChange={e => setDescription(e.target.value)} className="bg-background border-border focus:ring-2 focus:ring-primary/20" placeholder="Digite uma descrição para a transação" required />
+                      <Input id="description" value={description} onChange={e => setDescription(e.target.value)} className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2" placeholder="Digite uma descrição para a transação" required />
                     </div>
                   </TooltipHelper>
                   
@@ -452,7 +452,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         Categoria
                       </Label>
                       <Select value={category} onValueChange={setCategory} required>
-                        <SelectTrigger className="bg-background border-border focus:ring-2 focus:ring-primary/20">
+                        <SelectTrigger className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2">
                           <SelectValue placeholder="Selecione uma categoria" />
                         </SelectTrigger>
                         <SelectContent className="bg-background border shadow-lg">
@@ -471,7 +471,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         <Label htmlFor="customCategory" className="text-sm font-medium text-foreground">
                           Especificar categoria personalizada
                         </Label>
-                        <Input id="customCategory" value={customCategory} onChange={e => setCustomCategory(e.target.value)} placeholder="Digite o nome da categoria" className="bg-background border-border focus:ring-2 focus:ring-primary/20" />
+                        <Input id="customCategory" value={customCategory} onChange={e => setCustomCategory(e.target.value)} placeholder="Digite o nome da categoria" className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2" />
                       </div>
                     </TooltipHelper>}
                   
@@ -480,7 +480,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                       <Label htmlFor="amount" className="text-sm font-medium text-foreground">
                         Valor (R$)
                       </Label>
-                      <Input id="amount" value={formattedAmount} onChange={e => handleAmountChange(e, 'regular')} className="bg-background border-border focus:ring-2 focus:ring-primary/20 font-mono text-lg" placeholder="R$ 0,00" required />
+                      <Input id="amount" value={formattedAmount} onChange={e => handleAmountChange(e, 'regular')} className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-lg" placeholder="R$ 0,00" required />
                     </div>
                   </TooltipHelper>
                   
@@ -490,7 +490,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         Forma de Pagamento
                       </Label>
                       <Select value={paymentMethod} onValueChange={value => setPaymentMethod(value as PaymentMethod)}>
-                        <SelectTrigger className="bg-background border-border focus:ring-2 focus:ring-primary/20">
+                        <SelectTrigger className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2">
                           <SelectValue placeholder="Selecione uma forma de pagamento" />
                         </SelectTrigger>
                         <SelectContent className="bg-background border shadow-lg">

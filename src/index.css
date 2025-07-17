@@ -38,6 +38,9 @@
     
     /* Primary action color */
     --primary-action: 142 70% 45%;
+    
+    /* Navy blue for tabs */
+    --navy-blue: 221 83% 53%;
 
     --radius: 0.5rem;
 
@@ -94,6 +97,9 @@
     
     /* Orange for active tabs in dark mode */
     --royal-blue: 25 95% 58%;
+    
+    /* Navy blue for tabs in dark mode */
+    --navy-blue: 221 83% 58%;
     
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%; /* Brighter text for better contrast */
