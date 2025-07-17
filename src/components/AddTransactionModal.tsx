@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,17 +15,17 @@ import { Info, Target, TrendingUp, Calendar } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
-
 interface AddTransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   open,
   onOpenChange
 }) => {
-  const { mode } = useAppMode();
+  const {
+    mode
+  } = useAppMode();
   const financeContext = mode === 'personal' ? useFinance() : useBusiness();
   const {
     addTransaction,
@@ -103,10 +102,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const getCurrentCategories = () => {
     const defaultCategories = transactionType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
     const userCustomCategories = customCategories?.[transactionType] || [];
-    
+
     // Combine custom categories with default ones, but exclude "Outros" which will be at the end
     const filteredDefaultCategories = defaultCategories.filter(cat => cat !== 'Outros');
-    
+
     // Return custom categories first, then default categories, and "Outros" at the end
     return [...userCustomCategories, ...filteredDefaultCategories, 'Outros'];
   };
@@ -115,14 +114,13 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const getRecurringCategories = () => {
     const defaultCategories = EXPENSE_CATEGORIES;
     const userCustomCategories = customCategories?.expense || [];
-    
+
     // Combine custom categories with default ones, but exclude "Outros" which will be at the end
     const filteredDefaultCategories = defaultCategories.filter(cat => cat !== 'Outros');
-    
+
     // Return custom categories first, then default categories, and "Outros" at the end
     return [...userCustomCategories, ...filteredDefaultCategories, 'Outros'];
   };
-
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'regular' | 'recurring' | 'goal' | 'investment') => {
     // Remove all non-numeric characters
     const numericValue = e.target.value.replace(/\D/g, '');
@@ -148,7 +146,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         break;
     }
   };
-
   const handleSubmitRegular = (e: React.FormEvent) => {
     e.preventDefault();
     if (!description || !category || !amount || !date) {
@@ -158,15 +155,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     // If it's a custom category (under "Outros"), add it to favorites
     if (category === 'Outros' && customCategory.trim()) {
       const finalCustomCategory = customCategory.trim();
-      
+
       // Save the custom category and add it to favorites
       if (addCustomCategory) {
         addCustomCategory(transactionType, finalCustomCategory);
       }
-      
+
       // Use the custom category as the transaction category
       const finalCategory = `Outros: ${finalCustomCategory}`;
-      
       addTransaction({
         date: new Date(date),
         description,
@@ -186,7 +182,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         paymentMethod
       });
     }
-
     toast({
       title: 'Transação adicionada',
       description: 'A transação foi adicionada com sucesso!'
@@ -194,7 +189,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     resetForm();
     onOpenChange(false);
   };
-
   const handleSubmitRecurring = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -211,15 +205,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     // If it's a custom category (under "Outros"), add it to favorites
     if (recCategory === 'Outros' && recCustomCategory.trim()) {
       const finalCustomCategory = recCustomCategory.trim();
-      
+
       // Save the custom category and add it to favorites
       if (addCustomCategory) {
         addCustomCategory('expense', finalCustomCategory);
       }
-      
+
       // Use the custom category as the recurring expense category
       const finalCategory = `Outros: ${finalCustomCategory}`;
-      
       addRecurringExpense({
         description: recDescription,
         category: finalCategory,
@@ -241,7 +234,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         repeatMonths: parseInt(recRepeatMonths)
       });
     }
-
     toast({
       title: 'Despesa fixa adicionada',
       description: 'A despesa fixa foi adicionada com sucesso!'
@@ -249,7 +241,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     resetForm();
     onOpenChange(false);
   };
-
   const handleSubmitGoalContribution = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedGoal || !goalAmount) {
@@ -287,7 +278,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     resetForm();
     onOpenChange(false);
   };
-
   const handleSubmitInvestmentContribution = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedInvestment || !investmentAmount) {
@@ -322,7 +312,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     resetForm();
     onOpenChange(false);
   };
-
   const resetForm = () => {
     // Reset regular transaction fields
     setTransactionType('income');
@@ -387,9 +376,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const showCustomCategory = transactionType === 'expense' && category === 'Outros';
   const showRecurringCustomCategory = recCategory === 'Outros';
   const repeatOptions = generateRepeatOptions();
-
-  return (
-    <TooltipProvider>
+  return <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto bg-card border-border shadow-lg">
           <DialogHeader className="border-b border-border pb-4 mb-6">
@@ -404,34 +391,22 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           <Tabs value={selectedTab} onValueChange={value => setSelectedTab(value as 'regular' | 'recurring' | 'goal' | 'investment')} className="w-full">
             <TabsList className="grid grid-cols-4 w-full bg-muted p-1 rounded-lg">
               <TooltipHelper content={tooltipContent.modals.transactionTypes.regular} delayDuration={500}>
-                <TabsTrigger 
-                  value="regular" 
-                  className="text-xs md:text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm"
-                >
+                <TabsTrigger value="regular" className="text-xs md:text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm">
                   Transação
                 </TabsTrigger>
               </TooltipHelper>
               <TooltipHelper content={tooltipContent.modals.transactionTypes.recurring} delayDuration={500}>
-                <TabsTrigger 
-                  value="recurring" 
-                  className="text-xs md:text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm"
-                >
+                <TabsTrigger value="recurring" className="text-xs md:text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm">
                   Recorrente
                 </TabsTrigger>
               </TooltipHelper>
               <TooltipHelper content={tooltipContent.modals.transactionTypes.goal} delayDuration={500}>
-                <TabsTrigger 
-                  value="goal" 
-                  className="text-xs md:text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm"
-                >
+                <TabsTrigger value="goal" className="text-xs md:text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm">
                   Metas
                 </TabsTrigger>
               </TooltipHelper>
               <TooltipHelper content={tooltipContent.modals.transactionTypes.investment} delayDuration={500}>
-                <TabsTrigger 
-                  value="investment" 
-                  className="text-xs md:text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm"
-                >
+                <TabsTrigger value="investment" className="text-xs md:text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-card-foreground data-[state=active]:shadow-sm">
                   Investir
                 </TabsTrigger>
               </TooltipHelper>
@@ -439,19 +414,13 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             
             {/* Transação Regular */}
             <TabsContent value="regular" className="mt-6">
-              <form onSubmit={handleSubmitRegular} className="space-y-6">
+              <form onSubmit={handleSubmitRegular} className="space-y-6 bg-slate-50">
                 <Tabs defaultValue="income" value={transactionType} onValueChange={value => setTransactionType(value as TransactionType)} className="w-full">
                   <TabsList className="grid grid-cols-2 w-full bg-muted p-1 rounded-lg">
-                    <TabsTrigger 
-                      value="income" 
-                      className="font-medium data-[state=active]:bg-card data-[state=active]:text-green-700 data-[state=active]:shadow-sm"
-                    >
+                    <TabsTrigger value="income" className="font-medium data-[state=active]:bg-card data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
                       Receita
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="expense" 
-                      className="font-medium data-[state=active]:bg-card data-[state=active]:text-red-700 data-[state=active]:shadow-sm"
-                    >
+                    <TabsTrigger value="expense" className="font-medium data-[state=active]:bg-card data-[state=active]:text-red-700 data-[state=active]:shadow-sm">
                       Despesa
                     </TabsTrigger>
                   </TabsList>
@@ -464,14 +433,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         Data
                       </Label>
-                      <Input 
-                        id="date" 
-                        type="date" 
-                        value={date} 
-                        onChange={e => setDate(e.target.value)} 
-                        className="bg-background border-border focus:ring-2 focus:ring-primary/20" 
-                        required 
-                      />
+                      <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} className="bg-background border-border focus:ring-2 focus:ring-primary/20" required />
                     </div>
                   </TooltipHelper>
                   
@@ -480,14 +442,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                       <Label htmlFor="description" className="text-sm font-medium text-foreground">
                         Descrição
                       </Label>
-                      <Input 
-                        id="description" 
-                        value={description} 
-                        onChange={e => setDescription(e.target.value)} 
-                        className="bg-background border-border focus:ring-2 focus:ring-primary/20" 
-                        placeholder="Digite uma descrição para a transação" 
-                        required 
-                      />
+                      <Input id="description" value={description} onChange={e => setDescription(e.target.value)} className="bg-background border-border focus:ring-2 focus:ring-primary/20" placeholder="Digite uma descrição para a transação" required />
                     </div>
                   </TooltipHelper>
                   
@@ -502,47 +457,30 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         </SelectTrigger>
                         <SelectContent className="bg-background border shadow-lg">
                           <SelectGroup>
-                            {categories.map(cat => (
-                              <SelectItem key={cat} value={cat} className="hover:bg-muted/50">
+                            {categories.map(cat => <SelectItem key={cat} value={cat} className="hover:bg-muted/50">
                                 {cat.startsWith('Outros:') ? cat.substring(7) : cat}
-                              </SelectItem>
-                            ))}
+                              </SelectItem>)}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
                     </div>
                   </TooltipHelper>
 
-                  {showCustomCategory && (
-                    <TooltipHelper content={tooltipContent.modals.fields.customCategory} delayDuration={500}>
+                  {showCustomCategory && <TooltipHelper content={tooltipContent.modals.fields.customCategory} delayDuration={500}>
                       <div className="space-y-2">
                         <Label htmlFor="customCategory" className="text-sm font-medium text-foreground">
                           Especificar categoria personalizada
                         </Label>
-                        <Input 
-                          id="customCategory" 
-                          value={customCategory} 
-                          onChange={e => setCustomCategory(e.target.value)} 
-                          placeholder="Digite o nome da categoria" 
-                          className="bg-background border-border focus:ring-2 focus:ring-primary/20" 
-                        />
+                        <Input id="customCategory" value={customCategory} onChange={e => setCustomCategory(e.target.value)} placeholder="Digite o nome da categoria" className="bg-background border-border focus:ring-2 focus:ring-primary/20" />
                       </div>
-                    </TooltipHelper>
-                  )}
+                    </TooltipHelper>}
                   
                   <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
                     <div className="space-y-2">
                       <Label htmlFor="amount" className="text-sm font-medium text-foreground">
                         Valor (R$)
                       </Label>
-                      <Input 
-                        id="amount" 
-                        value={formattedAmount} 
-                        onChange={e => handleAmountChange(e, 'regular')} 
-                        className="bg-background border-border focus:ring-2 focus:ring-primary/20 font-mono text-lg" 
-                        placeholder="R$ 0,00" 
-                        required 
-                      />
+                      <Input id="amount" value={formattedAmount} onChange={e => handleAmountChange(e, 'regular')} className="bg-background border-border focus:ring-2 focus:ring-primary/20 font-mono text-lg" placeholder="R$ 0,00" required />
                     </div>
                   </TooltipHelper>
                   
@@ -557,11 +495,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         </SelectTrigger>
                         <SelectContent className="bg-background border shadow-lg">
                           <SelectGroup>
-                            {Object.entries(PAYMENT_METHODS).map(([key, value]) => (
-                              <SelectItem key={key} value={key} className="hover:bg-muted/50">
+                            {Object.entries(PAYMENT_METHODS).map(([key, value]) => <SelectItem key={key} value={key} className="hover:bg-muted/50">
                                 {value}
-                              </SelectItem>
-                            ))}
+                              </SelectItem>)}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
@@ -574,10 +510,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                     Cancelar
                   </Button>
                   <TooltipHelper content={tooltipContent.forms.submit} delayDuration={500}>
-                    <Button 
-                      type="submit" 
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
-                    >
+                    <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium">
                       Salvar Transação
                     </Button>
                   </TooltipHelper>
@@ -609,27 +542,23 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            {recurringCategories.map(cat => (
-                              <SelectItem key={cat} value={cat}>
+                            {recurringCategories.map(cat => <SelectItem key={cat} value={cat}>
                                 {cat.startsWith('Outros:') ? cat.substring(7) : cat}
-                              </SelectItem>
-                            ))}
+                              </SelectItem>)}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
                     </div>
                   </TooltipHelper>
 
-                  {showRecurringCustomCategory && (
-                    <TooltipHelper content={tooltipContent.modals.fields.customCategory} delayDuration={500}>
+                  {showRecurringCustomCategory && <TooltipHelper content={tooltipContent.modals.fields.customCategory} delayDuration={500}>
                       <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="recCustomCategory" className="text-right">
                           Especificar
                         </Label>
                         <Input id="recCustomCategory" value={recCustomCategory} onChange={e => setRecCustomCategory(e.target.value)} placeholder="Descreva a categoria personalizada" className="col-span-3" />
                       </div>
-                    </TooltipHelper>
-                  )}
+                    </TooltipHelper>}
                   
                   <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -848,8 +777,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           </Tabs>
         </DialogContent>
       </Dialog>
-    </TooltipProvider>
-  );
+    </TooltipProvider>;
 };
-
 export default AddTransactionModal;
