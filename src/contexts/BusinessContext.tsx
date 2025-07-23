@@ -153,13 +153,13 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
         liabilitiesResult,
         monthlyResult
       ] = await Promise.all([
-        supabase.from('transactions').select('*').eq('user_id', user.id),
-        supabase.from('recurring_expenses').select('*').eq('user_id', user.id),
-        supabase.from('goals').select('*').eq('user_id', user.id),
-        supabase.from('assets').select('*').eq('user_id', user.id),
+        supabase.from('emp_transactions').select('*').eq('user_id', user.id),
+        supabase.from('emp_recurring_expenses').select('*').eq('user_id', user.id),
+        supabase.from('emp_goals').select('*').eq('user_id', user.id),
+        supabase.from('emp_assets').select('*').eq('user_id', user.id),
         supabase.from('suppliers').select('*').eq('user_id', user.id),
-        supabase.from('liabilities').select('*').eq('user_id', user.id),
-        supabase.from('monthly_finance_data').select('*').eq('user_id', user.id)
+        supabase.from('emp_liabilities').select('*').eq('user_id', user.id),
+        supabase.from('emp_monthly_finance_data').select('*').eq('user_id', user.id)
       ]);
 
       if (transactionsResult.data) {
@@ -288,7 +288,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
-        .from('transactions')
+        .from('emp_transactions')
         .insert({
           user_id: user.id,
           date: transaction.date.toISOString().split('T')[0],
@@ -344,7 +344,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
-        .from('recurring_expenses')
+        .from('emp_recurring_expenses')
         .insert({
           user_id: user.id,
           description: expense.description,
@@ -510,7 +510,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
-        .from('goals')
+        .from('emp_goals')
         .insert({
           user_id: user.id,
           name: goal.name,
@@ -573,7 +573,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
-        .from('assets')
+        .from('emp_assets')
         .insert({
           user_id: user.id,
           name: asset.name,
@@ -720,7 +720,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
-        .from('liabilities')
+        .from('emp_liabilities')
         .insert({
           user_id: user.id,
           name: liability.name,

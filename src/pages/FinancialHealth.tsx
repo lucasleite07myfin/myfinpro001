@@ -12,32 +12,32 @@ const FinancialHealth: React.FC = () => {
   useEffect(() => {
     const mockCurrentHealth: HealthSnapshot = {
       id: '1',
-      snapshot_date: new Date().toISOString().split('T')[0],
-      savings_rate_pct: 22.5,
-      debt_income_pct: 25.0,
-      months_emergency_fund: 4.2,
-      net_worth_growth_12m: 8.7,
-      owner: 'user1'
+      snapshotDate: new Date(),
+      savingsRatePct: 22.5,
+      debtIncomePct: 25.0,
+      monthsEmergencyFund: 4.2,
+      netWorthGrowth12m: 8.7,
+      createdAt: new Date()
     };
 
     const mockHistoricalData: HealthSnapshot[] = [
       {
         id: '2',
-        snapshot_date: '2024-01-01',
-        savings_rate_pct: 18.3,
-        debt_income_pct: 30.0,
-        months_emergency_fund: 2.8,
-        net_worth_growth_12m: 5.2,
-        owner: 'user1'
+        snapshotDate: new Date('2024-01-01'),
+        savingsRatePct: 18.3,
+        debtIncomePct: 30.0,
+        monthsEmergencyFund: 2.8,
+        netWorthGrowth12m: 5.2,
+        createdAt: new Date('2024-01-01')
       },
       {
         id: '3',
-        snapshot_date: '2024-02-01',
-        savings_rate_pct: 20.1,
-        debt_income_pct: 28.5,
-        months_emergency_fund: 3.5,
-        net_worth_growth_12m: 6.8,
-        owner: 'user1'
+        snapshotDate: new Date('2024-02-01'),
+        savingsRatePct: 20.1,
+        debtIncomePct: 28.5,
+        monthsEmergencyFund: 3.5,
+        netWorthGrowth12m: 6.8,
+        createdAt: new Date('2024-02-01')
       },
       mockCurrentHealth
     ];

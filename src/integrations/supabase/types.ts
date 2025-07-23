@@ -17,6 +17,7 @@ export type Database = {
       alert_logs: {
         Row: {
           alert_rule_id: string | null
+          app_mode: string
           id: string
           message: string
           read: boolean | null
@@ -25,6 +26,7 @@ export type Database = {
         }
         Insert: {
           alert_rule_id?: string | null
+          app_mode?: string
           id?: string
           message: string
           read?: boolean | null
@@ -33,6 +35,7 @@ export type Database = {
         }
         Update: {
           alert_rule_id?: string | null
+          app_mode?: string
           id?: string
           message?: string
           read?: boolean | null
@@ -52,6 +55,7 @@ export type Database = {
       alert_rules: {
         Row: {
           account_id: string | null
+          app_mode: string
           category_id: string | null
           created_at: string | null
           days_before_due: number | null
@@ -67,6 +71,7 @@ export type Database = {
         }
         Insert: {
           account_id?: string | null
+          app_mode?: string
           category_id?: string | null
           created_at?: string | null
           days_before_due?: number | null
@@ -82,6 +87,7 @@ export type Database = {
         }
         Update: {
           account_id?: string | null
+          app_mode?: string
           category_id?: string | null
           created_at?: string | null
           days_before_due?: number | null
@@ -101,6 +107,7 @@ export type Database = {
         Row: {
           acquisition_date: string | null
           acquisition_value: number | null
+          app_mode: string
           created_at: string | null
           evaluation_date: string | null
           id: string
@@ -121,6 +128,7 @@ export type Database = {
         Insert: {
           acquisition_date?: string | null
           acquisition_value?: number | null
+          app_mode?: string
           created_at?: string | null
           evaluation_date?: string | null
           id?: string
@@ -141,6 +149,7 @@ export type Database = {
         Update: {
           acquisition_date?: string | null
           acquisition_value?: number | null
+          app_mode?: string
           created_at?: string | null
           evaluation_date?: string | null
           id?: string
@@ -189,6 +198,7 @@ export type Database = {
       }
       custom_categories: {
         Row: {
+          app_mode: string
           category_name: string
           created_at: string | null
           id: string
@@ -196,6 +206,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          app_mode?: string
           category_name: string
           created_at?: string | null
           id?: string
@@ -203,6 +214,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          app_mode?: string
           category_name?: string
           created_at?: string | null
           id?: string
@@ -211,8 +223,414 @@ export type Database = {
         }
         Relationships: []
       }
+      emp_alert_logs: {
+        Row: {
+          alert_rule_id: string | null
+          id: string
+          message: string
+          read: boolean | null
+          triggered_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_rule_id?: string | null
+          id?: string
+          message: string
+          read?: boolean | null
+          triggered_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_rule_id?: string | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          triggered_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emp_alert_rules: {
+        Row: {
+          account_id: string | null
+          category_id: string | null
+          created_at: string
+          days_before_due: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notification_channel: string[] | null
+          rule_type: string
+          threshold_percent: number | null
+          threshold_value: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          days_before_due?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notification_channel?: string[] | null
+          rule_type: string
+          threshold_percent?: number | null
+          threshold_value?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          days_before_due?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notification_channel?: string[] | null
+          rule_type?: string
+          threshold_percent?: number | null
+          threshold_value?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emp_assets: {
+        Row: {
+          acquisition_date: string | null
+          acquisition_value: number | null
+          created_at: string
+          evaluation_date: string | null
+          id: string
+          insured: boolean | null
+          last_price_brl: number | null
+          last_updated: string | null
+          location: string | null
+          name: string
+          notes: string | null
+          quantity: number | null
+          symbol: string | null
+          type: string
+          updated_at: string
+          user_id: string
+          value: number
+          wallet: string | null
+        }
+        Insert: {
+          acquisition_date?: string | null
+          acquisition_value?: number | null
+          created_at?: string
+          evaluation_date?: string | null
+          id?: string
+          insured?: boolean | null
+          last_price_brl?: number | null
+          last_updated?: string | null
+          location?: string | null
+          name: string
+          notes?: string | null
+          quantity?: number | null
+          symbol?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+          value: number
+          wallet?: string | null
+        }
+        Update: {
+          acquisition_date?: string | null
+          acquisition_value?: number | null
+          created_at?: string
+          evaluation_date?: string | null
+          id?: string
+          insured?: boolean | null
+          last_price_brl?: number | null
+          last_updated?: string | null
+          location?: string | null
+          name?: string
+          notes?: string | null
+          quantity?: number | null
+          symbol?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+          value?: number
+          wallet?: string | null
+        }
+        Relationships: []
+      }
+      emp_custom_categories: {
+        Row: {
+          category_name: string
+          created_at: string
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          category_name: string
+          created_at?: string
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          category_name?: string
+          created_at?: string
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emp_goals: {
+        Row: {
+          created_at: string
+          current_amount: number | null
+          id: string
+          name: string
+          saving_location: string | null
+          target_amount: number
+          target_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_amount?: number | null
+          id?: string
+          name: string
+          saving_location?: string | null
+          target_amount: number
+          target_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_amount?: number | null
+          id?: string
+          name?: string
+          saving_location?: string | null
+          target_amount?: number
+          target_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emp_health_snapshots: {
+        Row: {
+          created_at: string
+          debt_income_pct: number | null
+          id: string
+          months_emergency_fund: number | null
+          net_worth_growth_12m: number | null
+          savings_rate_pct: number | null
+          snapshot_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          debt_income_pct?: number | null
+          id?: string
+          months_emergency_fund?: number | null
+          net_worth_growth_12m?: number | null
+          savings_rate_pct?: number | null
+          snapshot_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          debt_income_pct?: number | null
+          id?: string
+          months_emergency_fund?: number | null
+          net_worth_growth_12m?: number | null
+          savings_rate_pct?: number | null
+          snapshot_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emp_liabilities: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          type: string
+          updated_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          type: string
+          updated_at?: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: []
+      }
+      emp_monthly_finance_data: {
+        Row: {
+          balance: number | null
+          created_at: string
+          expense_total: number | null
+          id: string
+          income_total: number | null
+          month: string
+          savings_rate: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string
+          expense_total?: number | null
+          id?: string
+          income_total?: number | null
+          month: string
+          savings_rate?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string
+          expense_total?: number | null
+          id?: string
+          income_total?: number | null
+          month?: string
+          savings_rate?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emp_recurring_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string
+          due_day: number
+          id: string
+          is_paid: boolean | null
+          monthly_values: Json | null
+          paid_months: string[] | null
+          payment_method: string | null
+          repeat_months: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description: string
+          due_day: number
+          id?: string
+          is_paid?: boolean | null
+          monthly_values?: Json | null
+          paid_months?: string[] | null
+          payment_method?: string | null
+          repeat_months?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string
+          due_day?: number
+          id?: string
+          is_paid?: boolean | null
+          monthly_values?: Json | null
+          paid_months?: string[] | null
+          payment_method?: string | null
+          repeat_months?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emp_transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          description: string
+          goal_id: string | null
+          id: string
+          investment_id: string | null
+          is_goal_contribution: boolean | null
+          is_investment_contribution: boolean | null
+          is_recurring_payment: boolean | null
+          payment_method: string | null
+          recurring_expense_id: string | null
+          source: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          date: string
+          description: string
+          goal_id?: string | null
+          id?: string
+          investment_id?: string | null
+          is_goal_contribution?: boolean | null
+          is_investment_contribution?: boolean | null
+          is_recurring_payment?: boolean | null
+          payment_method?: string | null
+          recurring_expense_id?: string | null
+          source?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          description?: string
+          goal_id?: string | null
+          id?: string
+          investment_id?: string | null
+          is_goal_contribution?: boolean | null
+          is_investment_contribution?: boolean | null
+          is_recurring_payment?: boolean | null
+          payment_method?: string | null
+          recurring_expense_id?: string | null
+          source?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
+          app_mode: string
           created_at: string | null
           current_amount: number | null
           id: string
@@ -224,6 +642,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          app_mode?: string
           created_at?: string | null
           current_amount?: number | null
           id?: string
@@ -235,6 +654,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          app_mode?: string
           created_at?: string | null
           current_amount?: number | null
           id?: string
@@ -249,6 +669,7 @@ export type Database = {
       }
       health_snapshots: {
         Row: {
+          app_mode: string
           created_at: string | null
           debt_income_pct: number | null
           id: string
@@ -259,6 +680,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          app_mode?: string
           created_at?: string | null
           debt_income_pct?: number | null
           id?: string
@@ -269,6 +691,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          app_mode?: string
           created_at?: string | null
           debt_income_pct?: number | null
           id?: string
@@ -282,6 +705,7 @@ export type Database = {
       }
       liabilities: {
         Row: {
+          app_mode: string
           created_at: string | null
           id: string
           name: string
@@ -291,6 +715,7 @@ export type Database = {
           value: number
         }
         Insert: {
+          app_mode?: string
           created_at?: string | null
           id?: string
           name: string
@@ -300,6 +725,7 @@ export type Database = {
           value: number
         }
         Update: {
+          app_mode?: string
           created_at?: string | null
           id?: string
           name?: string
@@ -312,6 +738,7 @@ export type Database = {
       }
       monthly_finance_data: {
         Row: {
+          app_mode: string
           balance: number | null
           created_at: string | null
           expense_total: number | null
@@ -323,6 +750,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          app_mode?: string
           balance?: number | null
           created_at?: string | null
           expense_total?: number | null
@@ -334,6 +762,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          app_mode?: string
           balance?: number | null
           created_at?: string | null
           expense_total?: number | null
@@ -376,6 +805,7 @@ export type Database = {
       recurring_expenses: {
         Row: {
           amount: number
+          app_mode: string
           category: string
           created_at: string | null
           description: string
@@ -391,6 +821,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          app_mode?: string
           category: string
           created_at?: string | null
           description: string
@@ -406,6 +837,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          app_mode?: string
           category?: string
           created_at?: string | null
           description?: string
@@ -424,6 +856,7 @@ export type Database = {
       suppliers: {
         Row: {
           address: Json | null
+          app_mode: string
           bank_info: Json | null
           contact_person: string | null
           created_at: string | null
@@ -443,6 +876,7 @@ export type Database = {
         }
         Insert: {
           address?: Json | null
+          app_mode?: string
           bank_info?: Json | null
           contact_person?: string | null
           created_at?: string | null
@@ -462,6 +896,7 @@ export type Database = {
         }
         Update: {
           address?: Json | null
+          app_mode?: string
           bank_info?: Json | null
           contact_person?: string | null
           created_at?: string | null
@@ -484,6 +919,7 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          app_mode: string
           category: string
           created_at: string | null
           date: string
@@ -503,6 +939,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          app_mode?: string
           category: string
           created_at?: string | null
           date: string
@@ -522,6 +959,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          app_mode?: string
           category?: string
           created_at?: string | null
           date?: string

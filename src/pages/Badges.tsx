@@ -58,15 +58,13 @@ const Badges: React.FC = () => {
     const mockUserBadges: UserBadge[] = [
       {
         id: '1',
-        badge_id: '2',
-        earned_at: new Date('2024-01-15'),
-        owner: 'user1'
+        badgeId: '2',
+        earnedAt: new Date('2024-01-15')
       },
       {
         id: '2',
-        badge_id: '5',
-        earned_at: new Date('2024-02-20'),
-        owner: 'user1'
+        badgeId: '5',
+        earnedAt: new Date('2024-02-20')
       }
     ];
 

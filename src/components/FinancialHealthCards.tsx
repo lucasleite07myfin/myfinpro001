@@ -37,30 +37,30 @@ const FinancialHealthCards: React.FC<FinancialHealthCardsProps> = ({
   const healthMetrics = [
     {
       title: 'Taxa de Poupança',
-      value: `${currentHealth.savings_rate_pct.toFixed(1)}%`,
+      value: `${currentHealth.savingsRatePct?.toFixed(1) || 0}%`,
       icon: <PiggyBank className="h-5 w-5" />,
-      color: getHealthColor(currentHealth.savings_rate_pct, { good: 20, warning: 10 }),
+      color: getHealthColor(currentHealth.savingsRatePct || 0, { good: 20, warning: 10 }),
       tooltip: 'Taxa de poupança = (Receita - Despesa) / Receita × 100. Verde: ≥20%, Amarelo: 10-20%, Vermelho: <10%'
     },
     {
       title: 'Índice de Endividamento',
-      value: `${currentHealth.debt_income_pct.toFixed(1)}%`,
+      value: `${currentHealth.debtIncomePct?.toFixed(1) || 0}%`,
       icon: <CreditCard className="h-5 w-5" />,
-      color: getHealthColor(currentHealth.debt_income_pct, { good: 30, warning: 50 }, true),
+      color: getHealthColor(currentHealth.debtIncomePct || 0, { good: 30, warning: 50 }, true),
       tooltip: 'Índice de endividamento = Total de dívidas / Renda mensal × 100. Verde: <30%, Amarelo: 30-50%, Vermelho: >50%'
     },
     {
       title: 'Reserva de Emergência',
-      value: `${currentHealth.months_emergency_fund.toFixed(1)} meses`,
+      value: `${currentHealth.monthsEmergencyFund?.toFixed(1) || 0} meses`,
       icon: <Shield className="h-5 w-5" />,
-      color: getHealthColor(currentHealth.months_emergency_fund, { good: 6, warning: 3 }),
+      color: getHealthColor(currentHealth.monthsEmergencyFund || 0, { good: 6, warning: 3 }),
       tooltip: 'Meses de reserva = Reserva de emergência / Despesa média mensal. Verde: ≥6 meses, Amarelo: 3-5 meses, Vermelho: <3 meses'
     },
     {
       title: 'Crescimento Patrimonial',
-      value: `${currentHealth.net_worth_growth_12m >= 0 ? '+' : ''}${currentHealth.net_worth_growth_12m.toFixed(1)}%`,
-      icon: currentHealth.net_worth_growth_12m >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />,
-      color: currentHealth.net_worth_growth_12m >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+      value: `${(currentHealth.netWorthGrowth12m || 0) >= 0 ? '+' : ''}${(currentHealth.netWorthGrowth12m || 0).toFixed(1)}%`,
+      icon: (currentHealth.netWorthGrowth12m || 0) >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />,
+      color: (currentHealth.netWorthGrowth12m || 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
       tooltip: 'Crescimento do patrimônio nos últimos 12 meses comparado ao período anterior'
     }
   ];

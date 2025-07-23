@@ -15,7 +15,7 @@ interface BadgesGalleryProps {
 const BadgesGallery: React.FC<BadgesGalleryProps> = ({ allBadges, userBadges }) => {
   const [filter, setFilter] = useState<'all' | 'earned'>('all');
 
-  const earnedBadgeIds = userBadges.map(ub => ub.badge_id);
+  const earnedBadgeIds = userBadges.map(ub => ub.badgeId);
   
   const filteredBadges = filter === 'earned' 
     ? allBadges.filter(badge => earnedBadgeIds.includes(badge.id))
@@ -59,7 +59,7 @@ const BadgesGallery: React.FC<BadgesGalleryProps> = ({ allBadges, userBadges }) 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredBadges.map((badge) => {
             const isEarned = earnedBadgeIds.includes(badge.id);
-            const userBadge = userBadges.find(ub => ub.badge_id === badge.id);
+            const userBadge = userBadges.find(ub => ub.badgeId === badge.id);
             
             return (
               <Tooltip key={badge.id}>
@@ -78,7 +78,7 @@ const BadgesGallery: React.FC<BadgesGalleryProps> = ({ allBadges, userBadges }) 
                       <h3 className="font-medium text-sm">{badge.name}</h3>
                       {isEarned && userBadge && (
                         <Badge variant="secondary" className="text-xs">
-                          {new Date(userBadge.earned_at).toLocaleDateString('pt-BR')}
+                          {new Date(userBadge.earnedAt).toLocaleDateString('pt-BR')}
                         </Badge>
                       )}
                     </div>
@@ -90,7 +90,7 @@ const BadgesGallery: React.FC<BadgesGalleryProps> = ({ allBadges, userBadges }) 
                     <p className="text-sm text-muted-foreground mt-1">{badge.description}</p>
                     {isEarned && userBadge && (
                       <p className="text-xs text-green-600 mt-2">
-                        Conquistada em {new Date(userBadge.earned_at).toLocaleDateString('pt-BR')}
+                        Conquistada em {new Date(userBadge.earnedAt).toLocaleDateString('pt-BR')}
                       </p>
                     )}
                   </div>
