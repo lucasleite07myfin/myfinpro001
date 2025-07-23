@@ -18,7 +18,6 @@ import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 
 // New intelligent features pages
-import Alerts from "./pages/Alerts";
 import FinancialHealth from "./pages/FinancialHealth";
 
 // Business pages
@@ -72,7 +71,6 @@ const ModeRoutes = () => {
             <Route path="/despesas" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
             <Route path="/metas" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
             <Route path="/patrimonio" element={<ProtectedRoute><Patrimony /></ProtectedRoute>} />
-            <Route path="/alertas" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
             <Route path="/saude-financeira" element={<ProtectedRoute><FinancialHealth /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             

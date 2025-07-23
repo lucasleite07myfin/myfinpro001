@@ -5,42 +5,53 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
-import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, PAYMENT_METHODS, PaymentMethod, TransactionType, Goal, FinanceContextType, BusinessContextType } from '@/types/finance';
+import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, PAYMENT_METHODS, PaymentMethod, TransactionType, Goal, FinanceContextType, BusinessContextType, Transaction } from '@/types/finance';
 import { formatDateForInput, formatCurrency, formatNumberToCurrency, parseCurrencyToNumber } from '@/utils/formatters';
 import { toast } from '@/components/ui/use-toast';
-import { Info, Target, TrendingUp, Calendar } from 'lucide-react';
+import { Info, Target, TrendingUp, Calendar as CalendarIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+
 interface AddTransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialData?: Transaction;
+  mode?: 'add' | 'edit';
 }
+
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   open,
-  onOpenChange
+  onOpenChange,
+  initialData,
+  mode = 'add'
 }) => {
   const {
-    mode
+    mode: appMode
   } = useAppMode();
-  const financeContext = mode === 'personal' ? useFinance() : useBusiness();
+  const financeContext = appMode === 'personal' ? useFinance() : useBusiness();
   const {
     addTransaction,
     addRecurringExpense,
     goals,
     customCategories,
     addCustomCategory
-  } = financeContext as FinanceContextType | BusinessContextType; // Cast to union type
+  } = financeContext as FinanceContextType | BusinessContextType;
 
   // Common state
   const [transactionType, setTransactionType] = useState<TransactionType>('income');
   const [selectedTab, setSelectedTab] = useState<'regular' | 'recurring' | 'goal' | 'investment'>('regular');
 
   // Regular transaction state
-  const [date, setDate] = useState<string>(formatDateForInput(new Date()));
+  const [date, setDate] = useState<Date>(new Date());
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [customCategory, setCustomCategory] = useState('');
@@ -56,7 +67,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const [formattedRecAmount, setFormattedRecAmount] = useState('');
   const [recDueDay, setRecDueDay] = useState('');
   const [recPaymentMethod, setRecPaymentMethod] = useState<PaymentMethod>('bank_transfer');
-  const [recRepeatMonths, setRecRepeatMonths] = useState('12'); // Padrão: 12 meses (1 ano)
+  const [recRepeatMonths, setRecRepeatMonths] = useState('12');
 
   // Goal contribution state
   const [selectedGoal, setSelectedGoal] = useState<string>('');
@@ -77,7 +88,26 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     }
   }, [open]);
 
-  // Mock investments data (should be replaced with actual data from context)
+  // Populate form with initial data when editing
+  useEffect(() => {
+    if (mode === 'edit' && initialData && open) {
+      setTransactionType(initialData.type);
+      setDate(initialData.date);
+      setDescription(initialData.description);
+      setCategory(initialData.category);
+      setAmount(initialData.amount.toString());
+      setFormattedAmount(formatNumberToCurrency(initialData.amount));
+      setPaymentMethod(initialData.paymentMethod);
+      
+      // Handle custom categories
+      if (initialData.category.startsWith('Outros: ')) {
+        setCategory('Outros');
+        setCustomCategory(initialData.category.substring(7));
+      }
+    }
+  }, [mode, initialData, open]);
+
+  // Mock investments data
   const mockInvestments = [{
     id: '1',
     name: 'Expansão da Fábrica',
@@ -102,11 +132,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const getCurrentCategories = () => {
     const defaultCategories = transactionType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
     const userCustomCategories = customCategories?.[transactionType] || [];
-
-    // Combine custom categories with default ones, but exclude "Outros" which will be at the end
     const filteredDefaultCategories = defaultCategories.filter(cat => cat !== 'Outros');
-
-    // Return custom categories first, then default categories, and "Outros" at the end
     return [...userCustomCategories, ...filteredDefaultCategories, 'Outros'];
   };
 
@@ -114,19 +140,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const getRecurringCategories = () => {
     const defaultCategories = EXPENSE_CATEGORIES;
     const userCustomCategories = customCategories?.expense || [];
-
-    // Combine custom categories with default ones, but exclude "Outros" which will be at the end
     const filteredDefaultCategories = defaultCategories.filter(cat => cat !== 'Outros');
-
-    // Return custom categories first, then default categories, and "Outros" at the end
     return [...userCustomCategories, ...filteredDefaultCategories, 'Outros'];
   };
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'regular' | 'recurring' | 'goal' | 'investment') => {
-    // Remove all non-numeric characters
     const numericValue = e.target.value.replace(/\D/g, '');
     const floatValue = numericValue ? parseFloat(numericValue) / 100 : 0;
 
-    // Update the appropriate state based on the type
     switch (type) {
       case 'regular':
         setAmount(floatValue.toString());
@@ -146,53 +167,60 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         break;
     }
   };
+
   const handleSubmitRegular = (e: React.FormEvent) => {
     e.preventDefault();
     if (!description || !category || !amount || !date) {
       return;
     }
 
-    // If it's a custom category (under "Outros"), add it to favorites
-    if (category === 'Outros' && customCategory.trim()) {
-      const finalCustomCategory = customCategory.trim();
+    const transactionData = {
+      date: date,
+      description,
+      category: category === 'Outros' && customCategory.trim() ? `Outros: ${customCategory.trim()}` : category,
+      amount: parseFloat(amount),
+      type: transactionType,
+      paymentMethod
+    };
 
-      // Save the custom category and add it to favorites
-      if (addCustomCategory) {
-        addCustomCategory(transactionType, finalCustomCategory);
+    if (mode === 'edit' && initialData) {
+      if ('updateTransaction' in financeContext) {
+        financeContext.updateTransaction({
+          ...transactionData,
+          id: initialData.id
+        });
+      } else if ('editTransaction' in financeContext) {
+        financeContext.editTransaction({
+          ...transactionData,
+          id: initialData.id
+        });
       }
-
-      // Use the custom category as the transaction category
-      const finalCategory = `Outros: ${finalCustomCategory}`;
-      addTransaction({
-        date: new Date(date),
-        description,
-        category: finalCategory,
-        amount: parseFloat(amount),
-        type: transactionType,
-        paymentMethod
+      toast({
+        title: 'Transação atualizada',
+        description: 'A transação foi atualizada com sucesso!'
       });
     } else {
-      // Regular category
-      addTransaction({
-        date: new Date(date),
-        description,
-        category,
-        amount: parseFloat(amount),
-        type: transactionType,
-        paymentMethod
+      if (category === 'Outros' && customCategory.trim()) {
+        const finalCustomCategory = customCategory.trim();
+        if (addCustomCategory) {
+          addCustomCategory(transactionType, finalCustomCategory);
+        }
+      }
+      
+      addTransaction(transactionData);
+      toast({
+        title: 'Transação adicionada',
+        description: 'A transação foi adicionada com sucesso!'
       });
     }
-    toast({
-      title: 'Transação adicionada',
-      description: 'A transação foi adicionada com sucesso!'
-    });
+    
     resetForm();
     onOpenChange(false);
   };
+
   const handleSubmitRecurring = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Allow blank amount for recurring expenses, but still require description, category and dueDay
     if (!recDescription || !recCategory || !recDueDay || parseInt(recDueDay) < 1 || parseInt(recDueDay) > 31) {
       toast({
         title: 'Campos inválidos',
@@ -202,32 +230,26 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       return;
     }
 
-    // If it's a custom category (under "Outros"), add it to favorites
     if (recCategory === 'Outros' && recCustomCategory.trim()) {
       const finalCustomCategory = recCustomCategory.trim();
 
-      // Save the custom category and add it to favorites
       if (addCustomCategory) {
         addCustomCategory('expense', finalCustomCategory);
       }
 
-      // Use the custom category as the recurring expense category
       const finalCategory = `Outros: ${finalCustomCategory}`;
       addRecurringExpense({
         description: recDescription,
         category: finalCategory,
-        // Convert blank amount to 0
         amount: recAmount ? parseFloat(recAmount) : 0,
         dueDay: parseInt(recDueDay),
         paymentMethod: recPaymentMethod,
         repeatMonths: parseInt(recRepeatMonths)
       });
     } else {
-      // Regular category
       addRecurringExpense({
         description: recDescription,
         category: recCategory,
-        // Convert blank amount to 0
         amount: recAmount ? parseFloat(recAmount) : 0,
         dueDay: parseInt(recDueDay),
         paymentMethod: recPaymentMethod,
@@ -241,6 +263,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     resetForm();
     onOpenChange(false);
   };
+
   const handleSubmitGoalContribution = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedGoal || !goalAmount) {
@@ -254,7 +277,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     const selectedGoalObj = goals.find(g => g.id === selectedGoal);
     if (!selectedGoalObj) return;
 
-    // Create expense transaction for goal contribution
     addTransaction({
       date: new Date(),
       description: `Contribuição para meta: ${selectedGoalObj.name}`,
@@ -266,7 +288,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       goalId: selectedGoal
     });
 
-    // Update goal progress (this should trigger goal update in the context)
     financeContext.editGoal({
       ...selectedGoalObj,
       currentAmount: selectedGoalObj.currentAmount + parseFloat(goalAmount)
@@ -278,6 +299,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     resetForm();
     onOpenChange(false);
   };
+
   const handleSubmitInvestmentContribution = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedInvestment || !investmentAmount) {
@@ -291,7 +313,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     const selectedInvestmentObj = mockInvestments.find(inv => inv.id === selectedInvestment);
     if (!selectedInvestmentObj) return;
 
-    // Create expense transaction for investment contribution
     addTransaction({
       date: new Date(),
       description: `Investimento em: ${selectedInvestmentObj.name}`,
@@ -303,8 +324,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       investmentId: selectedInvestment
     });
 
-    // In a real implementation, we would update the investment progress here
-
     toast({
       title: 'Investimento realizado',
       description: `Você investiu ${formatCurrency(parseFloat(investmentAmount))} em "${selectedInvestmentObj.name}"`
@@ -312,11 +331,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     resetForm();
     onOpenChange(false);
   };
+
   const resetForm = () => {
-    // Reset regular transaction fields
     setTransactionType('income');
     setSelectedTab('regular');
-    setDate(formatDateForInput(new Date()));
+    setDate(new Date());
     setDescription('');
     setCategory('');
     setCustomCategory('');
@@ -324,7 +343,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     setFormattedAmount('');
     setPaymentMethod('bank_transfer');
 
-    // Reset recurring expense fields
     setRecDescription('');
     setRecCategory('');
     setRecCustomCategory('');
@@ -332,26 +350,22 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     setFormattedRecAmount('');
     setRecDueDay('');
     setRecPaymentMethod('bank_transfer');
-    setRecRepeatMonths('12'); // Reset para 12 meses
+    setRecRepeatMonths('12');
 
-    // Reset goal contribution fields
     setSelectedGoal('');
     setGoalAmount('');
     setFormattedGoalAmount('');
     setGoalPaymentMethod('bank_transfer');
 
-    // Reset investment contribution fields
     setSelectedInvestment('');
     setInvestmentAmount('');
     setFormattedInvestmentAmount('');
     setInvestmentPaymentMethod('bank_transfer');
   };
 
-  // Generate options for repeat months dropdown
   const generateRepeatOptions = () => {
     const options = [];
 
-    // 1-12 meses
     for (let i = 1; i <= 12; i++) {
       options.push({
         value: i.toString(),
@@ -359,7 +373,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       });
     }
 
-    // 18, 24, 36, 48, 60 meses (1.5, 2, 3, 4, 5 anos)
     [18, 24, 36, 48, 60, 72, 84, 96, 108, 120].forEach(months => {
       const years = months / 12;
       options.push({
@@ -370,70 +383,97 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     return options;
   };
 
-  // Determine categories based on transaction type
   const categories = getCurrentCategories();
   const recurringCategories = getRecurringCategories();
-  const showCustomCategory = transactionType === 'expense' && category === 'Outros';
+  const showCustomCategory = category === 'Outros';
   const showRecurringCustomCategory = recCategory === 'Outros';
   const repeatOptions = generateRepeatOptions();
-  return <TooltipProvider>
+
+  return (
+    <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto bg-card border-border shadow-lg">
           <DialogHeader className="border-b border-border pb-4 mb-6">
             <DialogTitle className="text-xl font-semibold text-card-foreground">
-              Adicionar Transação
+              {mode === 'edit' ? 'Editar Transação' : 'Adicionar Transação'}
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Preencha os detalhes da transação abaixo.
+              {mode === 'edit' ? 'Edite os detalhes da transação abaixo.' : 'Preencha os detalhes da transação abaixo.'}
             </DialogDescription>
           </DialogHeader>
           
           <Tabs value={selectedTab} onValueChange={value => setSelectedTab(value as 'regular' | 'recurring' | 'goal' | 'investment')} className="w-full">
-            <TabsList className="grid grid-cols-4 w-full bg-muted p-1 rounded-lg">
-              <TooltipHelper content={tooltipContent.modals.transactionTypes.regular} delayDuration={500}>
-                <TabsTrigger value="regular" className="text-xs md:text-sm font-medium data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground">
-                  Transação
-                </TabsTrigger>
-              </TooltipHelper>
-              <TooltipHelper content={tooltipContent.modals.transactionTypes.recurring} delayDuration={500}>
-                <TabsTrigger value="recurring" className="text-xs md:text-sm font-medium data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground">
-                  Recorrente
-                </TabsTrigger>
-              </TooltipHelper>
-              <TooltipHelper content={tooltipContent.modals.transactionTypes.goal} delayDuration={500}>
-                <TabsTrigger value="goal" className="text-xs md:text-sm font-medium data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground">
-                  Metas
-                </TabsTrigger>
-              </TooltipHelper>
-              <TooltipHelper content={tooltipContent.modals.transactionTypes.investment} delayDuration={500}>
-                <TabsTrigger value="investment" className="text-xs md:text-sm font-medium data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground">
-                  Investir
-                </TabsTrigger>
-              </TooltipHelper>
-            </TabsList>
+            <div className="flex justify-center mb-6">
+              <TabsList className="bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]">
+                <TooltipHelper content={tooltipContent.modals.transactionTypes.regular} delayDuration={500}>
+                  <TabsTrigger value="regular" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring text-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm">
+                    Transação
+                  </TabsTrigger>
+                </TooltipHelper>
+                <TooltipHelper content={tooltipContent.modals.transactionTypes.recurring} delayDuration={500}>
+                  <TabsTrigger value="recurring" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring text-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm">
+                    Recorrente
+                  </TabsTrigger>
+                </TooltipHelper>
+                <TooltipHelper content={tooltipContent.modals.transactionTypes.goal} delayDuration={500}>
+                  <TabsTrigger value="goal" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring text-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm">
+                    Metas
+                  </TabsTrigger>
+                </TooltipHelper>
+                <TooltipHelper content={tooltipContent.modals.transactionTypes.investment} delayDuration={500}>
+                  <TabsTrigger value="investment" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring text-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm">
+                    Investir
+                  </TabsTrigger>
+                </TooltipHelper>
+              </TabsList>
+            </div>
             
             {/* Transação Regular */}
             <TabsContent value="regular" className="mt-6">
               <form onSubmit={handleSubmitRegular} className="space-y-6 bg-card">
                 <Tabs defaultValue="income" value={transactionType} onValueChange={value => setTransactionType(value as TransactionType)} className="w-full">
-                  <TabsList className="grid grid-cols-2 w-full bg-muted p-1 rounded-lg">
-                    <TabsTrigger value="income" className="font-medium data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground">
-                      Receita
-                    </TabsTrigger>
-                    <TabsTrigger value="expense" className="font-medium data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground">
-                      Despesa
-                    </TabsTrigger>
-                  </TabsList>
+                  <div className="flex justify-center mb-4">
+                    <TabsList className="bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]">
+                      <TabsTrigger value="income" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring text-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm">
+                        Receita
+                      </TabsTrigger>
+                      <TabsTrigger value="expense" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring text-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm">
+                        Despesa
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
                 </Tabs>
                 
                 <div className="space-y-4">
                   <TooltipHelper content={tooltipContent.modals.fields.date} delayDuration={500}>
                     <div className="space-y-2">
-                      <Label htmlFor="date" className="text-sm font-medium text-foreground flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                         Data
                       </Label>
-                      <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} required className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2" />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                              !date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date ? format(date, "PPP", { locale: ptBR }) : "Selecione uma data"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-background border shadow-lg" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={(selectedDate) => selectedDate && setDate(selectedDate)}
+                            initialFocus
+                            className="rounded-lg border-0"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </TooltipHelper>
                   
@@ -457,23 +497,27 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         </SelectTrigger>
                         <SelectContent className="bg-background border shadow-lg">
                           <SelectGroup>
-                            {categories.map(cat => <SelectItem key={cat} value={cat} className="hover:bg-muted/50">
+                            {categories.map(cat => (
+                              <SelectItem key={cat} value={cat} className="hover:bg-muted/50">
                                 {cat.startsWith('Outros:') ? cat.substring(7) : cat}
-                              </SelectItem>)}
+                              </SelectItem>
+                            ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
                     </div>
                   </TooltipHelper>
 
-                  {showCustomCategory && <TooltipHelper content={tooltipContent.modals.fields.customCategory} delayDuration={500}>
+                  {showCustomCategory && (
+                    <TooltipHelper content={tooltipContent.modals.fields.customCategory} delayDuration={500}>
                       <div className="space-y-2">
                         <Label htmlFor="customCategory" className="text-sm font-medium text-foreground">
                           Especificar categoria personalizada
                         </Label>
                         <Input id="customCategory" value={customCategory} onChange={e => setCustomCategory(e.target.value)} placeholder="Digite o nome da categoria" className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2" />
                       </div>
-                    </TooltipHelper>}
+                    </TooltipHelper>
+                  )}
                   
                   <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
                     <div className="space-y-2">
@@ -495,9 +539,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         </SelectTrigger>
                         <SelectContent className="bg-background border shadow-lg">
                           <SelectGroup>
-                            {Object.entries(PAYMENT_METHODS).map(([key, value]) => <SelectItem key={key} value={key} className="hover:bg-muted/50">
+                            {Object.entries(PAYMENT_METHODS).map(([key, value]) => (
+                              <SelectItem key={key} value={key} className="hover:bg-muted/50">
                                 {value}
-                              </SelectItem>)}
+                              </SelectItem>
+                            ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
@@ -519,7 +565,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </TabsContent>
             
             {/* Despesas Recorrentes */}
-            <TabsContent value="recurring">
+            <TabsContent value="recurring" className="mt-6">
               <form onSubmit={handleSubmitRecurring} className="space-y-6 bg-card">
                 <div className="space-y-4">
                   <TooltipHelper content={tooltipContent.modals.fields.description} delayDuration={500}>
@@ -542,58 +588,64 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         </SelectTrigger>
                         <SelectContent className="bg-background border shadow-lg">
                           <SelectGroup>
-                            {recurringCategories.map(cat => <SelectItem key={cat} value={cat} className="hover:bg-muted/50">
+                            {recurringCategories.map(cat => (
+                              <SelectItem key={cat} value={cat} className="hover:bg-muted/50">
                                 {cat.startsWith('Outros:') ? cat.substring(7) : cat}
-                              </SelectItem>)}
+                              </SelectItem>
+                            ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
                     </div>
                   </TooltipHelper>
 
-                  {showRecurringCustomCategory && <TooltipHelper content={tooltipContent.modals.fields.customCategory} delayDuration={500}>
+                  {showRecurringCustomCategory && (
+                    <TooltipHelper content={tooltipContent.modals.fields.customCategory} delayDuration={500}>
                       <div className="space-y-2">
                         <Label htmlFor="recCustomCategory" className="text-sm font-medium text-foreground">
                           Especificar categoria personalizada
                         </Label>
                         <Input id="recCustomCategory" value={recCustomCategory} onChange={e => setRecCustomCategory(e.target.value)} placeholder="Digite o nome da categoria" className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2" />
                       </div>
-                    </TooltipHelper>}
+                    </TooltipHelper>
+                  )}
                   
                   <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
                     <div className="space-y-2">
                       <Label htmlFor="recAmount" className="text-sm font-medium text-foreground">
                         Valor (R$)
                       </Label>
-                      <Input id="recAmount" value={formattedRecAmount} onChange={e => handleAmountChange(e, 'recurring')} className="font-mono text-lg bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2" placeholder="R$ 0,00 (opcional)" />
+                      <Input id="recAmount" value={formattedRecAmount} onChange={e => handleAmountChange(e, 'recurring')} className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-lg" placeholder="R$ 0,00" />
                     </div>
                   </TooltipHelper>
                   
                   <TooltipHelper content={tooltipContent.modals.fields.dueDay} delayDuration={500}>
                     <div className="space-y-2">
                       <Label htmlFor="recDueDay" className="text-sm font-medium text-foreground flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                         Dia de Vencimento
                       </Label>
-                      <Input id="recDueDay" type="number" min="1" max="31" value={recDueDay} onChange={e => setRecDueDay(e.target.value)} className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2" required />
+                      <Input id="recDueDay" type="number" min="1" max="31" value={recDueDay} onChange={e => setRecDueDay(e.target.value)} className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2" placeholder="1-31" required />
                     </div>
                   </TooltipHelper>
                   
                   <TooltipHelper content={tooltipContent.modals.fields.repeatPeriod} delayDuration={500}>
                     <div className="space-y-2">
                       <Label htmlFor="recRepeatMonths" className="text-sm font-medium text-foreground flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
                         Repetir por
                       </Label>
                       <Select value={recRepeatMonths} onValueChange={setRecRepeatMonths}>
                         <SelectTrigger className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                          <SelectValue />
+                          <SelectValue placeholder="Selecione o período" />
                         </SelectTrigger>
-                        <SelectContent className="max-h-[300px] bg-background border shadow-lg">
+                        <SelectContent className="bg-background border shadow-lg">
                           <SelectGroup>
-                            {repeatOptions.map(option => <SelectItem key={option.value} value={option.value} className="hover:bg-muted/50">
+                            {repeatOptions.map(option => (
+                              <SelectItem key={option.value} value={option.value} className="hover:bg-muted/50">
                                 {option.label}
-                              </SelectItem>)}
+                              </SelectItem>
+                            ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
@@ -611,9 +663,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         </SelectTrigger>
                         <SelectContent className="bg-background border shadow-lg">
                           <SelectGroup>
-                            {Object.entries(PAYMENT_METHODS).map(([key, value]) => <SelectItem key={key} value={key} className="hover:bg-muted/50">
+                            {Object.entries(PAYMENT_METHODS).map(([key, value]) => (
+                              <SelectItem key={key} value={key} className="hover:bg-muted/50">
                                 {value}
-                              </SelectItem>)}
+                              </SelectItem>
+                            ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
@@ -626,43 +680,47 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                     Cancelar
                   </Button>
                   <TooltipHelper content={tooltipContent.forms.submit} delayDuration={500}>
-                    <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium">Salvar Despesa Recorrente</Button>
+                    <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium">
+                      Salvar Despesa Recorrente
+                    </Button>
                   </TooltipHelper>
                 </DialogFooter>
               </form>
             </TabsContent>
-
+            
             {/* Contribuição para Metas */}
-            <TabsContent value="goal">
+            <TabsContent value="goal" className="mt-6">
               <form onSubmit={handleSubmitGoalContribution} className="space-y-6 bg-card">
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="goal" className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <Target className="h-4 w-4 text-muted-foreground" />
-                      Meta
-                    </Label>
-                    <Select value={selectedGoal} onValueChange={setSelectedGoal} required>
-                      <SelectTrigger className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                        <SelectValue placeholder="Selecione uma meta" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border shadow-lg">
-                        <SelectGroup>
-                          {goals.length === 0 ? <SelectItem value="no-goals" disabled className="hover:bg-muted/50">
-                              Nenhuma meta cadastrada
-                            </SelectItem> : goals.map(goal => <SelectItem key={goal.id} value={goal.id} className="hover:bg-muted/50">
-                                {goal.name} ({formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)})
-                              </SelectItem>)}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
                   <TooltipHelper content={tooltipContent.modals.fields.goalContribution} delayDuration={500}>
+                    <div className="space-y-2">
+                      <Label htmlFor="selectedGoal" className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Target className="h-4 w-4 text-muted-foreground" />
+                        Meta
+                      </Label>
+                      <Select value={selectedGoal} onValueChange={setSelectedGoal} required>
+                        <SelectTrigger className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                          <SelectValue placeholder="Selecione uma meta" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border shadow-lg">
+                          <SelectGroup>
+                            {goals.map(goal => (
+                              <SelectItem key={goal.id} value={goal.id} className="hover:bg-muted/50">
+                                {goal.name} - {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TooltipHelper>
+                  
+                  <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
                     <div className="space-y-2">
                       <Label htmlFor="goalAmount" className="text-sm font-medium text-foreground">
                         Valor (R$)
                       </Label>
-                      <Input id="goalAmount" value={formattedGoalAmount} onChange={e => handleAmountChange(e, 'goal')} className="font-mono text-lg bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2" placeholder="R$ 0,00" required />
+                      <Input id="goalAmount" value={formattedGoalAmount} onChange={e => handleAmountChange(e, 'goal')} className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-lg" placeholder="R$ 0,00" required />
                     </div>
                   </TooltipHelper>
                   
@@ -677,18 +735,24 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         </SelectTrigger>
                         <SelectContent className="bg-background border shadow-lg">
                           <SelectGroup>
-                            {Object.entries(PAYMENT_METHODS).map(([key, value]) => <SelectItem key={key} value={key} className="hover:bg-muted/50">
+                            {Object.entries(PAYMENT_METHODS).map(([key, value]) => (
+                              <SelectItem key={key} value={key} className="hover:bg-muted/50">
                                 {value}
-                              </SelectItem>)}
+                              </SelectItem>
+                            ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
                     </div>
                   </TooltipHelper>
-
-                  <div className="bg-muted/30 p-3 rounded-md text-xs text-muted-foreground">
-                    <p>Esta contribuição será registrada como uma despesa na categoria "Poupança para Metas" 
-                    e o valor será adicionado à meta selecionada.</p>
+                  
+                  <div className="bg-muted/50 p-4 rounded-lg border border-border">
+                    <div className="flex items-start gap-3">
+                      <Info className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-muted-foreground">
+                        Esta contribuição será registrada como uma despesa na categoria "Poupança para Metas" e o valor será adicionado à meta selecionada.
+                      </p>
+                    </div>
                   </div>
                 </div>
                 
@@ -704,38 +768,40 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 </DialogFooter>
               </form>
             </TabsContent>
-
+            
             {/* Investimento */}
-            <TabsContent value="investment">
+            <TabsContent value="investment" className="mt-6">
               <form onSubmit={handleSubmitInvestmentContribution} className="space-y-6 bg-card">
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="investment" className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                      Investimento
-                    </Label>
-                    <Select value={selectedInvestment} onValueChange={setSelectedInvestment} required>
-                      <SelectTrigger className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                        <SelectValue placeholder="Selecione um investimento" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border shadow-lg">
-                        <SelectGroup>
-                          {mockInvestments.length === 0 ? <SelectItem value="no-investments" disabled className="hover:bg-muted/50">
-                              Nenhum investimento cadastrado
-                            </SelectItem> : mockInvestments.map(inv => <SelectItem key={inv.id} value={inv.id} className="hover:bg-muted/50">
-                                {inv.name} ({formatCurrency(inv.value)})
-                              </SelectItem>)}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
                   <TooltipHelper content={tooltipContent.modals.fields.investmentContribution} delayDuration={500}>
+                    <div className="space-y-2">
+                      <Label htmlFor="selectedInvestment" className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        Investimento
+                      </Label>
+                      <Select value={selectedInvestment} onValueChange={setSelectedInvestment} required>
+                        <SelectTrigger className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                          <SelectValue placeholder="Selecione um investimento" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border shadow-lg">
+                          <SelectGroup>
+                            {mockInvestments.map(investment => (
+                              <SelectItem key={investment.id} value={investment.id} className="hover:bg-muted/50">
+                                {investment.name} - ROI: {investment.roi}%
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TooltipHelper>
+                  
+                  <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
                     <div className="space-y-2">
                       <Label htmlFor="investmentAmount" className="text-sm font-medium text-foreground">
                         Valor (R$)
                       </Label>
-                      <Input id="investmentAmount" value={formattedInvestmentAmount} onChange={e => handleAmountChange(e, 'investment')} className="font-mono text-lg bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2" placeholder="R$ 0,00" required />
+                      <Input id="investmentAmount" value={formattedInvestmentAmount} onChange={e => handleAmountChange(e, 'investment')} className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-lg" placeholder="R$ 0,00" required />
                     </div>
                   </TooltipHelper>
                   
@@ -750,18 +816,24 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         </SelectTrigger>
                         <SelectContent className="bg-background border shadow-lg">
                           <SelectGroup>
-                            {Object.entries(PAYMENT_METHODS).map(([key, value]) => <SelectItem key={key} value={key} className="hover:bg-muted/50">
+                            {Object.entries(PAYMENT_METHODS).map(([key, value]) => (
+                              <SelectItem key={key} value={key} className="hover:bg-muted/50">
                                 {value}
-                              </SelectItem>)}
+                              </SelectItem>
+                            ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
                     </div>
                   </TooltipHelper>
-
-                  <div className="bg-muted/30 p-3 rounded-md text-xs text-muted-foreground">
-                    <p>Este valor será registrado como uma despesa na categoria "Investimentos" 
-                    e o valor será adicionado ao investimento selecionado.</p>
+                  
+                  <div className="bg-muted/50 p-4 rounded-lg border border-border">
+                    <div className="flex items-start gap-3">
+                      <Info className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-muted-foreground">
+                        Este valor será registrado como uma despesa na categoria "Investimentos" e o valor será adicionado ao investimento selecionado.
+                      </p>
+                    </div>
                   </div>
                 </div>
                 
@@ -780,6 +852,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           </Tabs>
         </DialogContent>
       </Dialog>
-    </TooltipProvider>;
+    </TooltipProvider>
+  );
 };
+
 export default AddTransactionModal;

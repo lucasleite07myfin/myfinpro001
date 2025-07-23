@@ -8,18 +8,36 @@ import { formatCurrency, formatDate } from '@/utils/formatters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { PlusCircle, PiggyBank } from 'lucide-react';
+import { PlusCircle, PiggyBank, Edit, Trash2 } from 'lucide-react';
 import AddGoalModal from '@/components/AddGoalModal';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
+import { Goal } from '@/types/finance';
 
 const Goals: React.FC = () => {
   const { mode } = useAppMode();
   // Use either finance or business context based on current mode
   const financeContext = mode === 'personal' ? useFinance() : useBusiness();
-  const { goals } = financeContext;
+  const { goals, deleteGoal } = financeContext;
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+
+  const handleEditGoal = (goal: Goal) => {
+    setEditingGoal(goal);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteGoal = (goalId: string) => {
+    if (window.confirm('Tem certeza que deseja excluir esta meta?')) {
+      deleteGoal(goalId);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingGoal(null);
+  };
 
   return (
     <MainLayout>
@@ -52,11 +70,34 @@ const Goals: React.FC = () => {
               const remainingAmount = goal.targetAmount - goal.currentAmount;
               
               return (
-                <TooltipHelper key={goal.id} content={`Meta: ${goal.name}`}>
-                  <Card className="overflow-hidden">
-                    <CardHeader className="pb-2 p-3 md:p-4">
+                <Card key={goal.id} className="overflow-hidden">
+                  <CardHeader className="pb-2 p-3 md:p-4">
+                    <div className="flex justify-between items-start">
                       <CardTitle className="text-base md:text-lg">{goal.name}</CardTitle>
-                    </CardHeader>
+                      <div className="flex gap-1">
+                        <TooltipHelper content="Editar meta">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditGoal(goal)}
+                            className="h-8 w-8 p-0 hover:bg-muted"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TooltipHelper>
+                        <TooltipHelper content="Excluir meta">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteGoal(goal.id)}
+                            className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipHelper>
+                      </div>
+                    </div>
+                  </CardHeader>
                     <CardContent className="p-3 md:p-4 pt-0">
                       <div className="mb-3 md:mb-4">
                         <div className="flex justify-between mb-1">
@@ -95,13 +136,17 @@ const Goals: React.FC = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </TooltipHelper>
               );
             })}
           </div>
         )}
         
-        <AddGoalModal open={isModalOpen} onOpenChange={setIsModalOpen} />
+        <AddGoalModal 
+          open={isModalOpen} 
+          onOpenChange={handleCloseModal}
+          initialData={editingGoal}
+          mode={editingGoal ? 'edit' : 'add'}
+        />
       </TooltipProvider>
     </MainLayout>
   );

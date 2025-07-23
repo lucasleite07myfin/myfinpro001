@@ -6,6 +6,7 @@ import { useAppMode } from '@/contexts/AppModeContext';
 import MainLayout from '@/components/MainLayout';
 import TransactionsTable from '@/components/TransactionsTable';
 import MonthSelector from '@/components/MonthSelector';
+import AddTransactionModal from '@/components/AddTransactionModal';
 import { formatCurrency } from '@/utils/formatters';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,7 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { FileText, FileSpreadsheet, ChevronDown } from 'lucide-react';
-import { INCOME_CATEGORIES, FinanceContextType, BusinessContextType } from '@/types/finance';
+import { INCOME_CATEGORIES, FinanceContextType, BusinessContextType, Transaction } from '@/types/finance';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,8 @@ const Incomes: React.FC = () => {
   
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   // Get all income categories including custom ones
   const getAllIncomeCategories = () => {
@@ -79,6 +82,23 @@ const Incomes: React.FC = () => {
   const handleDeleteTransaction = (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta receita?')) {
       deleteTransaction(id);
+    }
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateTransaction = (updatedTransaction: Omit<Transaction, 'id'>) => {
+    if (editingTransaction) {
+      const fullTransaction = { ...updatedTransaction, id: editingTransaction.id };
+      // Use the appropriate context method based on mode
+      if ('updateTransaction' in financeContext) {
+        financeContext.updateTransaction(fullTransaction);
+      }
+      setIsEditModalOpen(false);
+      setEditingTransaction(null);
     }
   };
 
@@ -290,7 +310,21 @@ const Incomes: React.FC = () => {
       <TransactionsTable 
         transactions={currentMonthIncomes} 
         onDelete={handleDeleteTransaction}
+        onEdit={handleEditTransaction}
         type="income"
+      />
+
+      {/* Modal de edição */}
+      <AddTransactionModal
+        open={isEditModalOpen}
+        onOpenChange={(open) => {
+          setIsEditModalOpen(open);
+          if (!open) {
+            setEditingTransaction(null);
+          }
+        }}
+        initialData={editingTransaction || undefined}
+        mode={editingTransaction ? 'edit' : 'add'}
       />
     </MainLayout>
   );

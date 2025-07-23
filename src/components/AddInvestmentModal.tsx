@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Plus } from 'lucide-react';
+import { ptBR } from 'date-fns/locale';
+import { CalendarIcon, Plus, TrendingUp } from 'lucide-react';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,6 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -29,6 +31,7 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -41,8 +44,12 @@ import {
 } from '@/components/ui/popover';
 
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import TooltipHelper from './TooltipHelper';
+import { tooltipContent } from '@/data/tooltipContent';
 import { cn } from '@/lib/utils';
 
 // Definir o schema de validação para o formulário
@@ -78,13 +85,16 @@ export interface Investment {
 }
 
 const INVESTMENT_TYPES = [
-  { label: 'Automóvel', value: 'vehicle' },
-  { label: 'Maquinário', value: 'machinery' },
-  { label: 'Empréstimo', value: 'loan' },
-  { label: 'Financiamento', value: 'financing' },
-  { label: 'Imóvel', value: 'real_estate' },
-  { label: 'Tecnologia', value: 'technology' },
-  { label: 'Personalizado', value: 'custom' },
+  'Automóvel',
+  'Maquinário', 
+  'Empréstimo',
+  'Financiamento',
+  'Imóvel',
+  'Tecnologia',
+  'Equipamentos',
+  'Software',
+  'Infraestrutura',
+  'Outros'
 ];
 
 const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
@@ -194,218 +204,299 @@ const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
-        <DialogHeader>
-          <DialogTitle>
-            {editingInvestment ? 'Editar Investimento' : 'Adicionar Novo Investimento'}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do Investimento</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Máquina de produção" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <TooltipProvider>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto bg-card border-border shadow-lg">
+          <DialogHeader className="border-b border-border pb-4 mb-6">
+            <DialogTitle className="text-xl font-semibold text-card-foreground flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              {editingInvestment ? 'Editar Investimento' : 'Adicionar Novo Investimento'}
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              {editingInvestment ? 'Edite os detalhes do investimento abaixo.' : 'Preencha os detalhes do investimento abaixo.'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 bg-card">
+              <div className="space-y-4">
+                <TooltipHelper content="Nome identificador do investimento" delayDuration={500}>
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-medium text-foreground">
+                      Nome do Investimento
+                    </Label>
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input 
+                              id="name"
+                              placeholder="Ex: Máquina de produção" 
+                              className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </TooltipHelper>
 
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Investimento</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setIsCustomType(value === 'custom');
-                    }}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {INVESTMENT_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {isCustomType && (
-              <FormField
-                control={form.control}
-                name="customType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo Personalizado</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Informe o tipo personalizado" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="value"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor Total (R$)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        min="0" 
-                        {...field}
-                        onChange={(e) => {
-                          const value = parseFloat(e.target.value);
-                          field.onChange(value);
-                          handleValueChange(value, 'value');
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="installments"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Número de Parcelas</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="1"
-                        {...field}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value);
-                          field.onChange(value);
-                          handleValueChange(value, 'installments');
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="installmentValue"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor da Parcela (R$)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        min="0"
-                        {...field}
-                        onChange={(e) => {
-                          const value = parseFloat(e.target.value);
-                          field.onChange(value);
-                          handleValueChange(value, 'installmentValue');
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data de Início</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
+                <TooltipHelper content="Categoria do investimento" delayDuration={500}>
+                  <div className="space-y-2">
+                    <Label htmlFor="type" className="text-sm font-medium text-foreground">
+                      Tipo de Investimento
+                    </Label>
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              setIsCustomType(value === 'Outros');
+                            }}
+                            value={field.value}
                           >
-                            {field.value ? (
-                              format(field.value, "dd/MM/yyyy")
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
+                            <FormControl>
+                              <SelectTrigger className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                                <SelectValue placeholder="Selecione o tipo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="bg-background border shadow-lg">
+                              <SelectGroup>
+                                {INVESTMENT_TYPES.map((type) => (
+                                  <SelectItem key={type} value={type} className="hover:bg-muted/50">
+                                    {type}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </TooltipHelper>
+
+                {isCustomType && (
+                  <TooltipHelper content="Especifique o tipo personalizado do investimento" delayDuration={500}>
+                    <div className="space-y-2">
+                      <Label htmlFor="customType" className="text-sm font-medium text-foreground">
+                        Especificar tipo personalizado
+                      </Label>
+                      <FormField
+                        control={form.control}
+                        name="customType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input 
+                                id="customType"
+                                placeholder="Digite o tipo personalizado" 
+                                className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TooltipHelper>
                 )}
-              />
-            </div>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição (opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Detalhes adicionais sobre o investimento" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <TooltipHelper content="Valor total do investimento" delayDuration={500}>
+                    <div className="space-y-2">
+                      <Label htmlFor="value" className="text-sm font-medium text-foreground">
+                        Valor Total (R$)
+                      </Label>
+                      <FormField
+                        control={form.control}
+                        name="value"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input 
+                                id="value"
+                                type="number" 
+                                step="0.01" 
+                                min="0" 
+                                placeholder="R$ 0,00"
+                                className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-lg"
+                                {...field}
+                                onChange={(e) => {
+                                  const value = parseFloat(e.target.value);
+                                  field.onChange(value);
+                                  handleValueChange(value, 'value');
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TooltipHelper>
 
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {editingInvestment ? 'Atualizar' : 'Adicionar'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+                  <TooltipHelper content="Quantidade de parcelas para pagamento" delayDuration={500}>
+                    <div className="space-y-2">
+                      <Label htmlFor="installments" className="text-sm font-medium text-foreground">
+                        Número de Parcelas
+                      </Label>
+                      <FormField
+                        control={form.control}
+                        name="installments"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input 
+                                id="installments"
+                                type="number" 
+                                min="1"
+                                placeholder="1"
+                                className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                {...field}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value);
+                                  field.onChange(value);
+                                  handleValueChange(value, 'installments');
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TooltipHelper>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <TooltipHelper content="Valor de cada parcela" delayDuration={500}>
+                    <div className="space-y-2">
+                      <Label htmlFor="installmentValue" className="text-sm font-medium text-foreground">
+                        Valor da Parcela (R$)
+                      </Label>
+                      <FormField
+                        control={form.control}
+                        name="installmentValue"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input 
+                                id="installmentValue"
+                                type="number" 
+                                step="0.01" 
+                                min="0"
+                                placeholder="R$ 0,00"
+                                className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-lg"
+                                {...field}
+                                onChange={(e) => {
+                                  const value = parseFloat(e.target.value);
+                                  field.onChange(value);
+                                  handleValueChange(value, 'installmentValue');
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TooltipHelper>
+
+                  <TooltipHelper content="Data de início do investimento" delayDuration={500}>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                        Data de Início
+                      </Label>
+                      <FormField
+                        control={form.control}
+                        name="startDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    className={cn(
+                                      "w-full justify-start text-left font-normal bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {field.value ? format(field.value, "PPP", { locale: ptBR }) : "Selecione uma data"}
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0 bg-background border shadow-lg" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  initialFocus
+                                  className="rounded-lg border-0"
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TooltipHelper>
+                </div>
+
+                <TooltipHelper content="Informações adicionais sobre o investimento" delayDuration={500}>
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="text-sm font-medium text-foreground">
+                      Descrição (opcional)
+                    </Label>
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input 
+                              id="description"
+                              placeholder="Detalhes adicionais sobre o investimento" 
+                              className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </TooltipHelper>
+              </div>
+
+              <DialogFooter className="border-t pt-4 mt-6">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="hover:bg-muted/50">
+                  Cancelar
+                </Button>
+                <TooltipHelper content="Salvar investimento" delayDuration={500}>
+                  <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium">
+                    {editingInvestment ? 'Atualizar Investimento' : 'Salvar Investimento'}
+                  </Button>
+                </TooltipHelper>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </TooltipProvider>
   );
 };
 

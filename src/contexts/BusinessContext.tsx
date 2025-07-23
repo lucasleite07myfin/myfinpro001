@@ -74,8 +74,8 @@ export const useBusiness = (): BusinessContextType => {
   return context;
 };
 
-// Generate sample monthly data
-const generateMonthlyData = (): MonthlyFinanceData[] => {
+// Generate monthly data based on transactions
+const generateMonthlyDataFromTransactions = (transactions: Transaction[]): MonthlyFinanceData[] => {
   const data: MonthlyFinanceData[] = [];
   const now = new Date();
   
@@ -83,10 +83,25 @@ const generateMonthlyData = (): MonthlyFinanceData[] => {
     const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
     
+    // Filter transactions for this month
+    const monthTransactions = transactions.filter(t => {
+      const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
+      return transactionMonth === monthStr;
+    });
+    
+    // Calculate totals
+    const incomeTotal = monthTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+      
+    const expenseTotal = monthTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
     data.push({
       month: monthStr,
-      incomeTotal: Math.floor(Math.random() * 5000) + 3000,
-      expenseTotal: Math.floor(Math.random() * 3000) + 2000
+      incomeTotal,
+      expenseTotal
     });
   }
   
@@ -102,7 +117,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [liabilities, setLiabilities] = useState<Liability[]>([]);
-  const [monthlyData, setMonthlyData] = useState<MonthlyFinanceData[]>(generateMonthlyData());
+  const [monthlyData, setMonthlyData] = useState<MonthlyFinanceData[]>([]);
   const [currentMonth, setCurrentMonth] = useState(getCurrentMonth());
   const [companyName, setCompanyName] = useState('Minha Empresa');
   const [loading, setLoading] = useState(true);
@@ -114,6 +129,14 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Atualizar dados mensais quando as transações mudarem
+  useEffect(() => {
+    if (transactions.length > 0) {
+      const newMonthlyData = generateMonthlyDataFromTransactions(transactions);
+      setMonthlyData(newMonthlyData);
+    }
+  }, [transactions]);
 
   const loadData = async () => {
     try {

@@ -19,6 +19,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { TrendingUp } from 'lucide-react';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import TooltipHelper from './TooltipHelper';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
@@ -34,6 +37,9 @@ const ASSET_TYPES = [
   'Veículo',
   'Investimento',
   'Conta Bancária',
+  'Equipamentos',
+  'Joias',
+  'Arte',
   'Outros'
 ];
 
@@ -46,6 +52,8 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({ open, onOpenChange }) => 
   const [name, setName] = useState('');
   const [type, setType] = useState('');
   const [value, setValue] = useState('');
+  const [customType, setCustomType] = useState('');
+  const [isCustomType, setIsCustomType] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,9 +62,11 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({ open, onOpenChange }) => 
       return;
     }
 
+    const finalType = isCustomType && customType ? customType : type;
+    
     addAsset({
       name,
-      type,
+      type: finalType,
       value: parseCurrencyToNumber(value)
     });
 
@@ -68,81 +78,123 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({ open, onOpenChange }) => 
     setName('');
     setType('');
     setValue('');
+    setCustomType('');
+    setIsCustomType(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Adicionar Ativo</DialogTitle>
-          <DialogDescription>
-            Preencha os detalhes do seu ativo abaixo.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Nome
-              </Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="col-span-3"
-                placeholder="Ex: Apartamento"
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="type" className="text-right">
-                Tipo
-              </Label>
-              <Select value={type} onValueChange={setType} required>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Selecione um tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {ASSET_TYPES.map((assetType) => (
-                      <SelectItem key={assetType} value={assetType}>
-                        {assetType}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="value" className="text-right">
-                Valor (R$)
-              </Label>
-              <Input
-                id="value"
-                value={value ? `R$ ${value}` : ''}
-                onChange={(e) => {
-                  const inputValue = e.target.value.replace(/[^\d]/g, '');
-                  setValue(formatCurrencyInput(inputValue));
-                }}
-                className="col-span-3 font-inter"
-                placeholder="R$ 0,00"
-                required
-              />
-            </div>
-          </div>
+    <TooltipProvider>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto bg-card border-border shadow-lg">
+          <DialogHeader className="border-b border-border pb-4 mb-6">
+            <DialogTitle className="text-xl font-semibold text-card-foreground flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Adicionar Ativo
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Preencha os detalhes do seu ativo abaixo.
+            </DialogDescription>
+          </DialogHeader>
           
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit">Salvar</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          <form onSubmit={handleSubmit} className="space-y-6 bg-card">
+            <div className="space-y-4">
+              <TooltipHelper content="Nome identificador do ativo" delayDuration={500}>
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-sm font-medium text-foreground">
+                    Nome do Ativo
+                  </Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    placeholder="Ex: Apartamento Centro"
+                    required
+                  />
+                </div>
+              </TooltipHelper>
+              
+              <TooltipHelper content="Categoria do ativo" delayDuration={500}>
+                <div className="space-y-2">
+                  <Label htmlFor="type" className="text-sm font-medium text-foreground">
+                    Tipo de Ativo
+                  </Label>
+                  <Select 
+                    value={type} 
+                    onValueChange={(value) => {
+                      setType(value);
+                      setIsCustomType(value === 'Outros');
+                    }} 
+                    required
+                  >
+                    <SelectTrigger className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                      <SelectValue placeholder="Selecione um tipo" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg">
+                      <SelectGroup>
+                        {ASSET_TYPES.map((assetType) => (
+                          <SelectItem key={assetType} value={assetType} className="hover:bg-muted/50">
+                            {assetType}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TooltipHelper>
+
+              {isCustomType && (
+                <TooltipHelper content="Especifique o tipo personalizado do ativo" delayDuration={500}>
+                  <div className="space-y-2">
+                    <Label htmlFor="customType" className="text-sm font-medium text-foreground">
+                      Especificar tipo personalizado
+                    </Label>
+                    <Input
+                      id="customType"
+                      value={customType}
+                      onChange={(e) => setCustomType(e.target.value)}
+                      className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      placeholder="Digite o tipo personalizado"
+                      required={isCustomType}
+                    />
+                  </div>
+                </TooltipHelper>
+              )}
+              
+              <TooltipHelper content="Valor atual estimado do ativo" delayDuration={500}>
+                <div className="space-y-2">
+                  <Label htmlFor="value" className="text-sm font-medium text-foreground">
+                    Valor Atual (R$)
+                  </Label>
+                  <Input
+                    id="value"
+                    value={value ? `R$ ${value}` : ''}
+                    onChange={(e) => {
+                      const inputValue = e.target.value.replace(/[^\d]/g, '');
+                      setValue(formatCurrencyInput(inputValue));
+                    }}
+                    className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-lg"
+                    placeholder="R$ 0,00"
+                    required
+                  />
+                </div>
+              </TooltipHelper>
+            </div>
+            
+            <DialogFooter className="border-t pt-4 mt-6">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="hover:bg-muted/50">
+                Cancelar
+              </Button>
+              <TooltipHelper content="Salvar ativo" delayDuration={500}>
+                <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium">
+                  Salvar Ativo
+                </Button>
+              </TooltipHelper>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </TooltipProvider>
   );
 };
 

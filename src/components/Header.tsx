@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, ChartBar, Truck, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import ModeToggle from './ModeToggle';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAuth } from '@/hooks/useAuth';
-import ThemeToggle from './ThemeToggle';
-import AlertsBellIcon from './AlertsBellIcon';
-import { AlertLog } from '@/types/alerts';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import TooltipHelper from './TooltipHelper';
@@ -21,40 +28,11 @@ const Header: React.FC = () => {
   const location = useLocation();
   const currentPath = location.pathname;
   const [menuOpen, setMenuOpen] = useState(false);
-  const [alerts, setAlerts] = useState<AlertLog[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const { mode } = useAppMode();
   const { user, signOut } = useAuth();
   const business = mode === 'business' ? useBusiness() : null;
 
-  // Mock alerts data
-  useEffect(() => {
-    const mockAlerts: AlertLog[] = [{
-      id: '1',
-      alert_rule_id: 'rule1',
-      message: 'Você já gastou 85% do seu orçamento de Alimentação este mês',
-      triggered_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      read: false,
-      owner: 'user1'
-    }, {
-      id: '2',
-      alert_rule_id: 'rule2',
-      message: 'Transação incomum detectada: R$ 1.500 em Eletrônicos',
-      triggered_at: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      read: false,
-      owner: 'user1'
-    }];
-    setAlerts(mockAlerts);
-    setUnreadCount(mockAlerts.filter(alert => !alert.read).length);
-  }, []);
 
-  const handleMarkAsRead = (id: string) => {
-    setAlerts(prev => prev.map(alert => alert.id === id ? {
-      ...alert,
-      read: true
-    } : alert));
-    setUnreadCount(prev => Math.max(0, prev - 1));
-  };
 
   // Add logging to track mode and path
   useEffect(() => {
@@ -88,11 +66,12 @@ const Header: React.FC = () => {
   return (
     <TooltipProvider>
       <header className="w-full bg-background border-b border-border shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto py-3 md:py-4 px-4 flex flex-col md:flex-row justify-between items-center">
-          <div className="flex w-full md:w-auto justify-between items-center mb-3 md:mb-0 mx-[23px] px-[37px]">
+        <div className="container mx-auto py-3 md:py-4 px-4">
+          {/* Top row - Logo and User Controls */}
+          <div className="flex justify-between items-center mb-4">
             <TooltipHelper content={tooltipContent.header.logo}>
               <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-                <img src="/lovable-uploads/3ac31d22-79b8-44f6-b7ba-5baf7d682784.png" alt="MyFin Pro Logo" className="h-12 md:h-16 mr-3" />
+                <img src="/lovable-uploads/3ac31d22-79b8-44f6-b7ba-5baf7d682784.png" alt="MyFin Pro Logo" className="h-12 md:h-14 mr-3" />
                 <div>
                   <h1 className="text-xl md:text-2xl font-bold text-foreground">
                     {mode === 'personal' ? 'MyFin Pro' : 'MyFin Pro Empresas'}
@@ -103,16 +82,14 @@ const Header: React.FC = () => {
               </div>
             </TooltipHelper>
             
-            <div className="flex items-center gap-2">
-              {/* Alerts Bell Icon */}
-              <AlertsBellIcon alerts={alerts} unreadCount={unreadCount} onMarkAsRead={handleMarkAsRead} />
+            <div className="flex items-center gap-3">
               
               {/* User Profile Dropdown */}
               <TooltipHelper content={tooltipContent.header.profile}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                      <Avatar className="h-8 w-8">
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                      <Avatar className="h-9 w-9">
                         <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                           {getUserInitials()}
                         </AvatarFallback>
@@ -142,89 +119,40 @@ const Header: React.FC = () => {
                 </DropdownMenu>
               </TooltipHelper>
               
-              <ThemeToggle />
               <ModeToggle />
+              
               <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
                 {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </div>
           </div>
           
-          <div className={`w-full md:w-auto ${menuOpen ? 'block' : 'hidden md:block'}`}>
-            <Tabs value={currentPath} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="w-full grid grid-cols-2 md:flex md:w-auto gap-1 md:gap-0 rounded-none bg-muted">
-                <TooltipHelper content={tooltipContent.navigation.dashboard}>
-                  <TabsTrigger value="/" className="flex-1 md:flex-none data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
-                    Dashboard
-                  </TabsTrigger>
-                </TooltipHelper>
-                <TooltipHelper content={tooltipContent.navigation.receitas}>
-                  <TabsTrigger value="/receitas" className="flex-1 md:flex-none data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
-                    Receitas
-                  </TabsTrigger>
-                </TooltipHelper>
-                <TooltipHelper content={tooltipContent.navigation.despesas}>
-                  <TabsTrigger value="/despesas" className="flex-1 md:flex-none data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
-                    Despesas
-                  </TabsTrigger>
-                </TooltipHelper>
-                <TooltipHelper content={tooltipContent.navigation.metas}>
-                  <TabsTrigger value="/metas" className="flex-1 md:flex-none data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
-                    Metas
-                  </TabsTrigger>
-                </TooltipHelper>
-                <TooltipHelper content={tooltipContent.navigation.patrimonio}>
-                  <TabsTrigger value="/patrimonio" className="flex-1 md:flex-none data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
-                    Patrimônio
-                  </TabsTrigger>
-                </TooltipHelper>
-                
-                {/* Alertas tab appears in both modes */}
-                <TooltipHelper content="Gerencie alertas inteligentes e regras personalizadas">
-                  <TabsTrigger value="/alertas" className="flex-1 md:flex-none data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
-                    Alertas
-                  </TabsTrigger>
-                </TooltipHelper>
-                
-                {/* Saúde tab only appears in personal mode */}
-                {mode === 'personal' && (
-                  <TooltipHelper content="Acompanhe métricas de saúde financeira">
-                    <TabsTrigger value="/saude-financeira" className="flex-1 md:flex-none data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
-                      Saúde
-                    </TabsTrigger>
-                  </TooltipHelper>
-                )}
-                
-                {mode === 'business' && (
-                  <TooltipHelper content={tooltipContent.navigation.fluxoCaixa}>
-                    <TabsTrigger value="/fluxo-caixa" className="flex-1 md:flex-none data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
-                      Fluxo de Caixa
-                    </TabsTrigger>
-                  </TooltipHelper>
-                )}
-                {mode === 'business' && (
-                  <TooltipHelper content={tooltipContent.navigation.fornecedores}>
-                    <TabsTrigger value="/fornecedores" className="flex-1 md:flex-none flex items-center data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
-                      Fornecedores
-                    </TabsTrigger>
-                  </TooltipHelper>
-                )}
-                {mode === 'business' && (
-                  <TooltipHelper content={tooltipContent.navigation.investimentos}>
-                    <TabsTrigger value="/investimentos" className="flex-1 md:flex-none data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
-                      Investimentos
-                    </TabsTrigger>
-                  </TooltipHelper>
-                )}
-                {mode === 'business' && (
-                  <TooltipHelper content={tooltipContent.navigation.dre}>
-                    <TabsTrigger value="/dre" className="flex-1 md:flex-none flex items-center data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
-                      <ChartBar className="h-3 w-3 mr-1" /> DRE
-                    </TabsTrigger>
-                  </TooltipHelper>
-                )}
-              </TabsList>
-            </Tabs>
+          {/* Bottom row - Navigation Tabs */}
+          <div className={`w-full ${menuOpen ? 'block' : 'hidden md:block'}`}>
+            <div className="flex justify-center">
+              <Tabs value={currentPath} onValueChange={handleTabChange} className="w-full md:w-auto">
+                <TabsList className="grid w-full grid-cols-2 md:flex md:w-fit bg-muted">
+                  <TabsTrigger value="/" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Dashboard</TabsTrigger>
+                  <TabsTrigger value="/receitas" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Receitas</TabsTrigger>
+                  <TabsTrigger value="/despesas" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Despesas</TabsTrigger>
+                  <TabsTrigger value="/metas" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Metas</TabsTrigger>
+                  <TabsTrigger value="/patrimonio" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Patrimônio</TabsTrigger>
+                  {mode === 'personal' && (
+                    <TabsTrigger value="/saude-financeira" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Saúde</TabsTrigger>
+                  )}
+                  {mode === 'business' && (
+                    <>
+                      <TabsTrigger value="/fluxo-caixa" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Fluxo de Caixa</TabsTrigger>
+                      <TabsTrigger value="/fornecedores" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Fornecedores</TabsTrigger>
+                      <TabsTrigger value="/investimentos" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Investimentos</TabsTrigger>
+                      <TabsTrigger value="/dre" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
+                        <ChartBar className="h-3 w-3 mr-1" /> DRE
+                      </TabsTrigger>
+                    </>
+                  )}
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
         </div>
       </header>

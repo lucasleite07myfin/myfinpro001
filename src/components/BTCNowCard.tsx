@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Bitcoin } from 'lucide-react';
+import { Bitcoin, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { 
   ChartContainer, 
   ChartTooltipContent, 
   ChartTooltip 
 } from '@/components/ui/chart';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
 import TooltipHelper from './TooltipHelper';
@@ -213,66 +213,92 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
   const currentPrice = getCurrentPrice();
   const chartData = getChartData();
   
+  const getTrendIcon = () => {
+    switch (currentTrend) {
+      case 'up': return <TrendingUp className="h-3 w-3" />;
+      case 'down': return <TrendingDown className="h-3 w-3" />;
+      default: return <Minus className="h-3 w-3" />;
+    }
+  };
+
   return (
     <TooltipHelper content={tooltipContent.dashboard.bitcoinCard}>
       <Card 
-        className={`w-[280px] h-[100px] bg-transparent border-0 shadow-none overflow-hidden hover:bg-gray-50/50 dark:hover:bg-gray-800/30 cursor-pointer transition-all duration-200 ${className}`}
+        className={`w-[320px] h-[140px] bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 border border-orange-200/50 dark:border-orange-800/30 shadow-lg hover:shadow-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] ${className}`}
         onClick={toggleCurrency}
       >
-        <div className="p-4 h-full flex flex-col">
-          {/* Header com BTC separado do valor e moeda */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Bitcoin 
-                className="h-4 w-4" 
-                style={{ color: trendColor }}
-              />
-              <span 
-                className="font-medium text-sm"
-                style={{ color: trendColor }}
-              >
-                BTC
-              </span>
-            </div>
-            
-            {isLoading ? (
-              <div className="text-sm text-gray-400">...</div>
-            ) : (
-              <div className="flex items-center gap-3">
-                {/* Valor com moeda ao lado */}
+        <div className="p-5 h-full flex flex-col relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute top-2 right-2 text-6xl">₿</div>
+          </div>
+          
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30">
+                <Bitcoin 
+                  className="h-5 w-5 text-orange-600 dark:text-orange-400" 
+                />
+              </div>
+              <div>
                 <div className="flex items-center gap-2">
-                  <div 
-                    className={`text-sm font-semibold ${priceChanged ? 'animate-pulse' : ''}`}
-                    style={{ color: trendColor }}
-                  >
-                    {currency === 'USD' 
-                      ? `$${(currentPrice / 1000).toFixed(1)}k`
-                      : `R$${(currentPrice / 1000).toFixed(0)}k`
-                    }
-                  </div>
+                  <span className="font-bold text-lg text-gray-900 dark:text-gray-100">
+                    Bitcoin
+                  </span>
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
+                    BTC
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
                   <span 
-                    className="text-xs font-medium px-1.5 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-700"
-                    style={{ color: trendColor }}
+                    className="text-xs font-medium px-2 py-1 rounded-full"
+                    style={{ 
+                      backgroundColor: `${trendColor}20`, 
+                      color: trendColor 
+                    }}
                   >
                     {currency}
                   </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    24h
+                  </span>
                 </div>
-                
-                {/* Percentual de mudança */}
+              </div>
+            </div>
+            
+            {/* Price and Change */}
+            {isLoading ? (
+              <div className="text-right">
+                <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1"></div>
+                <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              </div>
+            ) : (
+              <div className="text-right">
+                <div 
+                  className={`text-xl font-bold ${priceChanged ? 'animate-pulse' : ''}`}
+                  style={{ color: trendColor }}
+                >
+                  {currency === 'USD' 
+                    ? `$${(currentPrice / 1000).toFixed(1)}k`
+                    : `R$${(currentPrice / 1000).toFixed(0)}k`
+                  }
+                </div>
                 {percentChange !== 0 && (
                   <div 
-                    className="text-xs font-medium"
+                    className="flex items-center justify-end gap-1 text-sm font-medium"
                     style={{ color: trendColor }}
                   >
-                    {percentChange > 0 ? '+' : ''}{percentChange.toFixed(1)}%
+                    {getTrendIcon()}
+                    {percentChange > 0 ? '+' : ''}{percentChange.toFixed(2)}%
                   </div>
                 )}
               </div>
             )}
           </div>
           
-          {/* Gráfico ocupando o espaço restante */}
-          <div className="flex-1 w-full">
+          {/* Enhanced Chart */}
+          <div className="flex-1 w-full relative z-10">
             <ResponsiveContainer width="100%" height="100%">
               <ChartContainer
                 config={{
@@ -284,25 +310,71 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
                   }
                 }}
               >
-                <AreaChart data={chartData}>
+                <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                   <defs>
                     <linearGradient id={`btcGradient-${currency}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={trendColor} stopOpacity={0.15} />
-                      <stop offset="95%" stopColor={trendColor} stopOpacity={0} />
+                      <stop offset="0%" stopColor={trendColor} stopOpacity={0.3} />
+                      <stop offset="50%" stopColor={trendColor} stopOpacity={0.1} />
+                      <stop offset="100%" stopColor={trendColor} stopOpacity={0} />
                     </linearGradient>
+                    <filter id="glow">
+                      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                      <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
                   </defs>
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartTooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const value = payload[0].value as number;
+                        return (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {currency === 'USD' 
+                                ? `$${value.toLocaleString()}`
+                                : `R$${value.toLocaleString()}`
+                              }
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {new Date(label).toLocaleTimeString()}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
                   <Area
                     type="monotone"
                     dataKey="price"
                     stroke={trendColor}
-                    strokeWidth={1.2}
+                    strokeWidth={2}
                     fill={`url(#btcGradient-${currency})`}
-                    isAnimationActive={false}
+                    filter="url(#glow)"
+                    isAnimationActive={true}
+                    animationDuration={1000}
                   />
                 </AreaChart>
               </ChartContainer>
             </ResponsiveContainer>
+          </div>
+          
+          {/* Subtle indicator dots */}
+          <div className="absolute bottom-2 right-2 flex gap-1">
+            <div 
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: `${trendColor}60` }}
+            ></div>
+            <div 
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: `${trendColor}40` }}
+            ></div>
+            <div 
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: `${trendColor}20` }}
+            ></div>
           </div>
         </div>
       </Card>
