@@ -264,7 +264,7 @@ const Patrimony: React.FC = () => {
                     setIsCryptoModalOpen(true);
                   }}
                   variant="secondary" 
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 border-2 border-orange-500"
                 >
                   <Bitcoin className="h-4 w-4" />
                   Adicionar Cripto

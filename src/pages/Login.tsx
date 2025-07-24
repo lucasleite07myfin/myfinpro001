@@ -132,10 +132,25 @@ const Login = () => {
         
         <CardContent>
           <Tabs value={loginType} onValueChange={(v) => setLoginType(v as 'email' | 'cpf' | 'cnpj')} className="mb-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="email">E-mail</TabsTrigger>
-              <TabsTrigger value="cpf">CPF</TabsTrigger>
-              <TabsTrigger value="cnpj">CNPJ</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 bg-gray-100">
+              <TabsTrigger 
+                value="email" 
+                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white"
+              >
+                E-mail
+              </TabsTrigger>
+              <TabsTrigger 
+                value="cpf" 
+                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white"
+              >
+                CPF
+              </TabsTrigger>
+              <TabsTrigger 
+                value="cnpj" 
+                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white"
+              >
+                CNPJ
+              </TabsTrigger>
             </TabsList>
           </Tabs>
 

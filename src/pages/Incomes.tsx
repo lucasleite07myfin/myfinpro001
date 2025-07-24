@@ -28,6 +28,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Incomes: React.FC = () => {
   const { mode } = useAppMode();
@@ -39,6 +49,8 @@ const Incomes: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   
   // Get all income categories including custom ones
   const getAllIncomeCategories = () => {
@@ -80,9 +92,26 @@ const Incomes: React.FC = () => {
   const totalIncome = currentMonthIncomes.reduce((sum, t) => sum + t.amount, 0);
 
   const handleDeleteTransaction = (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir esta receita?')) {
-      deleteTransaction(id);
+    setTransactionToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (transactionToDelete) {
+      deleteTransaction(transactionToDelete);
+      toast({
+        title: "Sucesso",
+        description: "Receita excluída com sucesso!",
+        variant: "success"
+      });
     }
+    setDeleteDialogOpen(false);
+    setTransactionToDelete(null);
+  };
+
+  const cancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setTransactionToDelete(null);
   };
 
   const handleEditTransaction = (transaction: Transaction) => {
@@ -93,9 +122,9 @@ const Incomes: React.FC = () => {
   const handleUpdateTransaction = (updatedTransaction: Omit<Transaction, 'id'>) => {
     if (editingTransaction) {
       const fullTransaction = { ...updatedTransaction, id: editingTransaction.id };
-      // Use the appropriate context method based on mode
-      if ('updateTransaction' in financeContext) {
-        financeContext.updateTransaction(fullTransaction);
+      // Use editTransaction which exists in the context
+      if ('editTransaction' in financeContext) {
+        financeContext.editTransaction(fullTransaction);
       }
       setIsEditModalOpen(false);
       setEditingTransaction(null);
@@ -326,6 +355,27 @@ const Incomes: React.FC = () => {
         initialData={editingTransaction || undefined}
         mode={editingTransaction ? 'edit' : 'add'}
       />
+
+      {/* Alert Dialog de confirmação de exclusão */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta <strong>Receita</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDelete}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };

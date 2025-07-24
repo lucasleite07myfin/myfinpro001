@@ -286,7 +286,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       if (error) throw error;
 
       setTransactions(transactions.map(t => t.id === transaction.id ? transaction : t));
-      toast.success('Transação atualizada com sucesso!');
       updateMonthlyData();
     } catch (error) {
       console.error('Erro ao atualizar transação:', error);

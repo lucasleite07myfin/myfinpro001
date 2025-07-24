@@ -28,6 +28,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Expenses: React.FC = () => {
   const { mode } = useAppMode();
@@ -40,6 +50,10 @@ const Expenses: React.FC = () => {
   const [showSpecialTransactions, setShowSpecialTransactions] = useState<
     'all' | 'goals' | 'investments' | 'recurring' | 'regular'
   >('all');
+  
+  // Estados para controle do AlertDialog de confirmação
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<{ id: string; message: string } | null>(null);
   
   // Get all expense categories including custom ones
   const getAllExpenseCategories = () => {
@@ -109,22 +123,39 @@ const Expenses: React.FC = () => {
       confirmMessage = 'ATENÇÃO: Esta é uma despesa fixa. Excluir esta transação também removerá o valor da despesa fixa. Deseja continuar?';
     }
     
-    if (window.confirm(confirmMessage)) {
-      // If it's a goal contribution, we need to update the goal
-      if (transaction.isGoalContribution && transaction.goalId) {
-        const goal = goals.find(g => g.id === transaction.goalId);
-        if (goal) {
-          // Subtract the contribution from the goal's current amount
-          financeContext.editGoal({
-            ...goal,
-            currentAmount: Math.max(0, goal.currentAmount - transaction.amount)
-          });
-        }
+    setTransactionToDelete({ id, message: confirmMessage });
+    setDeleteDialogOpen(true);
+  };
+  
+  const confirmDelete = () => {
+    if (!transactionToDelete) return;
+    
+    const transaction = transactions.find(t => t.id === transactionToDelete.id);
+    if (!transaction) return;
+    
+    // If it's a goal contribution, we need to update the goal
+    if (transaction.isGoalContribution && transaction.goalId) {
+      const goal = goals.find(g => g.id === transaction.goalId);
+      if (goal) {
+        // Subtract the contribution from the goal's current amount
+        financeContext.editGoal({
+          ...goal,
+          currentAmount: Math.max(0, goal.currentAmount - transaction.amount)
+        });
       }
-      
-      // Delete the transaction
-      deleteTransaction(id);
     }
+    
+    // Delete the transaction
+    deleteTransaction(transactionToDelete.id);
+    
+    // Reset state
+    setDeleteDialogOpen(false);
+    setTransactionToDelete(null);
+  };
+  
+  const cancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setTransactionToDelete(null);
   };
 
   const exportToCSV = () => {
@@ -392,6 +423,27 @@ const Expenses: React.FC = () => {
         type="expense"
         renderBadge={renderTransactionBadge}
       />
+      
+      {/* Alert Dialog de confirmação de exclusão */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              {transactionToDelete?.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDelete}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };

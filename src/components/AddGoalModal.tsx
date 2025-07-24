@@ -19,7 +19,7 @@ import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { formatDateForInput, formatCurrencyInput, parseCurrencyToNumber } from '@/utils/formatters';
 import { Goal } from '@/types/finance';
-import { Target, Calendar, PiggyBank, DollarSign, TrendingUp } from 'lucide-react';
+import { Target, Calendar, PiggyBank, DollarSign, TrendingUp, Edit, Lock } from 'lucide-react';
 
 interface AddGoalModalProps {
   open: boolean;
@@ -57,11 +57,13 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
   const [targetDate, setTargetDate] = useState(formatDateForInput(new Date()));
   const [savingLocation, setSavingLocation] = useState('');
   const [customSavingLocation, setCustomSavingLocation] = useState('');
+  const [isEditingValues, setIsEditingValues] = useState(false);
 
   // Reset form when dialog closes
   useEffect(() => {
     if (!open) {
       resetForm();
+      setIsEditingValues(false);
     }
   }, [open]);
 
@@ -69,8 +71,11 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
   useEffect(() => {
     if (mode === 'edit' && initialData && open) {
       setName(initialData.name);
-      setTargetAmount(formatCurrencyInput(initialData.targetAmount.toString().replace('.', '')));
-      setCurrentAmount(formatCurrencyInput(initialData.currentAmount.toString().replace('.', '')));
+      // Corrigir formatação dos valores - multiplicar por 100 para formatCurrencyInput
+      const targetAmountCents = Math.round(initialData.targetAmount * 100).toString();
+      const currentAmountCents = Math.round(initialData.currentAmount * 100).toString();
+      setTargetAmount(formatCurrencyInput(targetAmountCents));
+      setCurrentAmount(formatCurrencyInput(currentAmountCents));
       setTargetDate(formatDateForInput(initialData.targetDate));
       
       // Handle custom saving location
@@ -209,9 +214,32 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
 
             {/* Financial Information */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <DollarSign className="h-4 w-4" />
-                Valores Financeiros
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <DollarSign className="h-4 w-4" />
+                  Valores Financeiros
+                </div>
+                {mode === 'edit' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditingValues(!isEditingValues)}
+                    className="flex items-center gap-2"
+                  >
+                    {isEditingValues ? (
+                      <>
+                        <Lock className="h-4 w-4" />
+                        Bloquear Edição
+                      </>
+                    ) : (
+                      <>
+                        <Edit className="h-4 w-4" />
+                        Editar Valores
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -228,7 +256,11 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                     }}
                     placeholder="R$ 0,00"
                     required
-                    className="bg-gray-50 border-gray-200"
+                    disabled={mode === 'edit' && !isEditingValues}
+                    className={`${mode === 'edit' && !isEditingValues 
+                      ? 'bg-gray-100 border-gray-300 text-gray-600 cursor-not-allowed' 
+                      : 'bg-gray-50 border-gray-200'
+                    }`}
                   />
                 </div>
                 
@@ -245,10 +277,21 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                     }}
                     placeholder="R$ 0,00"
                     required
-                    className="bg-gray-50 border-gray-200"
+                    disabled={mode === 'edit' && !isEditingValues}
+                    className={`${mode === 'edit' && !isEditingValues 
+                      ? 'bg-gray-100 border-gray-300 text-gray-600 cursor-not-allowed' 
+                      : 'bg-gray-50 border-gray-200'
+                    }`}
                   />
                 </div>
               </div>
+              
+              {mode === 'edit' && !isEditingValues && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <Lock className="h-4 w-4 text-blue-600" />
+                  <span>Os valores estão protegidos contra edição acidental. Clique em "Editar Valores" para modificá-los.</span>
+                </div>
+              )}
             </div>
 
             <Separator />

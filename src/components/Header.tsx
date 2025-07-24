@@ -139,25 +139,61 @@ const Header: React.FC = () => {
               <ModeToggle />
               
               <div className="md:hidden">
-                <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)}>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className={menuOpen ? "text-[#EE680D]" : ""}
+                >
                   {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                 </Button>
               </div>
             </div>
           </div>
-
-          {/* Mobile Navigation */}
-          {menuOpen && (
-            <div className="md:hidden pb-4">
+        </div>
+      </header>
+      
+      {/* Mobile Navigation Overlay - Moved outside header */}
+      {menuOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[99998]"
+            onClick={() => setMenuOpen(false)}
+            style={{ zIndex: 99998 }}
+          />
+          {/* Menu Content */}
+          <div 
+            className="md:hidden fixed top-20 left-0 right-0 bg-background border-b border-border shadow-xl z-[99999]"
+            style={{ zIndex: 99999 }}
+          >
+            <div className="p-4">
               <Tabs value={currentPath} onValueChange={handleTabChange} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-muted">
-                  {navLinks}
+                <TabsList className="flex flex-col w-full gap-2 bg-muted/50 p-2 h-auto">
+                  <TabsTrigger value="/" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">Dashboard</TabsTrigger>
+                  <TabsTrigger value="/receitas" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">Receitas</TabsTrigger>
+                  <TabsTrigger value="/despesas" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">Despesas</TabsTrigger>
+                  <TabsTrigger value="/metas" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">Metas</TabsTrigger>
+                  <TabsTrigger value="/patrimonio" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">Patrimônio</TabsTrigger>
+                  {mode === 'personal' && (
+                    <TabsTrigger value="/saude-financeira" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">Saúde</TabsTrigger>
+                  )}
+                  {mode === 'business' && (
+                    <>
+                      <TabsTrigger value="/fluxo-caixa" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">Fluxo de Caixa</TabsTrigger>
+                      <TabsTrigger value="/fornecedores" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">Fornecedores</TabsTrigger>
+                      <TabsTrigger value="/investimentos" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">Investimentos</TabsTrigger>
+                      <TabsTrigger value="/dre" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">
+                        <ChartBar className="h-3 w-3 mr-1" /> DRE
+                      </TabsTrigger>
+                    </>
+                  )}
                 </TabsList>
               </Tabs>
             </div>
-          )}
-        </div>
-      </header>
+          </div>
+        </>
+      )}
     </TooltipProvider>
   );
 };

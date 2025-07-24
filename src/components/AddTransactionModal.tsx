@@ -136,7 +136,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   };
 
   const handleSubmitTransaction = () => {
-    if (!description || !category || !amount || !date) return;
+    if (!description || !category || !amount || !date) {
+      toast({ title: 'Erro', description: 'Preencha todos os campos obrigatórios' });
+      return;
+    }
 
     const transactionData = {
       date,
@@ -148,19 +151,19 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     };
 
     if (mode === 'edit' && initialData) {
-        // Simplified update logic
-        if ('updateTransaction' in financeContext) {
-            financeContext.updateTransaction({ ...transactionData, id: initialData.id });
-        } else if ('editTransaction' in financeContext) {
+        if ('editTransaction' in financeContext) {
             financeContext.editTransaction({ ...transactionData, id: initialData.id });
+            toast({ title: 'Sucesso', description: 'Transação atualizada com sucesso!' });
+        } else {
+            toast({ title: 'Erro', description: 'Função de edição não disponível' });
+            return;
         }
-        toast({ title: 'Transação atualizada', description: 'A transação foi atualizada com sucesso!' });
     } else {
         if (category === 'Outros' && customCategory.trim() && addCustomCategory) {
             addCustomCategory(transactionType, customCategory.trim());
         }
         addTransaction(transactionData);
-        toast({ title: 'Transação adicionada', description: 'A transação foi adicionada com sucesso!' });
+        toast({ title: 'Sucesso', description: 'Transação adicionada com sucesso!' });
     }
     
     onOpenChange(false);
@@ -168,7 +171,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   const handleSubmitRecurring = () => {
     if (!description || !category || !dueDay || parseInt(dueDay) < 1 || parseInt(dueDay) > 31) {
-        toast({ title: 'Campos inválidos', description: 'Preencha os campos obrigatórios corretamente.', variant: 'destructive' });
+        toast({ title: 'Campos inválidos', description: 'Preencha os campos obrigatórios corretamente.' });
         return;
     }
     const finalCategory = category === 'Outros' && customCategory.trim() ? `Outros: ${customCategory.trim()}` : category;
@@ -183,13 +186,12 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         paymentMethod,
         repeatMonths: parseInt(repeatMonths)
     });
-    toast({ title: 'Despesa recorrente adicionada', description: 'A despesa foi adicionada com sucesso!' });
     onOpenChange(false);
   };
 
   const handleSubmitGoalContribution = () => {
     if (!selectedGoal || !amount) {
-        toast({ title: 'Campos inválidos', description: 'Selecione uma meta e informe o valor.', variant: 'destructive' });
+        toast({ title: 'Campos inválidos', description: 'Selecione uma meta e informe o valor.' });
         return;
     }
     const selectedGoalObj = goals.find(g => g.id === selectedGoal);
@@ -212,13 +214,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             currentAmount: selectedGoalObj.currentAmount + parseFloat(amount)
         });
     }
-    toast({ title: 'Contribuição adicionada', description: `Você contribuiu ${formatCurrency(parseFloat(amount))} para a meta "${selectedGoalObj.name}"` });
     onOpenChange(false);
   };
 
   const handleSubmitInvestmentContribution = () => {
     // Mocked for now
-    toast({ title: 'Funcionalidade em desenvolvimento', description: 'A contribuição para investimentos será implementada em breve.' });
     onOpenChange(false);
   };
 
