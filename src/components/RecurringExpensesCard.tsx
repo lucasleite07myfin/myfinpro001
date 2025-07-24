@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { CheckCircle2, AlertCircle, Calendar, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,23 +35,29 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
 }) => {
   const [editingExpense, setEditingExpense] = useState<{ id: string; month: string } | null>(null);
   const [editAmount, setEditAmount] = useState<string>("");
-  const [displayMonths, setDisplayMonths] = useState<string[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
+  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
 
   useEffect(() => {
-    const maxRepeatMonths = Math.max(6, ...expenses.map(exp => exp.repeatMonths || 12));
+    const maxRepeatMonths = Math.max(12, ...expenses.map(exp => exp.repeatMonths || 12));
     const months: string[] = [];
     const [currentYear, currentMonthNum] = currentMonth.split('-').map(Number);
 
-    for (let i = 0; i < maxRepeatMonths; i++) {
+    // Generate months from 6 months ago to maxRepeatMonths in the future
+    for (let i = -6; i < maxRepeatMonths; i++) {
       let futureMonth = currentMonthNum + i;
       let futureYear = currentYear;
       while (futureMonth > 12) {
         futureMonth -= 12;
         futureYear += 1;
       }
+      while (futureMonth < 1) {
+        futureMonth += 12;
+        futureYear -= 1;
+      }
       months.push(`${futureYear}-${String(futureMonth).padStart(2, '0')}`);
     }
-    setDisplayMonths(months);
+    setAvailableMonths(months);
   }, [currentMonth, expenses]);
 
   const shouldDisplayExpense = (expense: RecurringExpense, month: string) => {
@@ -142,94 +148,102 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center"><Calendar className="mr-2 h-4 w-4" /> Despesas Recorrentes</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center">
+            <Calendar className="mr-2 h-4 w-4" /> 
+            Despesas Recorrentes
+          </CardTitle>
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Selecione o mês" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableMonths.map(month => (
+                <SelectItem key={month} value={month}>
+                  {formatMonth(month)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent className="p-3">
-        <Accordion type="single" collapsible defaultValue={currentMonth} className="w-full">
-          {displayMonths.map(month => (
-            <AccordionItem value={month} key={month}>
-              <AccordionTrigger>{formatMonth(month)}</AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-2">
-                  {sortedExpenses.filter(expense => shouldDisplayExpense(expense, month)).map(expense => {
-                    const paid = isPaid(expense.id, month);
-                    const overdue = !paid && isOverdue(expense.dueDay, month);
-                    const isEditing = editingExpense?.id === expense.id && editingExpense?.month === month;
-                    return (
-                      <div key={`${expense.id}-${month}`} className={cn("p-3 rounded-md border", { "bg-green-50 dark:bg-green-950": paid, "bg-red-50 dark:bg-red-950": overdue && !paid })}>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium text-sm">{expense.description}</h3>
-                            <p className="text-xs text-muted-foreground">{expense.category}</p>
-                          </div>
-                          <Badge variant={paid ? "outline" : overdue ? "destructive" : "secondary"}>
-                            {paid ? <CheckCircle2 className="h-3 w-3 mr-1" /> : overdue ? <AlertCircle className="h-3 w-3 mr-1" /> : null}
-                            {paid ? "Pago" : overdue ? "Vencido" : "A vencer"}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between items-center mt-2">
-                          {isEditing ? (
-                            <div className="flex items-center gap-2">
-                              <Input type="text" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} className="h-8 w-24" placeholder="Valor" autoFocus />
-                              <Button size="sm" onClick={() => handleSaveEdit(expense)}>Salvar</Button>
-                              <Button size="sm" variant="ghost" onClick={handleCancelEdit}>Cancelar</Button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <p className={cn("text-sm font-semibold", getExpenseAmountForMonth(expense, month) === null && "italic text-muted-foreground")}>
-                                {formatExpenseAmount(expense, month)}
-                              </p>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleStartEdit(expense, month)}><Pencil className="h-3 w-3" /></Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent><p>Editar valor</p></TooltipContent>
-                                </Tooltip>
-                                {onDelete && (
-                                  <AlertDialog>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <AlertDialogTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="h-6 w-6"><Trash2 className="h-3 w-3 text-red-500" /></Button>
-                                        </AlertDialogTrigger>
-                                      </TooltipTrigger>
-                                      <TooltipContent><p>Excluir despesa</p></TooltipContent>
-                                    </Tooltip>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Essa ação não pode ser desfeita. Isso excluirá permanentemente a despesa recorrente.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDelete(expense.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Deletar</AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                )}
-                              </TooltipProvider>
-                            </div>
-                          )}
-                          {!isEditing && getExpenseAmountForMonth(expense, month) !== null && (
-                            <Button size="sm" variant={paid ? "outline" : "default"} onClick={() => onMarkAsPaid(expense.id, month, !paid)}>
-                              {paid ? "Desmarcar" : "Pagar"}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {sortedExpenses.filter(expense => shouldDisplayExpense(expense, month)).length === 0 && (
-                    <p className="text-sm text-muted-foreground italic text-center py-4">Nenhuma despesa recorrente para este mês.</p>
+        <div className="space-y-2">
+          {sortedExpenses.filter(expense => shouldDisplayExpense(expense, selectedMonth)).map(expense => {
+            const paid = isPaid(expense.id, selectedMonth);
+            const overdue = !paid && isOverdue(expense.dueDay, selectedMonth);
+            const isEditing = editingExpense?.id === expense.id && editingExpense?.month === selectedMonth;
+            return (
+              <div key={`${expense.id}-${selectedMonth}`} className={cn("p-3 rounded-md border", { "bg-green-50 dark:bg-green-950": paid, "bg-red-50 dark:bg-red-950": overdue && !paid })}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium text-sm">{expense.description}</h3>
+                    <p className="text-xs text-muted-foreground">{expense.category}</p>
+                  </div>
+                  <Badge variant={paid ? "outline" : overdue ? "destructive" : "secondary"}>
+                    {paid ? <CheckCircle2 className="h-3 w-3 mr-1" /> : overdue ? <AlertCircle className="h-3 w-3 mr-1" /> : null}
+                    {paid ? "Pago" : overdue ? "Vencido" : "A vencer"}
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  {isEditing ? (
+                    <div className="flex items-center gap-2">
+                      <Input type="text" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} className="h-8 w-24" placeholder="Valor" autoFocus />
+                      <Button size="sm" onClick={() => handleSaveEdit(expense)}>Salvar</Button>
+                      <Button size="sm" variant="ghost" onClick={handleCancelEdit}>Cancelar</Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <p className={cn("text-sm font-semibold", getExpenseAmountForMonth(expense, selectedMonth) === null && "italic text-muted-foreground")}>
+                        {formatExpenseAmount(expense, selectedMonth)}
+                      </p>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleStartEdit(expense, selectedMonth)}><Pencil className="h-3 w-3" /></Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Editar valor</p></TooltipContent>
+                        </Tooltip>
+                        {onDelete && (
+                          <AlertDialog>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6"><Trash2 className="h-3 w-3 text-red-500" /></Button>
+                                </AlertDialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Excluir despesa</p></TooltipContent>
+                            </Tooltip>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Essa ação não pode ser desfeita. Isso excluirá permanentemente a despesa recorrente.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(expense.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Deletar</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </TooltipProvider>
+                    </div>
+                  )}
+                  {!isEditing && getExpenseAmountForMonth(expense, selectedMonth) !== null && (
+                    <Button size="sm" variant={paid ? "outline" : "default"} onClick={() => onMarkAsPaid(expense.id, selectedMonth, !paid)}>
+                      {paid ? "Desmarcar" : "Pagar"}
+                    </Button>
                   )}
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+              </div>
+            );
+          })}
+          {sortedExpenses.filter(expense => shouldDisplayExpense(expense, selectedMonth)).length === 0 && (
+            <p className="text-sm text-muted-foreground italic text-center py-4">Nenhuma despesa recorrente para este mês.</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

@@ -230,6 +230,12 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
                   {getCategoryIcon(formData.type)}
                   <span className="text-sm font-medium text-[#EE680D]">Prévia</span>
                   <Badge variant="secondary">{formData.type}</Badge>
+                  {formData.insured && (
+                    <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
+                      <Shield className="h-3 w-3 mr-1" />
+                      Segurado
+                    </Badge>
+                  )}
                 </div>
                 <h3 className="font-semibold mb-2">{formData.name || 'Nome do patrimônio'}</h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
@@ -441,8 +447,10 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
                   }
                 />
                 <Label htmlFor="insured" className="text-sm font-medium flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Este bem está segurado?
+                  <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100 flex items-center gap-1">
+                    <Shield className="h-3 w-3" />
+                    Este bem está segurado?
+                  </Badge>
                 </Label>
               </div>
 
