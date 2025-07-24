@@ -2,6 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Remove all ring shadows globally */
+* {
+  --tw-ring-shadow: none !important;
+  --tw-ring-offset-shadow: none !important;
+}
+
+*:focus,
+*:focus-visible,
+*:focus-within {
+  --tw-ring-shadow: none !important;
+  --tw-ring-offset-shadow: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove ring utilities */
+.ring-0,
+.ring-1,
+.ring-2,
+.ring-4,
+.ring-8,
+.ring,
+.ring-inset,
+.focus\:ring-0:focus,
+.focus\:ring-1:focus,
+.focus\:ring-2:focus,
+.focus\:ring-4:focus,
+.focus\:ring-8:focus,
+.focus\:ring:focus,
+.focus\:ring-inset:focus,
+.focus-visible\:ring-0:focus-visible,
+.focus-visible\:ring-1:focus-visible,
+.focus-visible\:ring-2:focus-visible,
+.focus-visible\:ring-4:focus-visible,
+.focus-visible\:ring-8:focus-visible,
+.focus-visible\:ring:focus-visible,
+.focus-visible\:ring-inset:focus-visible {
+  --tw-ring-shadow: none !important;
+  --tw-ring-offset-shadow: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove ring offset utilities */
+.ring-offset-0,
+.ring-offset-1,
+.ring-offset-2,
+.ring-offset-4,
+.ring-offset-8,
+.focus\:ring-offset-0:focus,
+.focus\:ring-offset-1:focus,
+.focus\:ring-offset-2:focus,
+.focus\:ring-offset-4:focus,
+.focus\:ring-offset-8:focus,
+.focus-visible\:ring-offset-0:focus-visible,
+.focus-visible\:ring-offset-1:focus-visible,
+.focus-visible\:ring-offset-2:focus-visible,
+.focus-visible\:ring-offset-4:focus-visible,
+.focus-visible\:ring-offset-8:focus-visible {
+  --tw-ring-offset-width: 0px !important;
+  --tw-ring-offset-shadow: none !important;
+  box-shadow: none !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 96%;

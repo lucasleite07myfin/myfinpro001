@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, ChartBar, Truck, User, LogOut } from 'lucide-react';
+import { Menu, X, ChartBar, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import ModeToggle from './ModeToggle';
 import { useAppMode } from '@/contexts/AppModeContext';
@@ -32,13 +22,9 @@ const Header: React.FC = () => {
   const { user, signOut } = useAuth();
   const business = mode === 'business' ? useBusiness() : null;
 
-
-
-  // Add logging to track mode and path
   useEffect(() => {
     console.log('Header - Current mode:', mode);
     console.log('Header - Current path:', currentPath);
-    console.log('Header - Tab value for comparison:', currentPath);
   }, [mode, currentPath]);
 
   const handleTabChange = (value: string) => {
@@ -63,12 +49,35 @@ const Header: React.FC = () => {
     return names[0][0].toUpperCase();
   };
 
+  const navLinks = (
+    <>
+      <TabsTrigger value="/" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Dashboard</TabsTrigger>
+      <TabsTrigger value="/receitas" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Receitas</TabsTrigger>
+      <TabsTrigger value="/despesas" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Despesas</TabsTrigger>
+      <TabsTrigger value="/metas" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Metas</TabsTrigger>
+      <TabsTrigger value="/patrimonio" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Patrimônio</TabsTrigger>
+      {mode === 'personal' && (
+        <TabsTrigger value="/saude-financeira" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Saúde</TabsTrigger>
+      )}
+      {mode === 'business' && (
+        <>
+          <TabsTrigger value="/fluxo-caixa" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Fluxo de Caixa</TabsTrigger>
+          <TabsTrigger value="/fornecedores" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Fornecedores</TabsTrigger>
+          <TabsTrigger value="/investimentos" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Investimentos</TabsTrigger>
+          <TabsTrigger value="/dre" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">
+            <ChartBar className="h-3 w-3 mr-1" /> DRE
+          </TabsTrigger>
+        </>
+      )}
+    </>
+  );
+
   return (
     <TooltipProvider>
       <header className="w-full bg-background border-b border-border shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto py-3 md:py-4 px-4">
-          {/* Top row - Logo and User Controls */}
-          <div className="flex justify-between items-center mb-4">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo */}
             <TooltipHelper content={tooltipContent.header.logo}>
               <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
                 <img src="/lovable-uploads/3ac31d22-79b8-44f6-b7ba-5baf7d682784.png" alt="MyFin Pro Logo" className="h-12 md:h-14 mr-3" />
@@ -81,10 +90,18 @@ const Header: React.FC = () => {
                 </div>
               </div>
             </TooltipHelper>
-            
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center justify-center">
+              <Tabs value={currentPath} onValueChange={handleTabChange}>
+                <TabsList className="bg-muted">
+                  {navLinks}
+                </TabsList>
+              </Tabs>
+            </div>
+
+            {/* Right side controls */}
             <div className="flex items-center gap-3">
-              
-              {/* User Profile Dropdown */}
               <TooltipHelper content={tooltipContent.header.profile}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -121,39 +138,24 @@ const Header: React.FC = () => {
               
               <ModeToggle />
               
-              <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
-                {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
+              <div className="md:hidden">
+                <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)}>
+                  {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </Button>
+              </div>
             </div>
           </div>
-          
-          {/* Bottom row - Navigation Tabs */}
-          <div className={`w-full ${menuOpen ? 'block' : 'hidden md:block'}`}>
-            <div className="flex justify-center">
-              <Tabs value={currentPath} onValueChange={handleTabChange} className="w-full md:w-auto">
-                <TabsList className="grid w-full grid-cols-2 md:flex md:w-fit bg-muted">
-                  <TabsTrigger value="/" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Dashboard</TabsTrigger>
-                  <TabsTrigger value="/receitas" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Receitas</TabsTrigger>
-                  <TabsTrigger value="/despesas" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Despesas</TabsTrigger>
-                  <TabsTrigger value="/metas" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Metas</TabsTrigger>
-                  <TabsTrigger value="/patrimonio" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Patrimônio</TabsTrigger>
-                  {mode === 'personal' && (
-                    <TabsTrigger value="/saude-financeira" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Saúde</TabsTrigger>
-                  )}
-                  {mode === 'business' && (
-                    <>
-                      <TabsTrigger value="/fluxo-caixa" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Fluxo de Caixa</TabsTrigger>
-                      <TabsTrigger value="/fornecedores" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Fornecedores</TabsTrigger>
-                      <TabsTrigger value="/investimentos" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">Investimentos</TabsTrigger>
-                      <TabsTrigger value="/dre" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
-                        <ChartBar className="h-3 w-3 mr-1" /> DRE
-                      </TabsTrigger>
-                    </>
-                  )}
+
+          {/* Mobile Navigation */}
+          {menuOpen && (
+            <div className="md:hidden pb-4">
+              <Tabs value={currentPath} onValueChange={handleTabChange} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-muted">
+                  {navLinks}
                 </TabsList>
               </Tabs>
             </div>
-          </div>
+          )}
         </div>
       </header>
     </TooltipProvider>

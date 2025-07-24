@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Bitcoin, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Bitcoin, TrendingUp, TrendingDown, Minus, DollarSign } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { 
   ChartContainer, 
@@ -12,6 +12,7 @@ import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
 import TooltipHelper from './TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
+import { cn } from '@/lib/utils';
 
 interface BTCNowCardProps {
   className?: string;
