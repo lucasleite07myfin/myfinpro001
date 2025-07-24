@@ -18,6 +18,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Bitcoin, Coins, FileType, Edit, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useFinance } from '@/contexts/FinanceContext';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusiness } from '@/contexts/BusinessContext';
@@ -34,6 +44,10 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
   const { deleteAsset } = financeContext;
   
   const [showHighValue, setShowHighValue] = useState(false);
+  
+  // Estados para controle do AlertDialog de confirmação
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [assetToDelete, setAssetToDelete] = useState<string | null>(null);
   
   // Filtrar apenas criptomoedas
   const cryptoAssets = useMemo(() => {
@@ -90,10 +104,24 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
   
   // Excluir criptomoeda
   const handleDelete = (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir esta criptomoeda?')) {
-      deleteAsset(id);
-      toast.success('Criptomoeda excluída com sucesso');
-    }
+    setAssetToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+  
+  const confirmDelete = () => {
+    if (!assetToDelete) return;
+    
+    deleteAsset(assetToDelete);
+    toast.success('Criptomoeda excluída com sucesso');
+    
+    // Reset state
+    setDeleteDialogOpen(false);
+    setAssetToDelete(null);
+  };
+  
+  const cancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setAssetToDelete(null);
   };
   
   // Se não houver criptomoedas, exibir mensagem
@@ -117,7 +145,8 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
   }
   
   return (
-    <Card>
+    <>
+      <Card>
       <CardHeader className="pb-2">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -173,7 +202,11 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
                 </TableRow>
               ) : (
                 filteredCryptos.map((asset) => (
-                  <TableRow key={asset.id}>
+                  <TableRow 
+                    key={asset.id} 
+                    onClick={() => onEditCrypto(asset)}
+                    className="cursor-pointer hover:bg-muted/50"
+                  >
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-1.5">
                         <Coins className="h-4 w-4" />
@@ -207,7 +240,10 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          onClick={() => onEditCrypto(asset)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditCrypto(asset);
+                          }}
                           title="Editar"
                         >
                           <Edit className="h-4 w-4" />
@@ -215,7 +251,10 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          onClick={() => handleDelete(asset.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(asset.id);
+                          }}
                           title="Excluir"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -229,7 +268,29 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
           </Table>
         </div>
       </CardContent>
-    </Card>
+      </Card>
+      
+      {/* Alert Dialog de confirmação de exclusão */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta <strong>criptomoeda</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDelete}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

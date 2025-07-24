@@ -82,6 +82,9 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
   const [openCoinSelector, setOpenCoinSelector] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Referência para detectar cliques fora do dropdown
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  
   // Extrair moedas únicas já utilizadas
   const usedCoins = React.useMemo(() => {
     const uniqueCoins = new Set<string>();
@@ -97,44 +100,19 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
 
   // Filtrar moedas baseado na busca
   const filteredCoins = React.useMemo(() => {
-    if (!searchTerm) return coins.slice(0, 50); // Mostrar apenas as top 50 inicialmente
+    if (!searchTerm) return coins.slice(0, 100); // Mostrar as top 100 inicialmente
     
+    const lowerSearchTerm = searchTerm.toLowerCase();
     return coins.filter(coin => 
-      coin.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      coin.name.toLowerCase().includes(searchTerm.toLowerCase())
-    ).slice(0, 100); // Limitar a 100 resultados
+      coin.symbol.toLowerCase().includes(lowerSearchTerm) ||
+      coin.name.toLowerCase().includes(lowerSearchTerm)
+    ).slice(0, 150); // Limitar a 150 resultados na busca
   }, [coins, searchTerm]);
 
-  // Combinar moedas usadas com as da API
-  const allCoins = React.useMemo(() => {
-    const apiCoins = filteredCoins.map(coin => ({
-      symbol: coin.symbol,
-      name: coin.name,
-      isUsed: false
-    }));
-
-    const usedCoinsData = usedCoins.map(coin => ({
-      symbol: coin.symbol,
-      name: coin.symbol,
-      isUsed: true
-    }));
-
-    // Remover duplicatas e priorizar moedas já usadas
-    const uniqueCoins = new Map();
-    
-    // Adicionar moedas usadas primeiro
-    usedCoinsData.forEach(coin => {
-      uniqueCoins.set(coin.symbol, coin);
-    });
-
-    // Adicionar moedas da API que não estão sendo usadas
-    apiCoins.forEach(coin => {
-      if (!uniqueCoins.has(coin.symbol)) {
-        uniqueCoins.set(coin.symbol, coin);
-      }
-    });
-
-    return Array.from(uniqueCoins.values());
+  // Filtrar moedas da API para remover as que já estão em uso
+  const availableApiCoins = React.useMemo(() => {
+    const usedSymbols = new Set(usedCoins.map(coin => coin.symbol.toUpperCase()));
+    return filteredCoins.filter(coin => !usedSymbols.has(coin.symbol.toUpperCase()));
   }, [filteredCoins, usedCoins]);
 
   // Carregar dados da criptomoeda quando editando
@@ -170,6 +148,20 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
       quantity: false,
     });
   }, [crypto, open]);
+
+  // Fechar dropdown quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenCoinSelector(false);
+      }
+    };
+
+    if (openCoinSelector) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [openCoinSelector]);
 
   const validateForm = () => {
     const newErrors = {
@@ -276,12 +268,13 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
   };
 
   const handleCoinSelect = (coin: string) => {
+    const selectedSymbol = coin.toUpperCase();
     setFormData({
       ...formData,
-      symbol: coin
+      symbol: selectedSymbol
     });
     setOpenCoinSelector(false);
-    setSearchTerm('');
+    setSearchTerm(selectedSymbol);
   };
 
   // Calculate estimated value for preview
@@ -358,111 +351,110 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
                 <Label htmlFor="symbol" className="text-sm font-medium">
                   Símbolo da moeda *
                 </Label>
-                <Popover open={openCoinSelector} onOpenChange={setOpenCoinSelector}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openCoinSelector}
-                      className={`w-full justify-between bg-gray-50 border-gray-200 ${errors.symbol ? 'border-red-500' : ''}`}
-                    >
-                      {formData.symbol ? formData.symbol.toUpperCase() : "Selecione uma moeda..."}
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput 
-                        placeholder="Buscar moeda..." 
-                        value={searchTerm}
-                        onValueChange={setSearchTerm}
-                      />
-                      <CommandList className="max-h-[200px]">
-                        {coinsLoading ? (
-                          <CommandEmpty>
-                            <div className="flex items-center gap-2 py-2">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Carregando moedas...
-                            </div>
-                          </CommandEmpty>
-                        ) : coinsError ? (
-                          <CommandEmpty>
-                            <div className="flex flex-col items-center gap-2 py-2">
-                              <span className="text-sm text-red-600">Erro ao carregar moedas</span>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={refetch}
-                                className="h-6 text-xs"
-                              >
-                                <RefreshCw className="h-3 w-3 mr-1" />
-                                Tentar novamente
-                              </Button>
-                            </div>
-                          </CommandEmpty>
-                        ) : allCoins.length === 0 ? (
-                          <CommandEmpty>Nenhuma moeda encontrada</CommandEmpty>
-                        ) : (
-                          <>
-                            {usedCoins.length > 0 && (
-                              <CommandGroup heading="Moedas já utilizadas">
-                                {usedCoins.map(coin => (
-                                  <CommandItem
-                                    key={`used-${coin.symbol}`}
-                                    value={coin.symbol}
-                                    onSelect={() => handleCoinSelect(coin.symbol)}
-                                    className="cursor-pointer"
-                                  >
-                                    <Check
-                                      className={`mr-2 h-4 w-4 ${formData.symbol.toUpperCase() === coin.symbol ? "opacity-100" : "opacity-0"}`}
-                                    />
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant="secondary" className="text-xs">
-                                        {coin.symbol}
-                                      </Badge>
-                                      <span className="text-xs text-muted-foreground">Já usado</span>
-                                    </div>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            )}
-                            
-                            <CommandGroup heading={searchTerm ? "Resultados da busca" : "Top criptomoedas"}>
-                              {filteredCoins.map(coin => (
-                                <CommandItem
-                                  key={`api-${coin.symbol}`}
-                                  value={`${coin.symbol} ${coin.name}`}
-                                  onSelect={() => handleCoinSelect(coin.symbol)}
-                                  className="cursor-pointer"
+                <div className="relative" ref={dropdownRef}>
+                  <Input
+                    id="symbol"
+                    name="symbol"
+                    value={formData.symbol}
+                    onChange={(e) => {
+                      const value = e.target.value.toUpperCase();
+                      setFormData({
+                        ...formData,
+                        symbol: value
+                      });
+                      setSearchTerm(value);
+                      setOpenCoinSelector(value.length > 0);
+                    }}
+                    onFocus={() => {
+                      if (formData.symbol.length > 0) {
+                        setSearchTerm(formData.symbol);
+                        setOpenCoinSelector(true);
+                      }
+                    }}
+                    placeholder="Digite o símbolo (ex: BTC, ETH, DOT)"
+                    className={`bg-gray-50 border-gray-200 ${errors.symbol ? 'border-red-500' : ''}`}
+                    maxLength={10}
+                  />
+                  
+                  {/* Dropdown com sugestões */}
+                  {openCoinSelector && (searchTerm.length > 0 || usedCoins.length > 0) && (
+                    <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-80 overflow-y-auto">
+                      {coinsLoading ? (
+                        <div className="flex items-center gap-2 p-3">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-sm text-gray-600">Carregando moedas...</span>
+                        </div>
+                      ) : coinsError ? (
+                        <div className="p-3 text-center">
+                          <p className="text-sm text-red-600 mb-2">Erro ao carregar moedas</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={refetch}
+                            className="h-8 text-xs"
+                          >
+                            <RefreshCw className="h-3 w-3 mr-1" />
+                            Tentar novamente
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Moedas já utilizadas */}
+                          {usedCoins.length > 0 && searchTerm.length === 0 && (
+                            <div className="border-b border-gray-100">
+                              <div className="px-3 py-2 text-xs font-medium text-gray-500 bg-gray-50">
+                                Moedas já utilizadas
+                              </div>
+                              {usedCoins.map(coin => (
+                                <div
+                                  key={`used-${coin.symbol}`}
+                                  onClick={() => handleCoinSelect(coin.symbol)}
+                                  className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
                                 >
-                                  <Check
-                                    className={`mr-2 h-4 w-4 ${formData.symbol.toUpperCase() === coin.symbol ? "opacity-100" : "opacity-0"}`}
-                                  />
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-xs font-mono">
-                                      {coin.symbol}
-                                    </Badge>
-                                    <span className="text-sm truncate">{coin.name}</span>
-                                  </div>
-                                </CommandItem>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {coin.symbol}
+                                  </Badge>
+                                  <span className="text-xs text-gray-500">Já usado</span>
+                                </div>
                               ))}
-                            </CommandGroup>
-                          </>
-                        )}
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                            </div>
+                          )}
+                          
+                          {/* Moedas da API filtradas */}
+                          {availableApiCoins.length > 0 && (
+                            <div>
+                              {(usedCoins.length > 0 && searchTerm.length === 0) && (
+                                <div className="px-3 py-2 text-xs font-medium text-gray-500 bg-gray-50">
+                                  Top criptomoedas
+                                </div>
+                              )}
+                              {availableApiCoins.slice(0, 50).map(coin => (
+                                <div
+                                  key={`api-${coin.symbol}`}
+                                  onClick={() => handleCoinSelect(coin.symbol)}
+                                  className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
+                                >
+                                  <Badge variant="outline" className="text-xs font-mono">
+                                    {coin.symbol}
+                                  </Badge>
+                                  <span className="text-sm text-gray-700 truncate">{coin.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Nenhum resultado */}
+                          {availableApiCoins.length === 0 && usedCoins.length === 0 && (
+                            <div className="px-3 py-6 text-center text-sm text-gray-500">
+                              Nenhuma moeda encontrada
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
                 
-                <Input
-                  id="symbol"
-                  name="symbol"
-                  value={formData.symbol}
-                  onChange={handleChange}
-                  placeholder="ex: BTC, ETH, DOT"
-                  className={`mt-2 bg-gray-50 border-gray-200 ${errors.symbol ? 'border-red-500' : ''}`}
-                  maxLength={10}
-                />
                 {errors.symbol && (
                   <p className="text-xs text-red-500 mt-1">Símbolo é obrigatório</p>
                 )}
