@@ -19,6 +19,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useCryptoList } from '@/hooks/useCryptoList';
+import { useCryptoPrice } from '@/hooks/useCryptoPrice';
 import { toast } from 'sonner';
 import { Asset } from '@/types/finance';
 import { 
@@ -73,6 +74,13 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
     evaluationDate: new Date(),
     notes: '',
   });
+  
+  // Hook para buscar preço individual da moeda selecionada
+  const selectedCoinId = React.useMemo(() => {
+    return coins.find(coin => coin.symbol === formData.symbol.toUpperCase())?.id || null;
+  }, [coins, formData.symbol]);
+  
+  const { price: selectedCoinPrice, loading: priceLoading } = useCryptoPrice(selectedCoinId);
 
   const [errors, setErrors] = useState({
     symbol: false,
@@ -164,9 +172,10 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
   }, [openCoinSelector]);
 
   const validateForm = () => {
+    const quantityValue = typeof formData.quantity === 'string' ? parseFloat(formData.quantity) : formData.quantity;
     const newErrors = {
       symbol: !formData.symbol.trim(),
-      quantity: formData.quantity <= 0,
+      quantity: !quantityValue || quantityValue <= 0,
     };
     setErrors(newErrors);
     return !Object.values(newErrors).some(Boolean);
@@ -191,16 +200,21 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
           );
       
       // Criar nome baseado no símbolo para exibição na lista
-      const name = `${formData.symbol.toUpperCase()} (${formData.quantity})`;
+      const finalQuantity = typeof formData.quantity === 'string' ? parseFloat(formData.quantity) : formData.quantity;
+      const name = `${formData.symbol.toUpperCase()} (${finalQuantity})`;
 
       if (existingCrypto) {
         // Atualizar quantidade da criptomoeda existente
-        const updatedQuantity = existingCrypto.quantity! + formData.quantity;
+        const updatedQuantity = existingCrypto.quantity! + finalQuantity;
         
+        const newTotalValue = updatedQuantity * currentPrice;
         editAsset({
           ...existingCrypto,
           name: `${existingCrypto.symbol?.toUpperCase()} (${updatedQuantity})`,
           quantity: updatedQuantity,
+          value: newTotalValue,
+          lastPriceBrl: currentPrice,
+          lastUpdated: new Date(),
           evaluationDate: new Date(),
         });
         
@@ -211,11 +225,13 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
           ...crypto,
           name,
           symbol: formData.symbol.toUpperCase(),
-          quantity: formData.quantity,
+          quantity: finalQuantity,
+          value: estimatedValue,
+          lastPriceBrl: currentPrice,
+          lastUpdated: new Date(),
           wallet: formData.wallet,
           notes: formData.notes,
           evaluationDate: formData.evaluationDate,
-          // Manter o valor atual até a próxima atualização automatizada
         });
         toast.success('Criptomoeda atualizada com sucesso');
       } else {
@@ -224,21 +240,25 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
           name,
           type: 'Cripto',
           symbol: formData.symbol.toUpperCase(),
-          quantity: formData.quantity,
-          value: 0, // Será atualizado automaticamente
+          quantity: finalQuantity,
+          value: estimatedValue, // Valor total (quantidade * preço)
+          lastPriceBrl: currentPrice, // Preço unitário atual
+          lastUpdated: new Date(), // Data da última atualização
           wallet: formData.wallet,
           evaluationDate: new Date(),
           insured: false,
           notes: formData.notes,
         });
-        toast.success('Criptomoeda adicionada com sucesso');
+        toast.success(`${formData.symbol.toUpperCase()} adicionada com sucesso!`);
       }
       onOpenChange(false);
       
-      // Mostra toast informativo sobre a atualização automática
-      toast.info('Os preços das criptomoedas serão atualizados automaticamente a cada 5 minutos', {
-        duration: 5000,
-      });
+      // Mostra toast informativo sobre o preço
+      if (currentPrice > 0) {
+        toast.info(`Preço atual: R$ ${currentPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, {
+          duration: 5000,
+        });
+      }
     } catch (error) {
       console.error('Error saving crypto asset:', error);
       toast.error('Erro ao salvar criptomoeda');
@@ -250,19 +270,24 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
   ) => {
     const { name, value, type } = e.target;
     
-    if (type === 'number' && name === 'quantity') {
-      // Limitar a 8 casas decimais para quantidade
-      const decimalValue = parseFloat(value);
-      const formattedValue = Number.isNaN(decimalValue) ? 0 : parseFloat(decimalValue.toFixed(8));
-      
-      setFormData({
-        ...formData,
-        [name]: formattedValue
-      });
+    if (type === 'number') {
+      // Permitir valores vazios para edição
+      if (value === '') {
+        setFormData({
+          ...formData,
+          [name]: value
+        });
+      } else {
+        const numericValue = parseFloat(value);
+        setFormData({
+          ...formData,
+          [name]: Number.isNaN(numericValue) ? 0 : numericValue,
+        });
+      }
     } else {
       setFormData({
         ...formData,
-        [name]: type === 'number' ? parseFloat(value) || 0 : value,
+        [name]: value,
       });
     }
   };
@@ -278,7 +303,9 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
   };
 
   // Calculate estimated value for preview
-  const estimatedValue = formData.quantity * (crypto?.value || 0);
+  const currentPrice = selectedCoinPrice?.current_price || crypto?.value || 0;
+  const quantityValue = typeof formData.quantity === 'string' ? parseFloat(formData.quantity) || 0 : formData.quantity;
+  const estimatedValue = quantityValue * currentPrice;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -298,7 +325,7 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Preview Card */}
-          {(formData.symbol || formData.quantity > 0) && (
+          {(formData.symbol || quantityValue > 0) && (
             <Card className="bg-gradient-to-r from-[#EE680D]/10 to-[#EE680D]/5 border-[#EE680D]/20">
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 mb-2">
@@ -307,18 +334,18 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
                   <Badge variant="secondary">Cripto</Badge>
                 </div>
                 <h3 className="font-semibold mb-2">
-                  {formData.symbol ? `${formData.symbol.toUpperCase()} (${formData.quantity})` : 'Criptomoeda'}
+                  {formData.symbol ? `${formData.symbol.toUpperCase()} (${quantityValue})` : 'Criptomoeda'}
                 </h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Quantidade:</span>
-                    <span className="font-medium">{formData.quantity.toFixed(8)}</span>
+                    <span className="font-medium">{quantityValue.toFixed(8)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Símbolo:</span>
                     <span className="font-medium">{formData.symbol.toUpperCase() || 'N/A'}</span>
                   </div>
-                  {crypto && estimatedValue > 0 && (
+                  {currentPrice > 0 && (
                     <>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Valor estimado:</span>
@@ -327,10 +354,28 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Preço unitário:</span>
-                        <span className="font-medium">
-                          R$ {(crypto?.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
+                        <span className="text-muted-foreground">Preço atual:</span>
+                        <div className="flex flex-col items-end">
+                          <span className="font-medium">
+                            {priceLoading ? (
+                              <div className="flex items-center gap-1">
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                <span className="text-xs">Atualizando...</span>
+                              </div>
+                            ) : (
+                              `R$ ${currentPrice.toLocaleString('pt-BR', { 
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: currentPrice < 1 ? 6 : 2
+                              })}`
+                            )}
+                          </span>
+                          {selectedCoinPrice?.price_change_percentage_24h !== undefined && (
+                            <span className={`text-xs ${selectedCoinPrice.price_change_percentage_24h >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {selectedCoinPrice.price_change_percentage_24h >= 0 ? '+' : ''}
+                              {selectedCoinPrice.price_change_percentage_24h.toFixed(2)}% (24h)
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </>
                   )}
@@ -432,12 +477,29 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
                                 <div
                                   key={`api-${coin.symbol}`}
                                   onClick={() => handleCoinSelect(coin.symbol)}
-                                  className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
+                                  className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center justify-between"
                                 >
-                                  <Badge variant="outline" className="text-xs font-mono">
-                                    {coin.symbol}
-                                  </Badge>
-                                  <span className="text-sm text-gray-700 truncate">{coin.name}</span>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-xs font-mono">
+                                      {coin.symbol}
+                                    </Badge>
+                                    <span className="text-sm text-gray-700 truncate">{coin.name}</span>
+                                  </div>
+                                  {coin.current_price && (
+                                    <div className="flex flex-col items-end text-xs">
+                                      <span className="font-medium text-gray-900">
+                                        R$ {coin.current_price.toLocaleString('pt-BR', { 
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: coin.current_price < 1 ? 6 : 2 
+                                        })}
+                                      </span>
+                                      {coin.price_change_24h !== undefined && (
+                                        <span className={`text-xs ${coin.price_change_24h >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                          {coin.price_change_24h >= 0 ? '+' : ''}{coin.price_change_24h?.toFixed(2)}%
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -538,10 +600,16 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
             <div className="flex items-start gap-2">
               <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
               <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">Atualização automática de preços</p>
+                <p className="font-medium mb-1">Preços em tempo real</p>
                 <p className="text-xs">
-                  Os preços das criptomoedas são atualizados automaticamente a cada 5 minutos usando dados de mercado em tempo real.
+                  Os preços são atualizados automaticamente usando a API do CoinGecko. 
+                  Valores mostrados em Real (BRL) com variação das últimas 24 horas.
                 </p>
+                {selectedCoinPrice?.last_updated && (
+                  <p className="text-xs mt-1 opacity-75">
+                    Última atualização: {selectedCoinPrice.last_updated}
+                  </p>
+                )}
               </div>
             </div>
           </div>

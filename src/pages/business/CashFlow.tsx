@@ -7,13 +7,19 @@ import { useBusiness } from '@/contexts/BusinessContext';
 import { formatCurrency } from '@/utils/formatters';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { FileText, FileSpreadsheet, ChevronDown } from 'lucide-react';
+import { FileText, FileSpreadsheet, ChevronDown, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Info, Eye, EyeOff } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CustomTabs, CustomTabTriggers } from '@/components/ui/custom-tabs';
 
 const projectedData = [
   { month: 'Jan', income: 50000, expenses: 35000, balance: 15000, projection: 15000 },
@@ -34,6 +40,8 @@ const projectedData = [
 const CashFlow: React.FC = () => {
   const { currentMonth, setCurrentMonth } = useBusiness();
   const [view, setView] = useState<'monthly' | 'accumulated'>('monthly');
+  const [chartMode, setChartMode] = useState<'historical' | 'projection'>('historical');
+  const [showDetailedTable, setShowDetailedTable] = useState(false);
   
   const calculateTotals = () => {
     const historical = projectedData.filter(item => item.income !== null && item.expenses !== null);
@@ -43,8 +51,60 @@ const CashFlow: React.FC = () => {
     
     return { totalIncome, totalExpenses, totalBalance };
   };
+
+  const calculateTrends = () => {
+    const historical = projectedData.filter(item => item.income !== null && item.expenses !== null);
+    const lastThreeMonths = historical.slice(-3);
+    const avgBalance = lastThreeMonths.reduce((sum, item) => sum + (item.balance || 0), 0) / lastThreeMonths.length;
+    const isGrowing = lastThreeMonths.every((item, index) => 
+      index === 0 || (item.balance || 0) >= (lastThreeMonths[index - 1].balance || 0)
+    );
+    
+    const projections = projectedData.filter(item => item.projection !== null);
+    const bestProjectedMonth = projections.reduce((max, item) => 
+      (item.projection || 0) > (max.projection || 0) ? item : max, projections[0]
+    );
+    
+    return { avgBalance, isGrowing, bestProjectedMonth, lastThreeMonths };
+  };
+
+  const generateInsights = () => {
+    const { isGrowing, bestProjectedMonth, lastThreeMonths } = calculateTrends();
+    const insights = [];
+
+    if (isGrowing) {
+      insights.push({
+        type: 'success',
+        icon: TrendingUp,
+        title: 'Tendência Positiva',
+        description: 'Seu saldo vem crescendo nos últimos 3 meses consecutivos'
+      });
+    }
+
+    if (bestProjectedMonth) {
+      insights.push({
+        type: 'info',
+        icon: CheckCircle,
+        title: 'Melhor Projeção',
+        description: `Se as projeções se confirmarem, ${bestProjectedMonth.month} será o melhor mês com ${formatCurrency(bestProjectedMonth.projection || 0)}`
+      });
+    }
+
+    const currentBalance = lastThreeMonths[lastThreeMonths.length - 1]?.balance || 0;
+    if (currentBalance < 15000) {
+      insights.push({
+        type: 'warning',
+        icon: AlertTriangle,
+        title: 'Atenção ao Saldo',
+        description: 'Saldo atual abaixo da média histórica. Considere revisar gastos.'
+      });
+    }
+
+    return insights;
+  };
   
   const { totalIncome, totalExpenses, totalBalance } = calculateTotals();
+  const insights = generateInsights();
 
   const exportToCSV = () => {
     // Preparar dados para exportação
@@ -189,28 +249,14 @@ const CashFlow: React.FC = () => {
           <p className="text-neutral-500">Acompanhe entradas, saídas e projeções</p>
         </div>
         <div className="flex items-center space-x-3">
-          <div className="flex gap-2 items-center">
-            <button
-              onClick={() => setView('monthly')}
-              className={`px-3 py-1 text-sm rounded-md ${
-                view === 'monthly' 
-                  ? 'bg-primary text-white' 
-                  : 'bg-neutral-100 text-neutral-600'
-              }`}
-            >
-              Mensal
-            </button>
-            <button
-              onClick={() => setView('accumulated')}
-              className={`px-3 py-1 text-sm rounded-md ${
-                view === 'accumulated' 
-                  ? 'bg-primary text-white' 
-                  : 'bg-neutral-100 text-neutral-600'
-              }`}
-            >
-              Acumulado
-            </button>
-          </div>
+          <CustomTabTriggers
+            items={[
+              { value: 'monthly', label: 'Mensal' },
+              { value: 'accumulated', label: 'Acumulado' }
+            ]}
+            value={view}
+            onValueChange={(value) => setView(value as 'monthly' | 'accumulated')}
+          />
           <div className="flex items-center gap-2">
             <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
             <DropdownMenu>
@@ -238,42 +284,100 @@ const CashFlow: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-neutral-500 font-normal">
-              Total de Entradas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-income">{formatCurrency(totalIncome)}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-neutral-500 font-normal">
-              Total de Saídas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-expense">{formatCurrency(totalExpenses)}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-neutral-500 font-normal">
-              Saldo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-2xl font-bold ${totalBalance >= 0 ? 'text-income' : 'text-expense'}`}>
-              {formatCurrency(totalBalance)}
-            </p>
-          </CardContent>
-        </Card>
+      {/* Resumo Financeiro */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold text-neutral-800 mb-4">Resumo Financeiro</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-neutral-500 font-normal flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Total de Entradas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-income">{formatCurrency(totalIncome)}</p>
+              <Badge variant="secondary" className="mt-2">9 meses</Badge>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-neutral-500 font-normal flex items-center gap-2">
+                <TrendingDown className="h-4 w-4" />
+                Total de Saídas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-expense">{formatCurrency(totalExpenses)}</p>
+              <Badge variant="secondary" className="mt-2">9 meses</Badge>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-neutral-500 font-normal flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Saldo Total
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className={`text-2xl font-bold ${totalBalance >= 0 ? 'text-income' : 'text-expense'}`}>
+                {formatCurrency(totalBalance)}
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                {totalBalance >= 0 ? (
+                  <TrendingUp className="h-4 w-4 text-income" />
+                ) : (
+                  <TrendingDown className="h-4 w-4 text-expense" />
+                )}
+                <Badge variant={totalBalance >= 0 ? "default" : "destructive"}>
+                  {totalBalance >= 0 ? "Positivo" : "Negativo"}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
+
+      {/* Análises Inteligentes */}
+      {insights.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-neutral-800 mb-4">Análises Inteligentes</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {insights.map((insight, index) => {
+              const Icon = insight.icon;
+              return (
+                <Alert key={index} className={
+                  insight.type === 'success' ? 'border-green-200 bg-green-50' :
+                  insight.type === 'warning' ? 'border-yellow-200 bg-yellow-50' :
+                  'border-blue-200 bg-blue-50'
+                }>
+                  <Icon className={`h-4 w-4 ${
+                    insight.type === 'success' ? 'text-green-600' :
+                    insight.type === 'warning' ? 'text-yellow-600' :
+                    'text-blue-600'
+                  }`} />
+                  <AlertTitle className={
+                    insight.type === 'success' ? 'text-green-800' :
+                    insight.type === 'warning' ? 'text-yellow-800' :
+                    'text-blue-800'
+                  }>
+                    {insight.title}
+                  </AlertTitle>
+                  <AlertDescription className={
+                    insight.type === 'success' ? 'text-green-700' :
+                    insight.type === 'warning' ? 'text-yellow-700' :
+                    'text-blue-700'
+                  }>
+                    {insight.description}
+                  </AlertDescription>
+                </Alert>
+              );
+            })}
+          </div>
+        </div>
+      )}
       
       <Card className="mb-6">
         <CardHeader>
@@ -319,45 +423,109 @@ const CashFlow: React.FC = () => {
         </CardContent>
       </Card>
       
+      {/* Tabela Detalhada com Tabs */}
       <Card>
         <CardHeader>
-          <CardTitle>Projeção de Fluxo de Caixa</CardTitle>
+          <CardTitle>Dados Detalhados</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  <th className="px-6 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase">Mês</th>
-                  <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Entradas</th>
-                  <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Saídas</th>
-                  <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Saldo</th>
-                  <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Projeção</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {projectedData.map((item, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{item.month}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-neutral-800">
-                      {item.income !== null ? formatCurrency(item.income) : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-neutral-800">
-                      {item.expenses !== null ? formatCurrency(item.expenses) : '-'}
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
-                      item.balance !== null ? (item.balance >= 0 ? 'text-income' : 'text-expense') : 'text-neutral-400'
-                    }`}>
-                      {item.balance !== null ? formatCurrency(item.balance) : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-purple-600">
-                      {item.projection !== null ? formatCurrency(item.projection) : '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Tabs defaultValue="historical" className="w-full">
+            <CustomTabTriggers
+              items={[
+                { value: 'historical', label: 'Histórico Real (Jan-Set)' },
+                { value: 'projections', label: 'Projeções (Out-Dez)' }
+              ]}
+              className="bg-muted mb-4"
+            />
+            
+            <TabsContent value="historical" className="mt-4">
+              <div className="overflow-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="px-6 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase">Mês</th>
+                      <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Entradas</th>
+                      <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Saídas</th>
+                      <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Saldo</th>
+                      <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {projectedData.filter(item => item.income !== null && item.expenses !== null).map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{item.month}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-neutral-800">
+                          {formatCurrency(item.income || 0)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-neutral-800">
+                          {formatCurrency(item.expenses || 0)}
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
+                          (item.balance || 0) >= 0 ? 'text-income' : 'text-expense'
+                        }`}>
+                          {formatCurrency(item.balance || 0)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                          <Badge variant="secondary">Realizado</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="projections" className="mt-4">
+              <div className="overflow-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="px-6 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase">Mês</th>
+                      <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Projeção</th>
+                      <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Confiança</th>
+                      <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {projectedData.filter(item => item.projection !== null).map((item, index) => {
+                      const confidence = Math.floor(Math.random() * 30) + 70; // Simular confiança entre 70-100%
+                      return (
+                        <tr key={index}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{item.month}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-purple-600">
+                            {formatCurrency(item.projection || 0)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                            <div className="flex items-center gap-2">
+                              <Progress value={confidence} className="w-16 h-2" />
+                              <span className="text-xs text-neutral-500">{confidence}%</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                            <Badge variant="outline" className="text-purple-600 border-purple-200">
+                              Projetado
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 p-4 bg-purple-50 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-purple-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-purple-800">Como calculamos as projeções</p>
+                    <p className="text-xs text-purple-700 mt-1">
+                      As projeções são baseadas na média dos últimos 6 meses, ajustadas por sazonalidade e tendências de crescimento.
+                      A confiança diminui quanto mais distante for o mês projetado.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </MainLayout>

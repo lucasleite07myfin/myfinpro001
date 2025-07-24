@@ -875,6 +875,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   const value = {
     transactions,
     addTransaction,
+    editTransaction: updateTransaction, // Alias para compatibilidade
     updateTransaction,
     deleteTransaction,
     recurringExpenses,

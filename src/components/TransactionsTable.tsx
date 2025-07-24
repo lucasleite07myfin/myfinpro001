@@ -30,6 +30,11 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   type = 'all',
   renderBadge 
 }) => {
+  const handleEditClick = (transaction: Transaction) => {
+    if (onEdit) {
+      onEdit(transaction);
+    }
+  };
   // No transactions message based on type
   const getEmptyMessage = () => {
     switch (type) {
@@ -108,7 +113,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                   <div className="flex justify-end space-x-2">
                     {onEdit && !transaction.isRecurringPayment && (
                       <Button
-                        onClick={() => onEdit(transaction)}
+                        onClick={() => handleEditClick(transaction)}
                         variant="ghost"
                         size="icon"
                       >
@@ -134,6 +139,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
           )}
         </TableBody>
       </Table>
+
     </div>
   );
 };

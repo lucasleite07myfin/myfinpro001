@@ -4,6 +4,9 @@ export interface CryptoCoin {
   id: string;
   symbol: string;
   name: string;
+  current_price?: number;
+  price_change_24h?: number;
+  market_cap_rank?: number;
 }
 
 export const useCryptoList = () => {
@@ -16,9 +19,9 @@ export const useCryptoList = () => {
     setError(null);
     
     try {
-      // Buscar as top 1000 criptomoedas da CoinGecko
+      // Buscar as top 1000 criptomoedas da CoinGecko com preços em BRL
       const response = await fetch(
-        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=1000&page=1&sparkline=false&locale=en'
+        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=brl&order=market_cap_desc&per_page=1000&page=1&sparkline=false&locale=en&price_change_percentage=24h'
       );
       
       if (!response.ok) {
@@ -31,6 +34,9 @@ export const useCryptoList = () => {
         id: coin.id,
         symbol: coin.symbol.toUpperCase(),
         name: coin.name,
+        current_price: coin.current_price,
+        price_change_24h: coin.price_change_percentage_24h,
+        market_cap_rank: coin.market_cap_rank,
       }));
       
       setCoins(formattedCoins);

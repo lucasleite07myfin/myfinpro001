@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
@@ -8,8 +7,12 @@ import TransactionsTable from '@/components/TransactionsTable';
 import MonthSelector from '@/components/MonthSelector';
 import AddTransactionModal from '@/components/AddTransactionModal';
 import { formatCurrency } from '@/utils/formatters';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { 
   Select, 
   SelectContent, 
@@ -20,13 +23,28 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { FileText, FileSpreadsheet, ChevronDown } from 'lucide-react';
+import { 
+  FileText, 
+  FileSpreadsheet, 
+  ChevronDown, 
+  TrendingUp, 
+  DollarSign, 
+  Calendar,
+  Search,
+  Filter,
+  Download,
+  Plus,
+  BarChart3,
+  Trash2
+} from 'lucide-react';
 import { INCOME_CATEGORIES, FinanceContextType, BusinessContextType, Transaction } from '@/types/finance';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -38,6 +56,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { TooltipProvider } from '@/components/ui/tooltip';
+import TooltipHelper from '@/components/TooltipHelper';
 
 const Incomes: React.FC = () => {
   const { mode } = useAppMode();
@@ -51,6 +79,8 @@ const Incomes: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Get all income categories including custom ones
   const getAllIncomeCategories = () => {
@@ -91,6 +121,14 @@ const Incomes: React.FC = () => {
   // Calculate total income for the month
   const totalIncome = currentMonthIncomes.reduce((sum, t) => sum + t.amount, 0);
 
+  // Calculate statistics
+  const stats = {
+    totalTransactions: currentMonthIncomes.length,
+    averageTransaction: currentMonthIncomes.length > 0 ? totalIncome / currentMonthIncomes.length : 0,
+    categoriesCount: new Set(currentMonthIncomes.map(t => t.category)).size,
+    highestTransaction: currentMonthIncomes.length > 0 ? Math.max(...currentMonthIncomes.map(t => t.amount)) : 0,
+  };
+
   const handleDeleteTransaction = (id: string) => {
     setTransactionToDelete(id);
     setDeleteDialogOpen(true);
@@ -102,7 +140,6 @@ const Incomes: React.FC = () => {
       toast({
         title: "Sucesso",
         description: "Receita excluída com sucesso!",
-        variant: "success"
       });
     }
     setDeleteDialogOpen(false);
@@ -119,19 +156,8 @@ const Incomes: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateTransaction = (updatedTransaction: Omit<Transaction, 'id'>) => {
-    if (editingTransaction) {
-      const fullTransaction = { ...updatedTransaction, id: editingTransaction.id };
-      // Use editTransaction which exists in the context
-      if ('editTransaction' in financeContext) {
-        financeContext.editTransaction(fullTransaction);
-      }
-      setIsEditModalOpen(false);
-      setEditingTransaction(null);
-    }
-  };
-
   const exportToCSV = () => {
+    setIsLoading(true);
     // Preparar dados para exportação
     const csvHeader = 'Data,Descrição,Categoria,Valor\n';
     const csvData = currentMonthIncomes.map(income => {
@@ -156,11 +182,12 @@ const Incomes: React.FC = () => {
     toast({
       title: "Sucesso",
       description: "Arquivo CSV exportado com sucesso!",
-      variant: "default"
     });
+    setIsLoading(false);
   };
 
   const exportToExcel = () => {
+    setIsLoading(true);
     // Preparar os dados para exportação
     let excelContent = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
     excelContent += '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Receitas</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
@@ -194,11 +221,12 @@ const Incomes: React.FC = () => {
     toast({
       title: "Sucesso",
       description: "Arquivo Excel exportado com sucesso!",
-      variant: "default"
     });
+    setIsLoading(false);
   };
 
   const exportToPDF = () => {
+    setIsLoading(true);
     // Criar uma tabela HTML que será convertida para PDF
     let pdfContent = `
       <html>
@@ -264,8 +292,8 @@ const Incomes: React.FC = () => {
     toast({
       title: "Sucesso",
       description: "Arquivo PDF exportado com sucesso! (HTML formatado para impressão)",
-      variant: "default"
     });
+    setIsLoading(false);
   };
 
   // Get all categories for the filter dropdown
@@ -273,109 +301,290 @@ const Incomes: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="mb-4 md:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white">Receitas</h1>
-        <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
-      </div>
+      <TooltipProvider>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
+                <TrendingUp className="h-6 w-6 text-[#EE680D]" />
+                Receitas
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Gerencie e acompanhe suas receitas mensais
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
+              <TooltipHelper content="Adicionar nova receita">
+                <Button 
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="flex items-center gap-2 bg-[#EE680D] hover:bg-[#EE680D]/90"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nova Receita
+                </Button>
+              </TooltipHelper>
+            </div>
+          </div>
 
-      <Card className="p-3 md:p-4 mb-4 md:mb-6 bg-neutral-50 dark:bg-card border border-neutral-200 dark:border-border/50">
-        <h2 className="text-base md:text-lg font-semibold text-neutral-700 dark:text-white mb-1 md:mb-2">Total de Receitas</h2>
-        <p className="text-xl md:text-2xl font-bold text-income-force">{formatCurrency(totalIncome)}</p>
-      </Card>
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <DollarSign className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total do Mês</p>
+                    <p className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Transações</p>
+                    <p className="text-2xl font-bold">{stats.totalTransactions}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Média por Transação</p>
+                    <p className="text-2xl font-bold">{formatCurrency(stats.averageTransaction)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Calendar className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Categorias Ativas</p>
+                    <p className="text-2xl font-bold">{stats.categoriesCount}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      <div className="flex flex-col md:flex-row gap-3 mb-4 md:mb-6">
-        <div className="flex-1">
-          <Input
-            placeholder="Buscar por descrição..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          {/* Filters and Actions */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filtros e Ações
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por descrição..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="w-full md:w-64">
+                  <Select value={filterCategory} onValueChange={setFilterCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filtrar por categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">Todas</Badge>
+                          <span>Todas as categorias</span>
+                        </div>
+                      </SelectItem>
+                      <Separator />
+                      {allCategories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">{category.startsWith('Outros: ') ? 'Custom' : 'Padrão'}</Badge>
+                            <span>{category.startsWith('Outros: ') ? category.substring(7) : category}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" disabled={isLoading} className="w-full md:w-auto">
+                      <Download className="mr-2 h-4 w-4" />
+                      Exportar 
+                      <ChevronDown className="ml-1 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Formatos de Exportação</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={exportToCSV} className="cursor-pointer">
+                      <FileText className="mr-2 h-4 w-4" />
+                      <span>Exportar CSV</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={exportToExcel} className="cursor-pointer">
+                      <FileSpreadsheet className="mr-2 h-4 w-4" />
+                      <span>Exportar Excel</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={exportToPDF} className="cursor-pointer">
+                      <FileText className="mr-2 h-4 w-4" />
+                      <span>Exportar PDF</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              
+              {/* Active Filters */}
+              {(filterCategory !== 'all' || searchTerm) && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm text-muted-foreground">Filtros ativos:</span>
+                  {filterCategory !== 'all' && (
+                    <Badge variant="secondary" className="gap-1">
+                      Categoria: {filterCategory.startsWith('Outros: ') ? filterCategory.substring(7) : filterCategory}
+                      <button 
+                        onClick={() => setFilterCategory('all')}
+                        className="ml-1 hover:bg-muted rounded-full"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
+                  {searchTerm && (
+                    <Badge variant="secondary" className="gap-1">
+                      Busca: "{searchTerm}"
+                      <button 
+                        onClick={() => setSearchTerm('')}
+                        className="ml-1 hover:bg-muted rounded-full"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Transactions Table */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg">
+                  Transações do Mês
+                  <Badge variant="outline" className="ml-2">
+                    {currentMonthIncomes.length} {currentMonthIncomes.length === 1 ? 'item' : 'itens'}
+                  </Badge>
+                </CardTitle>
+                {stats.highestTransaction > 0 && (
+                  <Badge variant="secondary">
+                    Maior: {formatCurrency(stats.highestTransaction)}
+                  </Badge>
+                )}
+              </div>
+              <CardDescription>
+                Visualize e gerencie todas as suas receitas do período selecionado
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[600px]">
+                {isLoading ? (
+                  <div className="p-6 space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex items-center space-x-4">
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-[250px]" />
+                          <Skeleton className="h-4 w-[200px]" />
+                        </div>
+                        <Skeleton className="h-4 w-[100px]" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <TransactionsTable 
+                    transactions={currentMonthIncomes} 
+                    onDelete={handleDeleteTransaction}
+                    onEdit={handleEditTransaction}
+                    type="income"
+                  />
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
-        <div className="w-full md:w-48">
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filtrar por categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as categorias</SelectItem>
-              {allCategories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category.startsWith('Outros: ') ? category.substring(7) : category}
-                </SelectItem>
-              ))}
-              {customCategories?.income?.map((category) => (
-                category.startsWith('Outros: ') && (
-                  <SelectItem key={category} value={category}>
-                    {category.substring(7)}
-                  </SelectItem>
-                )
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="default" className="w-full md:w-auto">
-              Exportar <ChevronDown className="ml-1 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={exportToCSV} className="cursor-pointer">
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Exportar CSV</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={exportToExcel} className="cursor-pointer">
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              <span>Exportar Excel</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={exportToPDF} className="cursor-pointer">
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Exportar PDF</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
 
-      <TransactionsTable 
-        transactions={currentMonthIncomes} 
-        onDelete={handleDeleteTransaction}
-        onEdit={handleEditTransaction}
-        type="income"
-      />
+        {/* Modal de adição */}
+        <AddTransactionModal
+          open={isAddModalOpen}
+          onOpenChange={setIsAddModalOpen}
+          mode="add"
+        />
 
-      {/* Modal de edição */}
-      <AddTransactionModal
-        open={isEditModalOpen}
-        onOpenChange={(open) => {
-          setIsEditModalOpen(open);
-          if (!open) {
-            setEditingTransaction(null);
-          }
-        }}
-        initialData={editingTransaction || undefined}
-        mode={editingTransaction ? 'edit' : 'add'}
-      />
+        {/* Modal de edição */}
+        <AddTransactionModal
+          open={isEditModalOpen}
+          onOpenChange={(open) => {
+            setIsEditModalOpen(open);
+            if (!open) {
+              setEditingTransaction(null);
+            }
+          }}
+          initialData={editingTransaction || undefined}
+          mode={editingTransaction ? 'edit' : 'add'}
+        />
 
-      {/* Alert Dialog de confirmação de exclusão */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir esta <strong>Receita</strong>? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelDelete}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Alert Dialog de confirmação de exclusão */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-destructive" />
+                Excluir Receita
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir esta receita?
+                <br />
+                <span className="text-sm text-muted-foreground mt-2 block">
+                  Esta ação não pode ser desfeita. Todos os dados relacionados a esta receita serão perdidos permanentemente.
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={cancelDelete}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDelete}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                Excluir Receita
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+      </TooltipProvider>
     </MainLayout>
   );
 };

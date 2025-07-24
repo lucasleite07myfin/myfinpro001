@@ -132,7 +132,7 @@ export interface BusinessContextType {
   transactions: Transaction[];
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   deleteTransaction: (id: string) => void;
-  editTransaction?: (transaction: Transaction) => void;
+  editTransaction: (transaction: Transaction) => void;
   
   recurringExpenses: RecurringExpense[];
   addRecurringExpense: (expense: Omit<RecurringExpense, 'id' | 'createdAt' | 'isPaid' | 'paidMonths'>) => void;

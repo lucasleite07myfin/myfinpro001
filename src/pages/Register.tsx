@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CustomTabTriggers } from '@/components/ui/custom-tabs';
 import { toast } from '@/hooks/use-toast';
 import { validateCPF, validateCNPJ } from '@/utils/documentValidator';
 
@@ -137,12 +138,15 @@ const Register = () => {
         </CardHeader>
         
         <CardContent>
-          <Tabs value={userType} onValueChange={(v) => setUserType(v as 'personal' | 'business')} className="mb-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="personal">Pessoa Física</TabsTrigger>
-              <TabsTrigger value="business">Pessoa Jurídica</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <CustomTabTriggers
+            items={[
+              { value: 'personal', label: 'Pessoa Física' },
+              { value: 'business', label: 'Pessoa Jurídica' }
+            ]}
+            value={userType}
+            onValueChange={(v) => setUserType(v as 'personal' | 'business')}
+            className="grid w-full grid-cols-2 mb-6"
+          />
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
@@ -6,9 +5,14 @@ import { useAppMode } from '@/contexts/AppModeContext';
 import MainLayout from '@/components/MainLayout';
 import TransactionsTable from '@/components/TransactionsTable';
 import MonthSelector from '@/components/MonthSelector';
+import AddTransactionModal from '@/components/AddTransactionModal';
 import { formatCurrency } from '@/utils/formatters';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { 
   Select, 
   SelectContent, 
@@ -18,15 +22,33 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Badge } from "@/components/ui/badge";
-import { EXPENSE_CATEGORIES, FinanceContextType, BusinessContextType } from '@/types/finance';
 import { toast } from '@/components/ui/use-toast';
-import { Target, TrendingUp, FileText, FileSpreadsheet, ChevronDown, Clock } from 'lucide-react';
+import { 
+  FileText, 
+  FileSpreadsheet, 
+  ChevronDown, 
+  TrendingDown, 
+  DollarSign, 
+  Calendar,
+  Search,
+  Filter,
+  Download,
+  Plus,
+  BarChart3,
+  Target,
+  TrendingUp,
+  Clock,
+  CreditCard,
+  Trash2
+} from 'lucide-react';
+import { EXPENSE_CATEGORIES, FinanceContextType, BusinessContextType, Transaction } from '@/types/finance';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -38,6 +60,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { TooltipProvider } from '@/components/ui/tooltip';
+import TooltipHelper from '@/components/TooltipHelper';
 
 const Expenses: React.FC = () => {
   const { mode } = useAppMode();
@@ -50,10 +82,12 @@ const Expenses: React.FC = () => {
   const [showSpecialTransactions, setShowSpecialTransactions] = useState<
     'all' | 'goals' | 'investments' | 'recurring' | 'regular'
   >('all');
-  
-  // Estados para controle do AlertDialog de confirmação
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<{ id: string; message: string } | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Get all expense categories including custom ones
   const getAllExpenseCategories = () => {
@@ -61,16 +95,16 @@ const Expenses: React.FC = () => {
     return [...userCustomCategories, ...EXPENSE_CATEGORIES.filter(cat => cat !== 'Outros')];
   };
   
-  // Filtrar apenas despesas
+  // Filter only expense transactions
   const expenseTransactions = transactions.filter(t => t.type === 'expense');
   
-  // Filtrar despesas do mês atual
+  // Filter expense transactions for current month
   let currentMonthExpenses = expenseTransactions.filter(t => {
     const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
     return transactionMonth === currentMonth;
   });
 
-  // Aplicar filtro por categoria, se selecionado
+  // Apply filter by category, if selected
   if (filterCategory && filterCategory !== 'all') {
     currentMonthExpenses = currentMonthExpenses.filter(t => {
       // Handle both regular categories and 'Outros: X' categories
@@ -84,14 +118,14 @@ const Expenses: React.FC = () => {
     });
   }
 
-  // Aplicar filtro por termo de busca
+  // Apply filter by search term
   if (searchTerm) {
     currentMonthExpenses = currentMonthExpenses.filter(t => 
       t.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }
 
-  // Aplicar filtro por tipo de transação especial
+  // Apply filter by special transaction type
   if (showSpecialTransactions === 'goals') {
     currentMonthExpenses = currentMonthExpenses.filter(t => t.isGoalContribution);
   } else if (showSpecialTransactions === 'investments') {
@@ -104,8 +138,19 @@ const Expenses: React.FC = () => {
     );
   }
 
-  // Calcular total de despesas filtradas
+  // Calculate total expense for the month
   const totalExpense = currentMonthExpenses.reduce((sum, t) => sum + t.amount, 0);
+
+  // Calculate statistics
+  const stats = {
+    totalTransactions: currentMonthExpenses.length,
+    averageTransaction: currentMonthExpenses.length > 0 ? totalExpense / currentMonthExpenses.length : 0,
+    categoriesCount: new Set(currentMonthExpenses.map(t => t.category)).size,
+    highestTransaction: currentMonthExpenses.length > 0 ? Math.max(...currentMonthExpenses.map(t => t.amount)) : 0,
+    goalContributions: currentMonthExpenses.filter(t => t.isGoalContribution).length,
+    investments: currentMonthExpenses.filter(t => t.isInvestmentContribution).length,
+    recurringPayments: currentMonthExpenses.filter(t => t.isRecurringPayment).length,
+  };
 
   const handleDeleteTransaction = (id: string) => {
     const transaction = transactions.find(t => t.id === id);
@@ -126,7 +171,7 @@ const Expenses: React.FC = () => {
     setTransactionToDelete({ id, message: confirmMessage });
     setDeleteDialogOpen(true);
   };
-  
+
   const confirmDelete = () => {
     if (!transactionToDelete) return;
     
@@ -148,24 +193,36 @@ const Expenses: React.FC = () => {
     // Delete the transaction
     deleteTransaction(transactionToDelete.id);
     
+    toast({
+      title: "Sucesso",
+      description: "Despesa excluída com sucesso!",
+    });
+    
     // Reset state
     setDeleteDialogOpen(false);
     setTransactionToDelete(null);
   };
-  
+
   const cancelDelete = () => {
     setDeleteDialogOpen(false);
     setTransactionToDelete(null);
   };
 
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsEditModalOpen(true);
+  };
+
   const exportToCSV = () => {
+    setIsLoading(true);
     // Preparar dados para exportação
     const csvHeader = 'Data,Descrição,Categoria,Valor,Forma de Pagamento,Tipo\n';
     const csvData = currentMonthExpenses.map(expense => {
       const date = expense.date.toLocaleDateString('pt-BR');
       const amount = expense.amount.toFixed(2).replace('.', ',');
       const type = expense.isGoalContribution ? 'Contribuição para Meta' : 
-                  expense.isInvestmentContribution ? 'Investimento' : 'Despesa Regular';
+                  expense.isInvestmentContribution ? 'Investimento' : 
+                  expense.isRecurringPayment ? 'Despesa Fixa' : 'Despesa Regular';
       return `${date},"${expense.description}",${expense.category},${amount},${expense.paymentMethod || 'N/A'},${type}`;
     }).join('\n');
     
@@ -185,11 +242,12 @@ const Expenses: React.FC = () => {
     toast({
       title: "Sucesso",
       description: "Arquivo CSV exportado com sucesso!",
-      variant: "default"
     });
+    setIsLoading(false);
   };
 
   const exportToExcel = () => {
+    setIsLoading(true);
     // Preparar os dados para exportação
     let excelContent = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
     excelContent += '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Despesas</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
@@ -201,7 +259,8 @@ const Expenses: React.FC = () => {
       const date = expense.date.toLocaleDateString('pt-BR');
       const amount = expense.amount.toFixed(2).replace('.', ',');
       const type = expense.isGoalContribution ? 'Contribuição para Meta' : 
-                expense.isInvestmentContribution ? 'Investimento' : 'Despesa Regular';
+                expense.isInvestmentContribution ? 'Investimento' : 
+                expense.isRecurringPayment ? 'Despesa Fixa' : 'Despesa Regular';
       
       excelContent += `<tr>`;
       excelContent += `<td>${date}</td>`;
@@ -227,11 +286,12 @@ const Expenses: React.FC = () => {
     toast({
       title: "Sucesso",
       description: "Arquivo Excel exportado com sucesso!",
-      variant: "default"
     });
+    setIsLoading(false);
   };
 
   const exportToPDF = () => {
+    setIsLoading(true);
     // Criar uma tabela HTML que será convertida para PDF
     let pdfContent = `
       <html>
@@ -264,7 +324,8 @@ const Expenses: React.FC = () => {
       const date = expense.date.toLocaleDateString('pt-BR');
       const amount = formatCurrency(expense.amount);
       const type = expense.isGoalContribution ? 'Contribuição para Meta' : 
-                expense.isInvestmentContribution ? 'Investimento' : 'Despesa Regular';
+                expense.isInvestmentContribution ? 'Investimento' : 
+                expense.isRecurringPayment ? 'Despesa Fixa' : 'Despesa Regular';
       
       pdfContent += `
         <tr>
@@ -304,8 +365,8 @@ const Expenses: React.FC = () => {
     toast({
       title: "Sucesso",
       description: "Arquivo PDF exportado com sucesso! (HTML formatado para impressão)",
-      variant: "default"
     });
+    setIsLoading(false);
   };
 
   // Helper function to render a transaction badge based on its type
@@ -340,110 +401,389 @@ const Expenses: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="mb-4 md:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white">Despesas</h1>
-        <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
-      </div>
+      <TooltipProvider>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
+                <TrendingDown className="h-6 w-6 text-red-500" />
+                Despesas
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Gerencie e acompanhe suas despesas mensais
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
+              <TooltipHelper content="Adicionar nova despesa">
+                <Button 
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="flex items-center gap-2 bg-red-500 hover:bg-red-600"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nova Despesa
+                </Button>
+              </TooltipHelper>
+            </div>
+          </div>
 
-      <Card className="p-3 md:p-4 mb-4 md:mb-6 bg-neutral-50 dark:bg-card border border-neutral-200 dark:border-border/50">
-        <h2 className="text-base md:text-lg font-semibold text-neutral-700 dark:text-white mb-1 md:mb-2">Total de Despesas</h2>
-        <p className="text-xl md:text-2xl font-bold text-expense-force">{formatCurrency(totalExpense)}</p>
-      </Card>
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-100 rounded-lg">
+                    <DollarSign className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total do Mês</p>
+                    <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpense)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Transações</p>
+                    <p className="text-2xl font-bold">{stats.totalTransactions}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <TrendingDown className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Média por Transação</p>
+                    <p className="text-2xl font-bold">{formatCurrency(stats.averageTransaction)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Calendar className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Categorias Ativas</p>
+                    <p className="text-2xl font-bold">{stats.categoriesCount}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      <div className="flex flex-col md:flex-row gap-3 mb-4 md:mb-6">
-        <div className="flex-1">
-          <Input
-            placeholder="Buscar por descrição..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="w-full md:w-48">
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filtrar por categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as categorias</SelectItem>
-              {allCategories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category.startsWith('Outros: ') ? category.substring(7) : category}
-                </SelectItem>
-              ))}
-              {customCategories?.expense?.map((category) => (
-                category.startsWith('Outros: ') && (
-                  <SelectItem key={category} value={category}>
-                    {category.substring(7)}
-                  </SelectItem>
-                )
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="w-full md:w-48">
-          <Select value={showSpecialTransactions} onValueChange={(value) => setShowSpecialTransactions(value as any)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filtrar por tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os tipos</SelectItem>
-              <SelectItem value="goals">Apenas contribuições para metas</SelectItem>
-              <SelectItem value="investments">Apenas investimentos</SelectItem>
-              <SelectItem value="recurring">Apenas despesas fixas</SelectItem>
-              <SelectItem value="regular">Apenas despesas regulares</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="default" className="w-full md:w-auto">
-              Exportar <ChevronDown className="ml-1 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={exportToCSV} className="cursor-pointer">
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Exportar CSV</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={exportToExcel} className="cursor-pointer">
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              <span>Exportar Excel</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={exportToPDF} className="cursor-pointer">
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Exportar PDF</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+          {/* Special Transactions Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Target className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Contribuições para Metas</p>
+                    <p className="text-xl font-bold">{stats.goalContributions}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-100 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Investimentos</p>
+                    <p className="text-xl font-bold">{stats.investments}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg">
+                    <Clock className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Despesas Fixas</p>
+                    <p className="text-xl font-bold">{stats.recurringPayments}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      <TransactionsTable 
-        transactions={currentMonthExpenses} 
-        onDelete={handleDeleteTransaction}
-        type="expense"
-        renderBadge={renderTransactionBadge}
-      />
-      
-      {/* Alert Dialog de confirmação de exclusão */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              {transactionToDelete?.message}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelDelete}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          {/* Filters and Actions */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filtros e Ações
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por descrição..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="w-full md:w-64">
+                  <Select value={filterCategory} onValueChange={setFilterCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filtrar por categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">Todas</Badge>
+                          <span>Todas as categorias</span>
+                        </div>
+                      </SelectItem>
+                      <Separator />
+                      {allCategories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">{category.startsWith('Outros: ') ? 'Custom' : 'Padrão'}</Badge>
+                            <span>{category.startsWith('Outros: ') ? category.substring(7) : category}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-full md:w-64">
+                  <Select value={showSpecialTransactions} onValueChange={(value) => setShowSpecialTransactions(value as any)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filtrar por tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">Todos</Badge>
+                          <span>Todos os tipos</span>
+                        </div>
+                      </SelectItem>
+                      <Separator />
+                      <SelectItem value="goals">
+                        <div className="flex items-center gap-2">
+                          <Target className="h-4 w-4" />
+                          <span>Contribuições para metas</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="investments">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4" />
+                          <span>Investimentos</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="recurring">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span>Despesas fixas</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="regular">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-4 w-4" />
+                          <span>Despesas regulares</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" disabled={isLoading} className="w-full md:w-auto">
+                      <Download className="mr-2 h-4 w-4" />
+                      Exportar 
+                      <ChevronDown className="ml-1 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Formatos de Exportação</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={exportToCSV} className="cursor-pointer">
+                      <FileText className="mr-2 h-4 w-4" />
+                      <span>Exportar CSV</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={exportToExcel} className="cursor-pointer">
+                      <FileSpreadsheet className="mr-2 h-4 w-4" />
+                      <span>Exportar Excel</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={exportToPDF} className="cursor-pointer">
+                      <FileText className="mr-2 h-4 w-4" />
+                      <span>Exportar PDF</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              
+              {/* Active Filters */}
+              {(filterCategory !== 'all' || searchTerm || showSpecialTransactions !== 'all') && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm text-muted-foreground">Filtros ativos:</span>
+                  {filterCategory !== 'all' && (
+                    <Badge variant="secondary" className="gap-1">
+                      Categoria: {filterCategory.startsWith('Outros: ') ? filterCategory.substring(7) : filterCategory}
+                      <button 
+                        onClick={() => setFilterCategory('all')}
+                        className="ml-1 hover:bg-muted rounded-full"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
+                  {searchTerm && (
+                    <Badge variant="secondary" className="gap-1">
+                      Busca: "{searchTerm}"
+                      <button 
+                        onClick={() => setSearchTerm('')}
+                        className="ml-1 hover:bg-muted rounded-full"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
+                  {showSpecialTransactions !== 'all' && (
+                    <Badge variant="secondary" className="gap-1">
+                      Tipo: {showSpecialTransactions === 'goals' ? 'Metas' : 
+                             showSpecialTransactions === 'investments' ? 'Investimentos' :
+                             showSpecialTransactions === 'recurring' ? 'Despesas Fixas' : 'Regulares'}
+                      <button 
+                        onClick={() => setShowSpecialTransactions('all')}
+                        className="ml-1 hover:bg-muted rounded-full"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Transactions Table */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg">
+                  Transações do Mês
+                  <Badge variant="outline" className="ml-2">
+                    {currentMonthExpenses.length} {currentMonthExpenses.length === 1 ? 'item' : 'itens'}
+                  </Badge>
+                </CardTitle>
+                {stats.highestTransaction > 0 && (
+                  <Badge variant="secondary">
+                    Maior: {formatCurrency(stats.highestTransaction)}
+                  </Badge>
+                )}
+              </div>
+              <CardDescription>
+                Visualize e gerencie todas as suas despesas do período selecionado
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[600px]">
+                {isLoading ? (
+                  <div className="p-6 space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex items-center space-x-4">
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-[250px]" />
+                          <Skeleton className="h-4 w-[200px]" />
+                        </div>
+                        <Skeleton className="h-4 w-[100px]" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <TransactionsTable 
+                    transactions={currentMonthExpenses} 
+                    onDelete={handleDeleteTransaction}
+                    onEdit={handleEditTransaction}
+                    type="expense"
+                    renderBadge={renderTransactionBadge}
+                  />
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Modal de adição */}
+        <AddTransactionModal
+          open={isAddModalOpen}
+          onOpenChange={setIsAddModalOpen}
+          mode="add"
+        />
+
+        {/* Modal de edição */}
+        <AddTransactionModal
+          open={isEditModalOpen}
+          onOpenChange={(open) => {
+            setIsEditModalOpen(open);
+            if (!open) {
+              setEditingTransaction(null);
+            }
+          }}
+          initialData={editingTransaction || undefined}
+          mode={editingTransaction ? 'edit' : 'add'}
+        />
+
+        {/* Alert Dialog de confirmação de exclusão */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-destructive" />
+                Excluir Despesa
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {transactionToDelete?.message}
+                <br />
+                <span className="text-sm text-muted-foreground mt-2 block">
+                  Esta ação não pode ser desfeita. Todos os dados relacionados a esta despesa serão perdidos permanentemente.
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={cancelDelete}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDelete}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                Excluir Despesa
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+      </TooltipProvider>
     </MainLayout>
   );
 };

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { CustomTabTriggers } from '@/components/ui/custom-tabs';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -27,6 +28,9 @@ interface AddTransactionModalProps {
   onOpenChange: (open: boolean) => void;
   initialData?: Transaction;
   mode?: 'add' | 'edit';
+  showEditConfirmation?: boolean;
+  onConfirmEdit?: () => void;
+  onCancelEdit?: () => void;
 }
 
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
@@ -73,6 +77,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   useEffect(() => {
     if (mode === 'edit' && initialData && open) {
+      setActiveTab('transaction'); // Força a aba de transação quando editando
       setTransactionType(initialData.type);
       setDate(initialData.date);
       setDescription(initialData.description);
@@ -151,13 +156,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     };
 
     if (mode === 'edit' && initialData) {
-        if ('editTransaction' in financeContext) {
-            financeContext.editTransaction({ ...transactionData, id: initialData.id });
-            toast({ title: 'Sucesso', description: 'Transação atualizada com sucesso!' });
-        } else {
-            toast({ title: 'Erro', description: 'Função de edição não disponível' });
-            return;
-        }
+        // Cast para o tipo correto que sabemos que tem editTransaction
+        const context = financeContext as FinanceContextType;
+        context.editTransaction({ ...transactionData, id: initialData.id });
+        toast({ title: 'Sucesso', description: 'Transação atualizada com sucesso!' });
     } else {
         if (category === 'Outros' && customCategory.trim() && addCustomCategory) {
             addCustomCategory(transactionType, customCategory.trim());
@@ -227,12 +229,15 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   const renderTransactionForm = () => (
     <>
-      <Tabs value={transactionType} onValueChange={(value) => setTransactionType(value as TransactionType)} className="w-full mb-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="income" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Receita</TabsTrigger>
-          <TabsTrigger value="expense" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Despesa</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <CustomTabTriggers
+        items={[
+          { value: 'income', label: 'Receita' },
+          { value: 'expense', label: 'Despesa' }
+        ]}
+        value={transactionType}
+        onValueChange={(value) => setTransactionType(value as TransactionType)}
+        className="grid w-full grid-cols-2 mb-4"
+      />
       <div className="space-y-4">
         <TooltipHelper content={tooltipContent.modals.fields.date} delayDuration={500}>
           <div className="space-y-2">
@@ -386,12 +391,35 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={mode === 'edit' ? undefined : setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="transaction" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Transação</TabsTrigger>
-              <TabsTrigger value="recurring" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Recorrente</TabsTrigger>
-              <TabsTrigger value="goals" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Metas</TabsTrigger>
-              <TabsTrigger value="invest" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white">Investir</TabsTrigger>
+              <TabsTrigger 
+                value="transaction" 
+                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white"
+              >
+                Transação
+              </TabsTrigger>
+              <TabsTrigger 
+                value="recurring" 
+                disabled={mode === 'edit'}
+                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Recorrente
+              </TabsTrigger>
+              <TabsTrigger 
+                value="goals" 
+                disabled={mode === 'edit'}
+                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Metas
+              </TabsTrigger>
+              <TabsTrigger 
+                value="invest" 
+                disabled={mode === 'edit'}
+                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Investir
+              </TabsTrigger>
             </TabsList>
             
             <form onSubmit={handleSubmit}>

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CustomTabTriggers } from '@/components/ui/custom-tabs';
 import { toast } from '@/hooks/use-toast';
 import { validateCPF, validateCNPJ } from '@/utils/documentValidator';
 
@@ -131,28 +132,16 @@ const Login = () => {
         </CardHeader>
         
         <CardContent>
-          <Tabs value={loginType} onValueChange={(v) => setLoginType(v as 'email' | 'cpf' | 'cnpj')} className="mb-6">
-            <TabsList className="grid w-full grid-cols-3 bg-gray-100">
-              <TabsTrigger 
-                value="email" 
-                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white"
-              >
-                E-mail
-              </TabsTrigger>
-              <TabsTrigger 
-                value="cpf" 
-                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white"
-              >
-                CPF
-              </TabsTrigger>
-              <TabsTrigger 
-                value="cnpj" 
-                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white"
-              >
-                CNPJ
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <CustomTabTriggers
+            items={[
+              { value: 'email', label: 'E-mail' },
+              { value: 'cpf', label: 'CPF' },
+              { value: 'cnpj', label: 'CNPJ' }
+            ]}
+            value={loginType}
+            onValueChange={(v) => setLoginType(v as 'email' | 'cpf' | 'cnpj')}
+            className="grid w-full grid-cols-3 bg-gray-100 mb-6"
+          />
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

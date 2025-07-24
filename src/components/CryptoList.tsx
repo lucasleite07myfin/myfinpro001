@@ -14,10 +14,9 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Bitcoin, Coins, FileType, Edit, Trash2 } from 'lucide-react';
+import { Bitcoin, Coins, FileType, Edit, Trash2, RefreshCw, Clock, Wifi, WifiOff } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +30,7 @@ import {
 import { useFinance } from '@/contexts/FinanceContext';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusiness } from '@/contexts/BusinessContext';
+import { useCryptoPriceUpdater } from '@/hooks/useCryptoPriceUpdater';
 import { toast } from 'sonner';
 
 interface CryptoListProps {
@@ -41,9 +41,10 @@ interface CryptoListProps {
 const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
   const { mode } = useAppMode();
   const financeContext = mode === 'personal' ? useFinance() : useBusiness();
-  const { deleteAsset } = financeContext;
+  const { deleteAsset, editAsset } = financeContext;
   
   const [showHighValue, setShowHighValue] = useState(false);
+  const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(true);
   
   // Estados para controle do AlertDialog de confirmação
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -53,6 +54,33 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
   const cryptoAssets = useMemo(() => {
     return assets.filter(asset => asset.type === 'Cripto');
   }, [assets]);
+
+  // Hook para atualização automática de preços
+  const handlePriceUpdate = (assetId: string, price: number, change24h: number, lastUpdated: Date) => {
+    const asset = cryptoAssets.find(a => a.id === assetId);
+    if (asset && asset.quantity) {
+      const newTotalValue = asset.quantity * price;
+      editAsset({
+        ...asset,
+        value: newTotalValue,
+        lastPriceBrl: price,
+        lastUpdated: lastUpdated,
+        priceChange24h: change24h // Adicionaremos este campo
+      });
+    }
+  };
+
+  const {
+    isUpdating,
+    lastUpdateTime,
+    error: updateError,
+    manualUpdate,
+    retryCount,
+    maxRetries
+  } = useCryptoPriceUpdater(cryptoAssets, handlePriceUpdate, {
+    updateInterval: 300, // 5 minutos (300 segundos)
+    enabled: autoUpdateEnabled
+  });
   
   // Aplicar filtro de valor alto se ativado
   const filteredCryptos = useMemo(() => {
@@ -66,6 +94,24 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
   const totalCryptoValue = useMemo(() => {
     return cryptoAssets.reduce((sum, asset) => sum + asset.value, 0);
   }, [cryptoAssets]);
+
+  // Função para formatar preço com precisão adequada
+  const formatPriceWithPrecision = (price: number) => {
+    if (price === 0) return formatCurrency(0);
+    if (price < 0.01) {
+      return `R$ ${price.toLocaleString('pt-BR', { 
+        minimumFractionDigits: 6, 
+        maximumFractionDigits: 8 
+      })}`;
+    } else if (price < 1) {
+      return `R$ ${price.toLocaleString('pt-BR', { 
+        minimumFractionDigits: 4, 
+        maximumFractionDigits: 6 
+      })}`;
+    } else {
+      return formatCurrency(price);
+    }
+  };
   
   // Converter dados para CSV/Excel
   const handleExport = () => {
@@ -156,7 +202,7 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
               {formatCurrency(totalCryptoValue)}
             </Badge>
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
             <div className="flex items-center space-x-2">
               <Switch
                 id="high-value-filter"
@@ -167,19 +213,82 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
                 Mostrar apenas acima de R$ 10.000
               </label>
             </div>
-            <Button 
-              size="sm"
-              variant="outline" 
-              onClick={handleExport}
-              className="flex items-center gap-1"
-            >
-              <FileType className="h-4 w-4" />
-              Exportar
-            </Button>
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="auto-update"
+                checked={autoUpdateEnabled}
+                onCheckedChange={setAutoUpdateEnabled}
+              />
+              <label htmlFor="auto-update" className="text-sm flex items-center gap-1">
+                {autoUpdateEnabled ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+                Atualização automática
+              </label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button 
+                size="sm"
+                variant="outline" 
+                onClick={manualUpdate}
+                disabled={isUpdating}
+                className="flex items-center gap-1"
+              >
+                <RefreshCw className={`h-4 w-4 ${isUpdating ? 'animate-spin' : ''}`} />
+                {isUpdating ? 'Atualizando...' : 'Atualizar'}
+              </Button>
+              
+              <Button 
+                size="sm"
+                variant="outline" 
+                onClick={handleExport}
+                className="flex items-center gap-1"
+              >
+                <FileType className="h-4 w-4" />
+                Exportar
+              </Button>
+            </div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
+        {/* Status da atualização */}
+        <div className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            {lastUpdateTime ? (
+              <span>
+                Última atualização: {formatDistanceToNow(lastUpdateTime, { 
+                  addSuffix: true, 
+                  locale: ptBR 
+                })}
+              </span>
+            ) : (
+              <span>Aguardando primeira atualização...</span>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {updateError && retryCount > 0 && (
+              <Badge variant="destructive" className="text-xs">
+                Erro - Tentativa {retryCount}/{maxRetries}
+              </Badge>
+            )}
+            {isUpdating && (
+              <Badge variant="secondary" className="text-xs">
+                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                Atualizando preços...
+              </Badge>
+            )}
+            {autoUpdateEnabled && !isUpdating && (
+              <Badge variant="outline" className="text-xs">
+                <Wifi className="h-3 w-3 mr-1" />
+                Automático (5min)
+              </Badge>
+            )}
+          </div>
+        </div>
+        
         <div className="rounded-md border overflow-hidden">
           <Table>
             <TableHeader>
@@ -217,22 +326,43 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
                       {asset.quantity?.toFixed(8)}
                     </TableCell>
                     <TableCell className="text-right font-mono">
-                      {formatCurrency(asset.lastPriceBrl || 0)}
+                      <div className="flex flex-col items-end">
+                        <span>{formatPriceWithPrecision(asset.lastPriceBrl || 0)}</span>
+                        {(asset as any).priceChange24h !== undefined && (
+                          <span className={`text-xs ${(asset as any).priceChange24h >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {(asset as any).priceChange24h >= 0 ? '+' : ''}
+                            {(asset as any).priceChange24h.toFixed(2)}% (24h)
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right font-mono">
-                      {formatCurrency(asset.value)}
+                      <Badge variant="outline" className="bg-green-50 border-green-200 text-green-800 font-medium">
+                        {formatCurrency(asset.value)}
+                      </Badge>
                     </TableCell>
                     <TableCell>{asset.wallet || '-'}</TableCell>
                     <TableCell>
                       {asset.lastUpdated ? (
-                        <Badge variant="outline" className="font-normal">
-                          Atualizado há {formatDistanceToNow(new Date(asset.lastUpdated), { 
-                            addSuffix: false,
-                            locale: ptBR
-                          })}
-                        </Badge>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="outline" className="font-normal text-xs">
+                            {formatDistanceToNow(new Date(asset.lastUpdated), { 
+                              addSuffix: true,
+                              locale: ptBR
+                            })}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(asset.lastUpdated).toLocaleTimeString('pt-BR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit'
+                            })}
+                          </span>
+                        </div>
                       ) : (
-                        <Badge variant="outline" className="font-normal">Aguardando atualização</Badge>
+                        <Badge variant="outline" className="font-normal text-yellow-600">
+                          Aguardando atualização
+                        </Badge>
                       )}
                     </TableCell>
                     <TableCell>

@@ -206,10 +206,12 @@ const Goals: React.FC = () => {
                           <span className="text-muted-foreground">Progresso</span>
                           <span className="font-medium">{percentage.toFixed(1)}%</span>
                         </div>
-                        <Progress 
-                          value={percentage} 
-                          className="h-3"
-                        />
+                        <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
+                          <div 
+                            className={`h-full transition-all duration-300 ${getProgressColor(percentage)}`}
+                            style={{ width: `${Math.min(100, percentage)}%` }}
+                          />
+                        </div>
                       </div>
                       
                       {/* Financial Details */}
