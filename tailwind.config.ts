@@ -71,6 +71,7 @@ export default {
 				expense: 'hsl(var(--expense))', // Vermelho para despesas
 				'navy-blue': 'hsl(var(--navy-blue))', // Azul marinho para abas ativas
 				'primary-action': 'hsl(var(--primary-action))', // Ação primária
+				orange: 'hsl(var(--orange))', // Laranja para estados ativos
 				neutral: {
 					50: '#f8fafc',
 					100: '#f1f5f9',

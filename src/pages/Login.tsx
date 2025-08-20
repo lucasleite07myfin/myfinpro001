@@ -135,19 +135,19 @@ const Login = () => {
             <TabsList className="grid w-full grid-cols-3 bg-gray-100">
               <TabsTrigger 
                 value="email" 
-                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white"
+                className="data-[state=active]:bg-orange data-[state=active]:text-white"
               >
                 E-mail
               </TabsTrigger>
               <TabsTrigger 
                 value="cpf" 
-                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white"
+                className="data-[state=active]:bg-orange data-[state=active]:text-white"
               >
                 CPF
               </TabsTrigger>
               <TabsTrigger 
                 value="cnpj" 
-                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white"
+                className="data-[state=active]:bg-orange data-[state=active]:text-white"
               >
                 CNPJ
               </TabsTrigger>

@@ -103,6 +103,9 @@
     
     /* Navy blue for tabs */
     --navy-blue: 221 83% 53%;
+    
+    /* Orange color for active states */
+    --orange: 22 95% 49%;
 
     --radius: 0.5rem;
 
