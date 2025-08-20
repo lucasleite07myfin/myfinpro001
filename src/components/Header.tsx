@@ -5,6 +5,7 @@ import { Menu, X, ChartBar, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import ModeToggle from './ModeToggle';
+import BitcoinHeaderButton from './BitcoinHeaderButton';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -102,6 +103,7 @@ const Header: React.FC = () => {
 
             {/* Right side controls */}
             <div className="flex items-center gap-3">
+              <BitcoinHeaderButton />
               <TooltipHelper content={tooltipContent.header.profile}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

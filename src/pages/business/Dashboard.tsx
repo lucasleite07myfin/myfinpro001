@@ -8,7 +8,6 @@ import FinanceChart from '@/components/FinanceChart';
 import { Coins, TrendingDown, Wallet, PiggyBank } from 'lucide-react';
 import TransactionsTable from '@/components/TransactionsTable';
 import RecurringExpensesCard from '@/components/RecurringExpensesCard';
-import BTCNowCard from '@/components/BTCNowCard';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
 
@@ -42,7 +41,6 @@ const BusinessDashboard: React.FC = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-start">
         <h1 className="text-2xl font-bold dark:text-white">Dashboard Empresarial</h1>
-        <BTCNowCard className="w-[280px] h-[100px]" />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -116,7 +114,7 @@ const BusinessDashboard: React.FC = () => {
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4 dark:text-white">Transações Recentes</h2>
+        <h2 className="text-xl font-semibold mb-4 text-[#EE680D]">Transações Recentes</h2>
         <TooltipHelper content={tooltipContent.dashboard.transactionsTable}>
           <TransactionsTable transactions={recentTransactions} />
         </TooltipHelper>

@@ -7,7 +7,6 @@ import FinanceChart from '@/components/FinanceChart';
 import MonthSelector from '@/components/MonthSelector';
 import TransactionsTable from '@/components/TransactionsTable';
 import RecurringExpensesCard from '@/components/RecurringExpensesCard';
-import BTCNowCard from '@/components/BTCNowCard';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
@@ -46,10 +45,7 @@ const Dashboard: React.FC = () => {
       <div>
         <div className="mb-2 md:mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white">Dashboard - Visão Rápida</h1>
-          <div className="flex items-center gap-3">
-            <BTCNowCard className="w-[280px] h-[100px]" />
-            <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
-          </div>
+          <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
         </div>
 
         <div className="mb-4 md:mb-6">
@@ -128,7 +124,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="mb-4 md:mb-6">
-          <h2 className="text-base md:text-lg font-semibold text-neutral-700 dark:text-white mb-3 md:mb-4">Transações Recentes</h2>
+          <h2 className="text-base md:text-lg font-semibold text-[#EE680D] mb-3 md:mb-4">Transações Recentes</h2>
           <TooltipHelper content={tooltipContent.dashboard.transactionsTable}>
             <div>
               {recentTransactions.length === 0 ? (
