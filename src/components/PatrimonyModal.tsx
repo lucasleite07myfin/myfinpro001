@@ -282,7 +282,7 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
                   value={formData.type}
                   onValueChange={(value) => setFormData({ ...formData, type: value })}
                 >
-                  <SelectTrigger id="type" className={`bg-gray-50 border-gray-200 ${errors.type ? 'border-red-500' : ''}`}>
+                  <SelectTrigger id="type" className={`bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D] ${errors.type ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Selecione uma categoria" />
                   </SelectTrigger>
                   <SelectContent>

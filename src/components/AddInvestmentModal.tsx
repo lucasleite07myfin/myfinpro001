@@ -263,7 +263,7 @@ const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
                             value={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                              <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
                                 <SelectValue placeholder="Selecione o tipo" />
                               </SelectTrigger>
                             </FormControl>
@@ -323,20 +323,23 @@ const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
                         render={({ field }) => (
                           <FormItem>
                             <FormControl>
-                              <Input 
-                                id="value"
-                                type="number" 
-                                step="0.01" 
-                                min="0" 
-                                placeholder="R$ 0,00"
-                                className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-lg"
-                                {...field}
-                                onChange={(e) => {
-                                  const value = parseFloat(e.target.value);
-                                  field.onChange(value);
-                                  handleValueChange(value, 'value');
-                                }}
-                              />
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                                <Input 
+                                  id="value"
+                                  type="number" 
+                                  step="0.01" 
+                                  min="0" 
+                                  placeholder="0,00"
+                                  className="text-right bg-gray-50 border-gray-200 pl-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  {...field}
+                                  onChange={(e) => {
+                                    const value = parseFloat(e.target.value);
+                                    field.onChange(value);
+                                    handleValueChange(value, 'value');
+                                  }}
+                                />
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -390,20 +393,23 @@ const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
                         render={({ field }) => (
                           <FormItem>
                             <FormControl>
-                              <Input 
-                                id="installmentValue"
-                                type="number" 
-                                step="0.01" 
-                                min="0"
-                                placeholder="R$ 0,00"
-                                className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-lg"
-                                {...field}
-                                onChange={(e) => {
-                                  const value = parseFloat(e.target.value);
-                                  field.onChange(value);
-                                  handleValueChange(value, 'installmentValue');
-                                }}
-                              />
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                                <Input 
+                                  id="installmentValue"
+                                  type="number" 
+                                  step="0.01" 
+                                  min="0"
+                                  placeholder="0,00"
+                                  className="text-right bg-gray-50 border-gray-200 pl-10"
+                                  {...field}
+                                  onChange={(e) => {
+                                    const value = parseFloat(e.target.value);
+                                    field.onChange(value);
+                                    handleValueChange(value, 'installmentValue');
+                                  }}
+                                />
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>

@@ -72,13 +72,13 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
     <div className="rounded-md border overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="font-inter">Data</TableHead>
-            <TableHead className="font-inter">Descrição</TableHead>
-            <TableHead className="font-inter">Categoria</TableHead>
-            <TableHead className="text-right font-inter">Valor</TableHead>
-            <TableHead className="font-inter">Forma de Pagamento</TableHead>
-            <TableHead className="text-right w-[100px] font-inter">Ações</TableHead>
+          <TableRow className="bg-[#EE680D]/10">
+            <TableHead className="font-inter text-[#EE680D] font-semibold border-r border-[#EE680D]/20">Data</TableHead>
+            <TableHead className="font-inter text-[#EE680D] font-semibold border-r border-[#EE680D]/20">Descrição</TableHead>
+            <TableHead className="font-inter text-[#EE680D] font-semibold border-r border-[#EE680D]/20">Categoria</TableHead>
+            <TableHead className="text-right font-inter text-[#EE680D] font-semibold border-r border-[#EE680D]/20">Valor</TableHead>
+            <TableHead className="font-inter text-[#EE680D] font-semibold border-r border-[#EE680D]/20">Forma de Pagamento</TableHead>
+            <TableHead className="text-right w-[100px] font-inter text-[#EE680D] font-semibold">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -89,8 +89,8 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
               </TableCell>
             </TableRow>
           ) : (
-            transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
+            transactions.map((transaction, index) => (
+              <TableRow key={transaction.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                 <TableCell className="font-medium font-inter">
                   {format(transaction.date, 'dd/MM/yyyy')}
                 </TableCell>

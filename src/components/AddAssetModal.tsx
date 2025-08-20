@@ -127,7 +127,7 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({ open, onOpenChange }) => 
                     }} 
                     required
                   >
-                    <SelectTrigger className="bg-background border-input text-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                    <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
                       <SelectValue placeholder="Selecione um tipo" />
                     </SelectTrigger>
                     <SelectContent className="bg-background border shadow-lg">

@@ -149,13 +149,13 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center">
-            <Calendar className="mr-2 h-4 w-4" /> 
+          <CardTitle className="flex items-center text-base md:text-lg text-black">
+            <Calendar className="mr-2 h-3 w-3 md:h-4 md:w-4" /> 
             Despesas Recorrentes
           </CardTitle>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Selecione o mês" />
+            <SelectTrigger className="w-32 md:w-48">
+              <SelectValue placeholder="Mês" />
             </SelectTrigger>
             <SelectContent>
               {availableMonths.map(month => (

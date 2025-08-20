@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { CustomTabTriggers } from '@/components/ui/custom-tabs';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -229,15 +228,22 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   const renderTransactionForm = () => (
     <>
-      <CustomTabTriggers
-        items={[
-          { value: 'income', label: 'Receita' },
-          { value: 'expense', label: 'Despesa' }
-        ]}
-        value={transactionType}
-        onValueChange={(value) => setTransactionType(value as TransactionType)}
-        className="grid w-full grid-cols-2 mb-4"
-      />
+      <Tabs value={transactionType} onValueChange={(value) => setTransactionType(value as TransactionType)} className="w-full mb-4">
+        <TabsList className="grid w-full grid-cols-2 bg-gray-100">
+          <TabsTrigger 
+            value="income" 
+            className="data-[state=active]:bg-green-500 data-[state=active]:text-white"
+          >
+            Receita
+          </TabsTrigger>
+          <TabsTrigger 
+            value="expense" 
+            className="data-[state=active]:bg-red-500 data-[state=active]:text-white"
+          >
+            Despesa
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
       <div className="space-y-4">
         <TooltipHelper content={tooltipContent.modals.fields.date} delayDuration={500}>
           <div className="space-y-2">
@@ -268,7 +274,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           <div className="space-y-2">
             <Label htmlFor="category">Categoria</Label>
             <Select value={category} onValueChange={setCategory} required>
-              <SelectTrigger><SelectValue placeholder="Selecione uma categoria" /></SelectTrigger>
+              <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
+                <SelectValue placeholder="Selecione uma categoria" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
@@ -286,14 +294,19 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
           <div className="space-y-2">
             <Label htmlFor="amount">Valor (R$)</Label>
-            <Input id="amount" value={formattedAmount} onChange={handleAmountChange} placeholder="R$ 0,00" required className="bg-gray-50 border-gray-200" />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                                <Input id="amount" value={formattedAmount} onChange={handleAmountChange} placeholder="0,00" required className="bg-gray-50 border-gray-200 pl-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+            </div>
           </div>
         </TooltipHelper>
         <TooltipHelper content={tooltipContent.modals.fields.paymentMethod} delayDuration={500}>
           <div className="space-y-2">
             <Label htmlFor="paymentMethod">Forma de Pagamento</Label>
             <Select value={paymentMethod} onValueChange={v => setPaymentMethod(v as PaymentMethod)}>
-              <SelectTrigger><SelectValue placeholder="Selecione uma forma" /></SelectTrigger>
+              <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
+                <SelectValue placeholder="Selecione uma forma" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {Object.entries(PAYMENT_METHODS).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
@@ -318,7 +331,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           <div className="space-y-2">
             <Label htmlFor="category">Categoria</Label>
             <Select value={category} onValueChange={setCategory} required>
-              <SelectTrigger><SelectValue placeholder="Selecione uma categoria" /></SelectTrigger>
+              <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
+                <SelectValue placeholder="Selecione uma categoria" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {EXPENSE_CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
@@ -330,7 +345,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
           <div className="space-y-2">
             <Label htmlFor="amount">Valor (R$)</Label>
-            <Input id="amount" value={formattedAmount} onChange={handleAmountChange} placeholder="R$ 0,00" required className="bg-gray-50 border-gray-200" />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+              <Input id="amount" value={formattedAmount} onChange={handleAmountChange} placeholder="0,00" required className="bg-gray-50 border-gray-200 pl-10" />
+            </div>
           </div>
         </TooltipHelper>
         <TooltipHelper content={tooltipContent.modals.fields.dueDay} delayDuration={500}>
@@ -348,7 +366,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           <div className="space-y-2">
             <Label htmlFor="selectedGoal">Meta</Label>
             <Select value={selectedGoal} onValueChange={setSelectedGoal} required>
-              <SelectTrigger><SelectValue placeholder="Selecione uma meta" /></SelectTrigger>
+              <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
+                <SelectValue placeholder="Selecione uma meta" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {goals.map(goal => (
@@ -364,7 +384,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
           <div className="space-y-2">
             <Label htmlFor="amount">Valor da Contribuição (R$)</Label>
-            <Input id="amount" value={formattedAmount} onChange={handleAmountChange} placeholder="R$ 0,00" required className="bg-gray-50 border-gray-200" />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+              <Input id="amount" value={formattedAmount} onChange={handleAmountChange} placeholder="0,00" required className="bg-gray-50 border-gray-200 pl-10" />
+            </div>
           </div>
         </TooltipHelper>
     </div>
@@ -384,7 +407,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
-              {mode === 'edit' ? 'Editar Transação' : 'Adicionar'}
+              {mode === 'edit' ? 'Editar Transação' : 'Adicionar Transação'}
             </DialogTitle>
             <DialogDescription>
               Selecione o tipo de entrada que deseja adicionar.

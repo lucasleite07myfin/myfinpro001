@@ -163,10 +163,10 @@ const Auth = () => {
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 bg-muted">
-                <TabsTrigger value="login" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
+                <TabsTrigger value="login" className="data-[state=active]:bg-orange data-[state=active]:text-white">
                   Entrar
                 </TabsTrigger>
-                <TabsTrigger value="signup" className="data-[state=active]:bg-[hsl(var(--navy-blue))] data-[state=active]:text-white">
+                <TabsTrigger value="signup" className="data-[state=active]:bg-orange data-[state=active]:text-white">
                   Cadastrar
                 </TabsTrigger>
               </TabsList>

@@ -6,7 +6,7 @@ import MonthSelector from '@/components/MonthSelector';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { formatCurrency } from '@/utils/formatters';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/components/ui/sonner';
 import { FileText, FileSpreadsheet, ChevronDown, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Info, Eye, EyeOff } from 'lucide-react';
 import {
   DropdownMenu,
@@ -126,11 +126,7 @@ const CashFlow: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Sucesso",
-      description: "Arquivo CSV exportado com sucesso!",
-      variant: "default"
-    });
+    toast.success("Arquivo CSV exportado com sucesso!");
   };
 
   const exportToExcel = () => {
@@ -162,11 +158,7 @@ const CashFlow: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Sucesso",
-      description: "Arquivo Excel exportado com sucesso!",
-      variant: "default"
-    });
+    toast.success("Arquivo Excel exportado com sucesso!");
   };
 
   const exportToPDF = () => {
@@ -234,34 +226,28 @@ const CashFlow: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Sucesso",
-      description: "Arquivo PDF exportado com sucesso! (HTML formatado para impressão)",
-      variant: "default"
-    });
+    toast.success("Arquivo PDF exportado com sucesso! (HTML formatado para impressão)");
   };
 
   return (
     <MainLayout>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-neutral-800 mb-1">Fluxo de Caixa</h1>
+          <h1 className="text-xl lg:text-2xl font-bold text-neutral-800 mb-1">Fluxo de Caixa</h1>
           <p className="text-neutral-500">Acompanhe entradas, saídas e projeções</p>
         </div>
-        <div className="flex items-center space-x-3">
-          <CustomTabTriggers
-            items={[
-              { value: 'monthly', label: 'Mensal' },
-              { value: 'accumulated', label: 'Acumulado' }
-            ]}
-            value={view}
-            onValueChange={(value) => setView(value as 'monthly' | 'accumulated')}
-          />
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
+          <Tabs value={view} onValueChange={(value) => setView(value as 'monthly' | 'accumulated')} className="w-full sm:w-auto">
+            <TabsList className="grid grid-cols-2 w-full sm:w-[200px]">
+              <TabsTrigger value="monthly">Mensal</TabsTrigger>
+              <TabsTrigger value="accumulated">Acumulado</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
             <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="default" size="sm">
+                <Button variant="default" size="sm" className="w-full sm:w-auto">
                   Exportar <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -430,13 +416,10 @@ const CashFlow: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="historical" className="w-full">
-            <CustomTabTriggers
-              items={[
-                { value: 'historical', label: 'Histórico Real (Jan-Set)' },
-                { value: 'projections', label: 'Projeções (Out-Dez)' }
-              ]}
-              className="bg-muted mb-4"
-            />
+            <TabsList className="grid grid-cols-2 w-full max-w-[400px]">
+              <TabsTrigger value="historical">Histórico Real (Jan-Set)</TabsTrigger>
+              <TabsTrigger value="projections">Projeções (Out-Dez)</TabsTrigger>
+            </TabsList>
             
             <TabsContent value="historical" className="mt-4">
               <div className="overflow-auto">

@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import TooltipHelper from './TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
 import { cn } from '@/lib/utils';
+import BitcoinModal from './BitcoinModal';
 
 interface BTCNowCardProps {
   className?: string;
@@ -37,6 +38,7 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentTrend, setCurrentTrend] = useState<'up' | 'down' | 'neutral'>('neutral');
   const [percentChange, setPercentChange] = useState<number>(0);
+  const [modalOpen, setModalOpen] = useState(false);
   
   // Função para buscar dados históricos do Bitcoin (24h)
   const fetchBitcoinHistory = async () => {
@@ -175,11 +177,17 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
   }, []);
   
   // Função para alternar a moeda
-  const toggleCurrency = () => {
+  const toggleCurrency = (e: React.MouseEvent) => {
+    e.stopPropagation();
     console.log(`Alternando moeda de ${currency} para ${currency === 'BRL' ? 'USD' : 'BRL'}`);
     setCurrency(prev => prev === 'BRL' ? 'USD' : 'BRL');
     setPriceChanged(true);
     setTimeout(() => setPriceChanged(false), 500);
+  };
+
+  // Função para abrir o modal
+  const handleCardClick = () => {
+    setModalOpen(true);
   };
 
   // Determinar a cor baseada na tendência

@@ -210,12 +210,18 @@ const DRE: React.FC = () => {
                   <TableRow className="hover:bg-neutral-50">
                     <TableCell className="font-medium">Receita Bruta</TableCell>
                     <TableCell className="text-right">
-                      <Input
-                        type="number"
-                        value={receitaBruta}
-                        onChange={(e) => setReceitaBruta(Number(e.target.value))}
-                        className="text-right w-40 ml-auto"
-                      />
+                      <div className="relative w-40 ml-auto">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={receitaBruta}
+                          onChange={(e) => setReceitaBruta(Number(e.target.value))}
+                          className="text-right bg-gray-50 border-gray-200 pl-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          placeholder="0,00"
+                        />
+                      </div>
                     </TableCell>
                   </TableRow>
                   
@@ -244,16 +250,23 @@ const DRE: React.FC = () => {
                         <Input
                           value={deducao.name}
                           onChange={(e) => atualizarDeducao(deducao.id, 'name', e.target.value)}
-                          className="border-dashed"
+                          className="border-dashed bg-gray-50 border-gray-200"
+                          placeholder="Nome da dedução"
                         />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Input
-                          type="number"
-                          value={deducao.value}
-                          onChange={(e) => atualizarDeducao(deducao.id, 'value', Number(e.target.value))}
-                          className="text-right w-40 ml-auto"
-                        />
+                        <div className="relative w-40 ml-auto">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={deducao.value}
+                            onChange={(e) => atualizarDeducao(deducao.id, 'value', Number(e.target.value))}
+                            className="text-right bg-gray-50 border-gray-200 pl-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            placeholder="0,00"
+                          />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -268,12 +281,18 @@ const DRE: React.FC = () => {
                   <TableRow className="hover:bg-neutral-50">
                     <TableCell className="font-medium">(-) CMV (Custo das Mercadorias Vendidas)</TableCell>
                     <TableCell className="text-right">
-                      <Input
-                        type="number"
-                        value={cmv}
-                        onChange={(e) => setCmv(Number(e.target.value))}
-                        className="text-right w-40 ml-auto"
-                      />
+                      <div className="relative w-40 ml-auto">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={cmv}
+                          onChange={(e) => setCmv(Number(e.target.value))}
+                          className="text-right bg-gray-50 border-gray-200 pl-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          placeholder="0,00"
+                        />
+                      </div>
                     </TableCell>
                   </TableRow>
                   
@@ -310,16 +329,23 @@ const DRE: React.FC = () => {
                         <Input
                           value={despesa.name}
                           onChange={(e) => atualizarDespesa(despesa.id, 'name', e.target.value)}
-                          className="border-dashed"
+                          className="border-dashed bg-gray-50 border-gray-200"
+                          placeholder="Nome da despesa"
                         />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Input
-                          type="number"
-                          value={despesa.value}
-                          onChange={(e) => atualizarDespesa(despesa.id, 'value', Number(e.target.value))}
-                          className="text-right w-40 ml-auto"
-                        />
+                        <div className="relative w-40 ml-auto">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={despesa.value}
+                            onChange={(e) => atualizarDespesa(despesa.id, 'value', Number(e.target.value))}
+                            className="text-right bg-gray-50 border-gray-200 pl-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            placeholder="0,00"
+                          />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -336,12 +362,18 @@ const DRE: React.FC = () => {
                   <TableRow className="hover:bg-neutral-50">
                     <TableCell>Receitas Financeiras</TableCell>
                     <TableCell className="text-right">
-                      <Input
-                        type="number"
-                        value={receitasFinanceiras}
-                        onChange={(e) => setReceitasFinanceiras(Number(e.target.value))}
-                        className="text-right w-40 ml-auto"
-                      />
+                      <div className="relative w-40 ml-auto">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={receitasFinanceiras}
+                          onChange={(e) => setReceitasFinanceiras(Number(e.target.value))}
+                          className="text-right bg-gray-50 border-gray-200 pl-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          placeholder="0,00"
+                        />
+                      </div>
                     </TableCell>
                   </TableRow>
                   
@@ -349,12 +381,18 @@ const DRE: React.FC = () => {
                   <TableRow className="hover:bg-neutral-50">
                     <TableCell>(-) Despesas Financeiras</TableCell>
                     <TableCell className="text-right">
-                      <Input
-                        type="number"
-                        value={despesasFinanceiras}
-                        onChange={(e) => setDespesasFinanceiras(Number(e.target.value))}
-                        className="text-right w-40 ml-auto"
-                      />
+                      <div className="relative w-40 ml-auto">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={despesasFinanceiras}
+                          onChange={(e) => setDespesasFinanceiras(Number(e.target.value))}
+                          className="text-right bg-gray-50 border-gray-200 pl-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          placeholder="0,00"
+                        />
+                      </div>
                     </TableCell>
                   </TableRow>
                   
@@ -384,7 +422,7 @@ const DRE: React.FC = () => {
                           type="number"
                           value={aliquotaImposto * 100}
                           onChange={(e) => setAliquotaImposto(Number(e.target.value) / 100)}
-                          className="w-16 text-center"
+                          className="w-16 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           min="0"
                           max="100"
                           step="0.5"

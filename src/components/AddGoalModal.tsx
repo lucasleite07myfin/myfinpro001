@@ -247,42 +247,48 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                   <Label htmlFor="targetAmount" className="text-sm font-medium">
                     Valor da Meta (R$) *
                   </Label>
-                  <Input
-                    id="targetAmount"
-                    value={targetAmount ? `R$ ${targetAmount}` : ''}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d]/g, '');
-                      setTargetAmount(formatCurrencyInput(value));
-                    }}
-                    placeholder="R$ 0,00"
-                    required
-                    disabled={mode === 'edit' && !isEditingValues}
-                    className={`${mode === 'edit' && !isEditingValues 
-                      ? 'bg-gray-100 border-gray-300 text-gray-600 cursor-not-allowed' 
-                      : 'bg-gray-50 border-gray-200'
-                    }`}
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                    <Input
+                      id="targetAmount"
+                      value={targetAmount}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^\d]/g, '');
+                        setTargetAmount(formatCurrencyInput(value));
+                      }}
+                      placeholder="0,00"
+                      required
+                      disabled={mode === 'edit' && !isEditingValues}
+                      className={`pl-10 ${mode === 'edit' && !isEditingValues 
+                        ? 'bg-gray-100 border-gray-300 text-gray-600 cursor-not-allowed' 
+                        : 'bg-gray-50 border-gray-200'
+                      }`}
+                    />
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="currentAmount" className="text-sm font-medium">
                     Valor Atual (R$) *
                   </Label>
-                  <Input
-                    id="currentAmount"
-                    value={currentAmount ? `R$ ${currentAmount}` : ''}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d]/g, '');
-                      setCurrentAmount(formatCurrencyInput(value));
-                    }}
-                    placeholder="R$ 0,00"
-                    required
-                    disabled={mode === 'edit' && !isEditingValues}
-                    className={`${mode === 'edit' && !isEditingValues 
-                      ? 'bg-gray-100 border-gray-300 text-gray-600 cursor-not-allowed' 
-                      : 'bg-gray-50 border-gray-200'
-                    }`}
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                    <Input
+                      id="currentAmount"
+                      value={currentAmount}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^\d]/g, '');
+                        setCurrentAmount(formatCurrencyInput(value));
+                      }}
+                      placeholder="0,00"
+                      required
+                      disabled={mode === 'edit' && !isEditingValues}
+                      className={`pl-10 ${mode === 'edit' && !isEditingValues 
+                        ? 'bg-gray-100 border-gray-300 text-gray-600 cursor-not-allowed' 
+                        : 'bg-gray-50 border-gray-200'
+                      }`}
+                    />
+                  </div>
                 </div>
               </div>
               
@@ -326,7 +332,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                     </div>
                   </Label>
                   <Select value={savingLocation} onValueChange={setSavingLocation}>
-                    <SelectTrigger className="bg-gray-50 border-gray-200">
+                    <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
                       <SelectValue placeholder="Onde você guarda o dinheiro?" />
                     </SelectTrigger>
                     <SelectContent>
