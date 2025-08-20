@@ -33,7 +33,8 @@ import {
   PieChart
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart as RechartsPieChart, Cell } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import PatrimonyModal from '@/components/PatrimonyModal';
 import CryptoModal from '@/components/CryptoModal';
 import CryptoList from '@/components/CryptoList';
@@ -429,11 +430,20 @@ const Patrimony: React.FC = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={historyData}>
+                    <ChartContainer 
+                      config={{
+                        total: {
+                          label: "Patrimônio Total",
+                          color: "hsl(var(--primary))",
+                        },
+                      }}
+                    >
+                       <LineChart data={historyData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="date" 
+                          tickLine={false}
+                          axisLine={false}
                           tickFormatter={(date) => {
                             try {
                               return format(new Date(date), 'MM/yyyy');
@@ -443,6 +453,8 @@ const Patrimony: React.FC = () => {
                           }}
                         />
                         <YAxis 
+                          tickLine={false}
+                          axisLine={false}
                           tickFormatter={(value) => value.toLocaleString('pt-BR', {
                             style: 'currency',
                             currency: 'BRL',
@@ -450,23 +462,26 @@ const Patrimony: React.FC = () => {
                             maximumFractionDigits: 0,
                           })}
                         />
-                        <Tooltip 
-                          formatter={(value: any) => [value.toLocaleString('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          }), 'Valor Total']}
-                          labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy')}
+                        <ChartTooltip 
+                          cursor={false}
+                          content={<ChartTooltipContent 
+                            formatter={(value: any) => [value.toLocaleString('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL',
+                            }), 'Patrimônio Total']}
+                          />}
                         />
                         <Line 
                           type="monotone" 
                           dataKey="value" 
-                          stroke="#EE680D" 
-                          dot={{ r: 4 }}
-                          activeDot={{ r: 6 }}
+                          stroke="var(--color-total)" 
+                          strokeWidth={3}
+                          dot={{ r: 6, strokeWidth: 2 }}
+                          activeDot={{ r: 8, strokeWidth: 2 }}
                           name="Valor Total"
                         />
                       </LineChart>
-                    </ResponsiveContainer>
+                    </ChartContainer>
                   </CardContent>
                 </Card>
               )}

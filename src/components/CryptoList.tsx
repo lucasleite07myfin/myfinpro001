@@ -65,7 +65,7 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
         value: newTotalValue,
         lastPriceBrl: price,
         lastUpdated: lastUpdated,
-        priceChange24h: change24h // Adicionaremos este campo
+        // priceChange24h: change24h // Campo removido temporariamente
       });
     }
   };

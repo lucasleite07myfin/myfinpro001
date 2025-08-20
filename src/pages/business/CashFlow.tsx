@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import MainLayout from '@/components/MainLayout';
 import MonthSelector from '@/components/MonthSelector';
 import { useBusiness } from '@/contexts/BusinessContext';
@@ -371,7 +372,38 @@ const CashFlow: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ChartContainer
+              config={{
+                income: {
+                  label: "Entradas",
+                  color: "hsl(142 76% 36%)",
+                },
+                expenses: {
+                  label: "Saídas", 
+                  color: "hsl(0 84% 60%)",
+                },
+                balance: {
+                  label: "Saldo",
+                  color: "hsl(221 83% 53%)",
+                },
+                projection: {
+                  label: "Projeção",
+                  color: "hsl(271 91% 65%)",
+                },
+                accIncome: {
+                  label: "Entradas Acumuladas",
+                  color: "hsl(142 76% 36%)",
+                },
+                accExpenses: {
+                  label: "Saídas Acumuladas",
+                  color: "hsl(0 84% 60%)",
+                },
+                accBalance: {
+                  label: "Saldo Acumulado",
+                  color: "hsl(221 83% 53%)",
+                },
+              }}
+            >
               <ComposedChart
                 data={view === 'accumulated' 
                   ? projectedData.map((item, index, arr) => ({
@@ -385,26 +417,37 @@ const CashFlow: React.FC = () => {
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Legend />
+                <XAxis 
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <ChartTooltip 
+                  cursor={false}
+                  content={<ChartTooltipContent 
+                    formatter={(value) => [formatCurrency(Number(value)), ""]}
+                  />} 
+                />
                 {view === 'accumulated' ? (
                   <>
-                    <Bar dataKey="accIncome" name="Entradas Acumuladas" stackId="a" fill="#4ade80" />
-                    <Bar dataKey="accExpenses" name="Saídas Acumuladas" stackId="b" fill="#f87171" />
-                    <Line type="monotone" dataKey="accBalance" name="Saldo Acumulado" stroke="#6366f1" strokeWidth={2} />
+                    <Bar dataKey="accIncome" name="Entradas Acumuladas" stackId="a" fill="var(--color-accIncome)" />
+                    <Bar dataKey="accExpenses" name="Saídas Acumuladas" stackId="b" fill="var(--color-accExpenses)" />
+                    <Line type="monotone" dataKey="accBalance" name="Saldo Acumulado" stroke="var(--color-accBalance)" strokeWidth={3} />
                   </>
                 ) : (
                   <>
-                    <Bar dataKey="income" name="Entradas" fill="#4ade80" />
-                    <Bar dataKey="expenses" name="Saídas" fill="#f87171" />
-                    <Line type="monotone" dataKey="balance" name="Saldo" stroke="#6366f1" strokeWidth={2} />
-                    <Line type="monotone" dataKey="projection" name="Projeção" stroke="#a855f7" strokeDasharray="5 5" strokeWidth={2} />
+                    <Bar dataKey="income" name="Entradas" fill="var(--color-income)" />
+                    <Bar dataKey="expenses" name="Saídas" fill="var(--color-expenses)" />
+                    <Line type="monotone" dataKey="balance" name="Saldo" stroke="var(--color-balance)" strokeWidth={3} />
+                    <Line type="monotone" dataKey="projection" name="Projeção" stroke="var(--color-projection)" strokeDasharray="5 5" strokeWidth={3} />
                   </>
                 )}
               </ComposedChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </div>
         </CardContent>
       </Card>

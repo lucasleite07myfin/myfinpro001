@@ -10,13 +10,12 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
   ResponsiveContainer, 
   Legend 
 } from 'recharts';
 import { formatCurrency, formatMonth } from '@/utils/formatters';
 import { MonthlyFinanceData, Transaction } from '@/types/finance';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PieChart as PieChartIcon, LineChart as LineChartIcon } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -67,38 +66,25 @@ const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
   // Ordenar do maior para o menor
   pieChartData.sort((a, b) => b.value - a.value);
 
-  const CustomLineTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white dark:bg-card p-4 shadow-md rounded-md border border-neutral-200 dark:border-border">
-          <p className="font-semibold dark:text-white">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={`item-${index}`} style={{ color: entry.color }}>
-              {entry.name}: {formatCurrency(entry.value)}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
+  // Configuração do ChartContainer
+  const chartConfig = {
+    receitas: {
+      label: "Receitas",
+      color: "hsl(142 76% 36%)",
+    },
+    despesas: {
+      label: "Despesas", 
+      color: "hsl(0 84% 60%)",
+    },
   };
 
-  const CustomPieTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      const total = pieChartData.reduce((sum, item) => sum + item.value, 0);
-      const percentage = ((data.value / total) * 100).toFixed(1);
-      
-      return (
-        <div className="bg-white dark:bg-card p-4 shadow-md rounded-md border border-neutral-200 dark:border-border">
-          <p className="font-semibold dark:text-white">{data.name}</p>
-          <p style={{ color: data.color }}>{formatCurrency(data.value)}</p>
-          <p style={{ color: data.color }}>{percentage}% do total</p>
-        </div>
-      );
-    }
-    return null;
-  };
+  const pieChartConfig = pieChartData.reduce((config: any, item, index) => {
+    config[item.name.toLowerCase().replace(/\s+/g, '_')] = {
+      label: item.name,
+      color: COLORS[index % COLORS.length],
+    };
+    return config;
+  }, {});
 
   return (
     <TooltipProvider>
@@ -122,56 +108,82 @@ const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
         </CardHeader>
         <CardContent>
           <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              {chartType === 'line' ? (
+            {chartType === 'line' ? (
+              <ChartContainer config={chartConfig}>
                 <LineChart
                   data={lineChartData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name"
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <YAxis
+                    tickLine={false}
+                    axisLine={false}
                     tickFormatter={(value) => `R$ ${value / 1000}k`}
                   />
-                  <Tooltip content={<CustomLineTooltip />} />
-                  <Legend />
+                  <ChartTooltip 
+                    cursor={false}
+                    content={<ChartTooltipContent 
+                      formatter={(value) => [formatCurrency(Number(value)), ""]}
+                    />} 
+                  />
                   <Line 
                     type="monotone" 
                     dataKey="Receitas" 
-                    stroke="#22c55e" 
-                    strokeWidth={2} 
-                    dot={{ r: 4 }} 
+                    stroke="var(--color-receitas)" 
+                    strokeWidth={3} 
+                    dot={{ r: 6, strokeWidth: 2 }}
+                    activeDot={{ r: 8, strokeWidth: 2 }}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="Despesas" 
-                    stroke="#ef4444" 
-                    strokeWidth={2} 
-                    dot={{ r: 4 }} 
+                    stroke="var(--color-despesas)" 
+                    strokeWidth={3} 
+                    dot={{ r: 6, strokeWidth: 2 }}
+                    activeDot={{ r: 8, strokeWidth: 2 }}
                   />
                 </LineChart>
-              ) : (
-                <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+              </ChartContainer>
+            ) : (
+              <ChartContainer config={pieChartConfig}>
+                <PieChart>
+                  <ChartTooltip 
+                    cursor={false}
+                    content={<ChartTooltipContent 
+                      formatter={(value, name, props) => [
+                        formatCurrency(Number(value)), 
+                        name,
+                        `${((Number(value) / pieChartData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}%`
+                      ]}
+                    />} 
+                  />
                   <Pie
                     data={pieChartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
                     dataKey="value"
                     nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    innerRadius={40}
+                    strokeWidth={2}
                     label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                   >
                     {pieChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={COLORS[index % COLORS.length]}
+                        stroke={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
-                  <Tooltip content={<CustomPieTooltip />} />
-                  <Legend />
                 </PieChart>
-              )}
-            </ResponsiveContainer>
+              </ChartContainer>
+            )}
           </div>
         </CardContent>
       </Card>
