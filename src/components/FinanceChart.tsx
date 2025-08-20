@@ -106,24 +106,26 @@ const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
             </TooltipHelper>
           </ToggleGroup>
         </CardHeader>
-        <CardContent>
-          <div className="h-80 w-full">
+        <CardContent className="p-4">
+          <div className="h-80 w-full overflow-hidden">
             {chartType === 'line' ? (
-              <ChartContainer config={chartConfig}>
+              <ChartContainer config={chartConfig} className="h-full w-full">
                 <LineChart
                   data={lineChartData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
+                  margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="name"
                     tickLine={false}
                     axisLine={false}
+                    fontSize={12}
                   />
                   <YAxis
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) => `R$ ${value / 1000}k`}
+                    fontSize={12}
+                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                   />
                   <ChartTooltip 
                     cursor={false}
@@ -136,21 +138,21 @@ const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
                     dataKey="Receitas" 
                     stroke="var(--color-receitas)" 
                     strokeWidth={3} 
-                    dot={{ r: 6, strokeWidth: 2 }}
-                    activeDot={{ r: 8, strokeWidth: 2 }}
+                    dot={{ r: 4, strokeWidth: 2 }}
+                    activeDot={{ r: 6, strokeWidth: 2 }}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="Despesas" 
                     stroke="var(--color-despesas)" 
                     strokeWidth={3} 
-                    dot={{ r: 6, strokeWidth: 2 }}
-                    activeDot={{ r: 8, strokeWidth: 2 }}
+                    dot={{ r: 4, strokeWidth: 2 }}
+                    activeDot={{ r: 6, strokeWidth: 2 }}
                   />
                 </LineChart>
               </ChartContainer>
             ) : (
-              <ChartContainer config={pieChartConfig}>
+              <ChartContainer config={pieChartConfig} className="h-full w-full">
                 <PieChart>
                   <ChartTooltip 
                     cursor={false}
@@ -167,11 +169,11 @@ const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    innerRadius={40}
+                    cy="45%"
+                    outerRadius={80}
+                    innerRadius={30}
                     strokeWidth={2}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={false}
                   >
                     {pieChartData.map((entry, index) => (
                       <Cell 
@@ -181,6 +183,15 @@ const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
                       />
                     ))}
                   </Pie>
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36}
+                    formatter={(value) => (
+                      <span className="text-xs truncate max-w-[100px] inline-block">
+                        {value}
+                      </span>
+                    )}
+                  />
                 </PieChart>
               </ChartContainer>
             )}

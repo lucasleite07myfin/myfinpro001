@@ -307,67 +307,62 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
           </div>
           
           {/* Enhanced Chart */}
-          <div className="flex-1 w-full relative z-10">
-            <ResponsiveContainer width="100%" height="100%">
-              <ChartContainer
-                config={{
-                  price: {
-                    theme: {
-                      light: trendColor,
-                      dark: trendColor
-                    }
+          <div className="flex-1 w-full relative z-10 overflow-hidden">
+            <ChartContainer
+              config={{
+                price: {
+                  theme: {
+                    light: trendColor,
+                    dark: trendColor
                   }
-                }}
+                }
+              }}
+              className="h-full w-full"
+            >
+              <AreaChart 
+                data={chartData} 
+                margin={{ top: 2, right: 2, left: 2, bottom: 2 }}
               >
-                <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id={`btcGradient-${currency}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={trendColor} stopOpacity={0.3} />
-                      <stop offset="50%" stopColor={trendColor} stopOpacity={0.1} />
-                      <stop offset="100%" stopColor={trendColor} stopOpacity={0} />
-                    </linearGradient>
-                    <filter id="glow">
-                      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                      <feMerge> 
-                        <feMergeNode in="coloredBlur"/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                  </defs>
-                  <ChartTooltip 
-                    content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        const value = payload[0].value as number;
-                        return (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                              {currency === 'USD' 
-                                ? `$${value.toLocaleString()}`
-                                : `R$${value.toLocaleString()}`
-                              }
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {new Date(label).toLocaleTimeString()}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="price"
-                    stroke={trendColor}
-                    strokeWidth={2}
-                    fill={`url(#btcGradient-${currency})`}
-                    filter="url(#glow)"
-                    isAnimationActive={true}
-                    animationDuration={1000}
-                  />
-                </AreaChart>
-              </ChartContainer>
-            </ResponsiveContainer>
+                <defs>
+                  <linearGradient id={`btcGradient-${currency}`} x2="0" y2="1">
+                    <stop offset="0%" stopColor={trendColor} stopOpacity={0.3} />
+                    <stop offset="50%" stopColor={trendColor} stopOpacity={0.1} />
+                    <stop offset="100%" stopColor={trendColor} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <ChartTooltip 
+                  cursor={false}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const value = payload[0].value as number;
+                      return (
+                        <div className="bg-background border border-border rounded-lg shadow-lg p-2 text-xs">
+                          <p className="font-medium text-foreground">
+                            {currency === 'USD' 
+                              ? `$${value.toLocaleString()}`
+                              : `R$${value.toLocaleString()}`
+                            }
+                          </p>
+                          <p className="text-muted-foreground">
+                            {new Date(label).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="price"
+                  stroke={trendColor}
+                  strokeWidth={2}
+                  fill={`url(#btcGradient-${currency})`}
+                  isAnimationActive={true}
+                  animationDuration={1000}
+                />
+              </AreaChart>
+            </ChartContainer>
           </div>
           
           {/* Subtle indicator dots */}

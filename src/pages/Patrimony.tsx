@@ -429,59 +429,62 @@ const Patrimony: React.FC = () => {
                       Evolução Patrimonial
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="h-64">
-                    <ChartContainer 
-                      config={{
-                        total: {
-                          label: "Patrimônio Total",
-                          color: "hsl(var(--primary))",
-                        },
-                      }}
-                    >
-                       <LineChart data={historyData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="date" 
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={(date) => {
-                            try {
-                              return format(new Date(date), 'MM/yyyy');
-                            } catch (e) {
-                              return date;
-                            }
-                          }}
-                        />
-                        <YAxis 
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={(value) => value.toLocaleString('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
-                        />
-                        <ChartTooltip 
-                          cursor={false}
-                          content={<ChartTooltipContent 
-                            formatter={(value: any) => [value.toLocaleString('pt-BR', {
-                              style: 'currency',
-                              currency: 'BRL',
-                            }), 'Patrimônio Total']}
-                          />}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="value" 
-                          stroke="var(--color-total)" 
-                          strokeWidth={3}
-                          dot={{ r: 6, strokeWidth: 2 }}
-                          activeDot={{ r: 8, strokeWidth: 2 }}
-                          name="Valor Total"
-                        />
-                      </LineChart>
-                    </ChartContainer>
+                  <CardContent className="p-4">
+                    <div className="h-56 w-full overflow-hidden relative">
+                      <ChartContainer 
+                        config={{
+                          total: {
+                            label: "Patrimônio Total",
+                            color: "hsl(var(--primary))",
+                          },
+                        }}
+                        className="absolute inset-0"
+                      >
+                        <LineChart 
+                          data={historyData}
+                          margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="date" 
+                            tickLine={false}
+                            axisLine={false}
+                            fontSize={11}
+                            tickFormatter={(date) => {
+                              try {
+                                return format(new Date(date), 'MM/yy');
+                              } catch (e) {
+                                return date;
+                              }
+                            }}
+                          />
+                          <YAxis 
+                            tickLine={false}
+                            axisLine={false}
+                            fontSize={11}
+                            tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                          />
+                          <ChartTooltip 
+                            cursor={false}
+                            content={<ChartTooltipContent 
+                              formatter={(value: any) => [value.toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL',
+                              }), 'Patrimônio Total']}
+                            />}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="value" 
+                            stroke="var(--color-total)" 
+                            strokeWidth={2}
+                            dot={{ r: 3, strokeWidth: 1 }}
+                            activeDot={{ r: 5, strokeWidth: 2 }}
+                            name="Valor Total"
+                          />
+                        </LineChart>
+                      </ChartContainer>
+                    </div>
                   </CardContent>
                 </Card>
               )}
