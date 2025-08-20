@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, BarChart } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import MainLayout from '@/components/MainLayout';
 import MonthSelector from '@/components/MonthSelector';
 import { useBusiness } from '@/contexts/BusinessContext';
@@ -106,6 +106,26 @@ const CashFlow: React.FC = () => {
   
   const { totalIncome, totalExpenses, totalBalance } = calculateTotals();
   const insights = generateInsights();
+
+  // Chart configuration for modern Recharts
+  const chartConfig: ChartConfig = {
+    income: {
+      label: "Entradas",
+      color: "hsl(var(--chart-1))",
+    },
+    expenses: {
+      label: "Saídas",
+      color: "hsl(var(--chart-2))",
+    },
+    balance: {
+      label: "Saldo",
+      color: "hsl(var(--chart-3))",
+    },
+    projection: {
+      label: "Projeção",
+      color: "hsl(var(--chart-4))",
+    },
+  };
 
   const exportToCSV = () => {
     // Preparar dados para exportação
@@ -366,90 +386,118 @@ const CashFlow: React.FC = () => {
         </div>
       )}
       
+      {/* Modern Chart with proper containment */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Fluxo de Caixa {view === 'accumulated' ? 'Acumulado' : 'Mensal'}</CardTitle>
+          <CardDescription>
+            {view === 'accumulated' 
+              ? 'Valores acumulados ao longo do ano' 
+              : 'Comparação mensal de entradas, saídas e projeções'
+            }
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="h-[400px]">
-            <ChartContainer
-              config={{
-                income: {
-                  label: "Entradas",
-                  color: "hsl(142 76% 36%)",
-                },
-                expenses: {
-                  label: "Saídas", 
-                  color: "hsl(0 84% 60%)",
-                },
-                balance: {
-                  label: "Saldo",
-                  color: "hsl(221 83% 53%)",
-                },
-                projection: {
-                  label: "Projeção",
-                  color: "hsl(271 91% 65%)",
-                },
-                accIncome: {
-                  label: "Entradas Acumuladas",
-                  color: "hsl(142 76% 36%)",
-                },
-                accExpenses: {
-                  label: "Saídas Acumuladas",
-                  color: "hsl(0 84% 60%)",
-                },
-                accBalance: {
-                  label: "Saldo Acumulado",
-                  color: "hsl(221 83% 53%)",
-                },
-              }}
-            >
-              <ComposedChart
-                data={view === 'accumulated' 
-                  ? projectedData.map((item, index, arr) => ({
-                      ...item,
-                      accIncome: arr.slice(0, index + 1).reduce((sum, i) => sum + (i.income || 0), 0),
-                      accExpenses: arr.slice(0, index + 1).reduce((sum, i) => sum + (i.expenses || 0), 0),
-                      accBalance: arr.slice(0, index + 1).reduce((sum, i) => sum + (i.balance || 0), 0),
-                    }))
-                  : projectedData
-                }
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <ChartTooltip 
-                  cursor={false}
-                  content={<ChartTooltipContent 
-                    formatter={(value) => [formatCurrency(Number(value)), ""]}
-                  />} 
-                />
-                {view === 'accumulated' ? (
-                  <>
-                    <Bar dataKey="accIncome" name="Entradas Acumuladas" stackId="a" fill="var(--color-accIncome)" />
-                    <Bar dataKey="accExpenses" name="Saídas Acumuladas" stackId="b" fill="var(--color-accExpenses)" />
-                    <Line type="monotone" dataKey="accBalance" name="Saldo Acumulado" stroke="var(--color-accBalance)" strokeWidth={3} />
-                  </>
-                ) : (
-                  <>
-                    <Bar dataKey="income" name="Entradas" fill="var(--color-income)" />
-                    <Bar dataKey="expenses" name="Saídas" fill="var(--color-expenses)" />
-                    <Line type="monotone" dataKey="balance" name="Saldo" stroke="var(--color-balance)" strokeWidth={3} />
-                    <Line type="monotone" dataKey="projection" name="Projeção" stroke="var(--color-projection)" strokeDasharray="5 5" strokeWidth={3} />
-                  </>
-                )}
-              </ComposedChart>
+        <CardContent className="overflow-hidden">
+          <div className="h-[400px] w-full">
+            <ChartContainer config={chartConfig}>
+              {view === 'monthly' ? (
+                <BarChart
+                  accessibilityLayer
+                  data={projectedData}
+                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                    tickFormatter={(value) => value}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent 
+                      formatter={(value, name) => [
+                        value ? formatCurrency(Number(value)) : '-',
+                        name
+                      ]}
+                      hideLabel={false}
+                    />}
+                  />
+                  <Bar 
+                    dataKey="income" 
+                    name="Entradas"
+                    fill="var(--color-income)" 
+                    radius={[4, 4, 0, 0]} 
+                  />
+                  <Bar 
+                    dataKey="expenses" 
+                    name="Saídas"
+                    fill="var(--color-expenses)" 
+                    radius={[4, 4, 0, 0]} 
+                  />
+                </BarChart>
+              ) : (
+                <BarChart
+                  accessibilityLayer
+                  data={projectedData.map((item, index, arr) => ({
+                    ...item,
+                    accIncome: arr.slice(0, index + 1).reduce((sum, i) => sum + (i.income || 0), 0),
+                    accExpenses: arr.slice(0, index + 1).reduce((sum, i) => sum + (i.expenses || 0), 0),
+                  }))}
+                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                    tickFormatter={(value) => value}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent 
+                      formatter={(value, name) => [
+                        formatCurrency(Number(value)),
+                        name
+                      ]}
+                      hideLabel={false}
+                    />}
+                  />
+                  <Bar 
+                    dataKey="accIncome" 
+                    name="Entradas Acumuladas"
+                    fill="var(--color-income)" 
+                    radius={[4, 4, 0, 0]} 
+                  />
+                  <Bar 
+                    dataKey="accExpenses" 
+                    name="Saídas Acumuladas"
+                    fill="var(--color-expenses)" 
+                    radius={[4, 4, 0, 0]} 
+                  />
+                </BarChart>
+              )}
             </ChartContainer>
           </div>
         </CardContent>
+        <CardFooter className="flex-col items-start gap-2 text-sm">
+          <div className="flex gap-2 font-medium leading-none">
+            {totalBalance >= 0 ? (
+              <>
+                Saldo positivo de {formatCurrency(totalBalance)} <TrendingUp className="h-4 w-4" />
+              </>
+            ) : (
+              <>
+                Déficit de {formatCurrency(Math.abs(totalBalance))} <TrendingDown className="h-4 w-4" />
+              </>
+            )}
+          </div>
+          <div className="leading-none text-muted-foreground">
+            Dados históricos e projeções para o período de 12 meses
+          </div>
+        </CardFooter>
       </Card>
       
       {/* Tabela Detalhada com Tabs */}
@@ -514,7 +562,7 @@ const CashFlow: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {projectedData.filter(item => item.projection !== null).map((item, index) => {
-                      const confidence = Math.floor(Math.random() * 30) + 70; // Simular confiança entre 70-100%
+                      const confidence = Math.floor(Math.random() * 30) + 70;
                       return (
                         <tr key={index}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{item.month}</td>
