@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,22 +31,33 @@ const ForgotPassword = () => {
     },
   });
 
-  const onSubmit = (values: ForgotPasswordFormValues) => {
+  const onSubmit = async (values: ForgotPasswordFormValues) => {
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Password reset requested for:', values.email);
-      
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
+        redirectTo: `${window.location.origin}/auth?recovery=true`,
+      });
+
+      if (error) throw error;
+
       toast({
         title: 'Email enviado',
         description: 'Um link para redefinir sua senha foi enviado para seu email.',
       });
       
+      // Redirect back to auth after success
+      navigate('/auth');
+    } catch (error: any) {
+      console.error('Erro ao enviar email de recuperação:', error);
+      toast({
+        title: 'Erro ao enviar email',
+        description: 'Erro ao enviar email de recuperação. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
       setIsSubmitting(false);
-      // Redirect back to login after success
-      navigate('/login');
-    }, 1500);
+    }
   };
 
   return (
@@ -100,7 +112,7 @@ const ForgotPassword = () => {
         
         <CardFooter className="flex justify-center">
           <div className="text-center">
-            <Link to="/login" className="text-sm text-primary hover:underline">
+            <Link to="/auth" className="text-sm text-primary hover:underline">
               Voltar para o login
             </Link>
           </div>
