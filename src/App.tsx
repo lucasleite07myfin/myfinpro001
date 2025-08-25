@@ -16,6 +16,8 @@ import Goals from "./pages/Goals";
 import Patrimony from "./pages/Patrimony";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // New intelligent features pages
 import FinancialHealth from "./pages/FinancialHealth";
@@ -95,6 +97,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/*" element={<ModeRoutes />} />
           </Routes>
         </BrowserRouter>
