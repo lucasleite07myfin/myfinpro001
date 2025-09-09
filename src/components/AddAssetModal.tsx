@@ -85,7 +85,7 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({ open, onOpenChange }) => 
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto bg-card border-border shadow-lg">
+        <DialogContent className="w-[95vw] max-w-[520px] max-h-[90vh] overflow-y-auto bg-card border-border shadow-lg">
           <DialogHeader className="border-b border-border pb-4 mb-6">
             <DialogTitle className="text-xl font-semibold text-card-foreground flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
@@ -181,7 +181,7 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({ open, onOpenChange }) => 
               </TooltipHelper>
             </div>
             
-            <DialogFooter className="border-t pt-4 mt-6">
+            <DialogFooter className="border-t pt-4 mt-6 flex-col sm:flex-row gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="hover:bg-muted/50">
                 Cancelar
               </Button>

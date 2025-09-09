@@ -95,7 +95,7 @@ const Header: React.FC = () => {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center justify-center">
               <Tabs value={currentPath} onValueChange={handleTabChange}>
-                <TabsList className="bg-muted">
+                <TabsList className="bg-[#e0e0e0]">
                   {navLinks}
                 </TabsList>
               </Tabs>
@@ -171,7 +171,7 @@ const Header: React.FC = () => {
           >
             <div className="p-4">
               <Tabs value={currentPath} onValueChange={handleTabChange} className="w-full">
-                <TabsList className="flex flex-col w-full gap-2 bg-muted/50 p-2 h-auto">
+                <TabsList className="flex flex-col w-full gap-2 bg-[#e0e0e0] p-2 h-auto">
                   <TabsTrigger value="/" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">Dashboard</TabsTrigger>
                   <TabsTrigger value="/receitas" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">Receitas</TabsTrigger>
                   <TabsTrigger value="/despesas" className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white w-full justify-start h-10 text-sm">Despesas</TabsTrigger>

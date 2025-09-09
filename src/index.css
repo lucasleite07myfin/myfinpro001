@@ -1,4 +1,6 @@
 @tailwind base;
+
+@custom-variant dark (&:is(.dark *));
 @tailwind components;
 @tailwind utilities;
 
@@ -93,17 +95,17 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
-    
+
     /* Updated income/expense colors for better consistency */
     --income: 142 70% 45%;
     --expense: 0 84% 60%;
-    
+
     /* Primary action color */
     --primary-action: 142 70% 45%;
-    
+
     /* Navy blue for tabs */
     --navy-blue: 221 83% 53%;
-    
+
     /* Orange color for active states */
     --orange: 22 95% 49%;
 
@@ -172,4 +174,28 @@
 
 .text-expense-force {
   color: #ef4444 !important; /* Red for expense */
+}
+
+@theme inline {
+  --animate-shine: shine var(--duration) infinite linear;
+  @keyframes shine {
+  0% {
+    background-position: 0% 0%;
+    }
+  50% {
+    background-position: 100% 100%;
+    }
+  to {
+    background-position: 0% 0%;
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

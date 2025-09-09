@@ -51,9 +51,9 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   const defaultRenderBadge = (transaction: Transaction) => {
     if (transaction.isRecurringPayment) {
       return (
-        <Badge variant="outline" className="flex items-center gap-1 bg-blue-500/10">
+        <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200">
           <Clock className="h-3 w-3" />
-          <span>Despesa Fixa</span>
+          <span className="text-xs">Despesa Fixa</span>
         </Badge>
       );
     }
@@ -69,67 +69,82 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   };
 
   return (
-    <div className="rounded-md border overflow-hidden">
+    <div className="rounded-xl border border-neutral-200 overflow-hidden shadow-sm bg-white">
       <Table>
         <TableHeader>
-          <TableRow className="bg-[#EE680D]/10">
-            <TableHead className="font-inter text-[#EE680D] font-semibold border-r border-[#EE680D]/20">Data</TableHead>
-            <TableHead className="font-inter text-[#EE680D] font-semibold border-r border-[#EE680D]/20">Descrição</TableHead>
-            <TableHead className="font-inter text-[#EE680D] font-semibold border-r border-[#EE680D]/20">Categoria</TableHead>
-            <TableHead className="text-right font-inter text-[#EE680D] font-semibold border-r border-[#EE680D]/20">Valor</TableHead>
-            <TableHead className="font-inter text-[#EE680D] font-semibold border-r border-[#EE680D]/20">Forma de Pagamento</TableHead>
-            <TableHead className="text-right w-[100px] font-inter text-[#EE680D] font-semibold">Ações</TableHead>
+          <TableRow className="bg-gradient-to-r from-neutral-50 to-neutral-100 border-b border-neutral-200">
+            <TableHead className="font-semibold text-neutral-700 py-4 px-6">Data</TableHead>
+            <TableHead className="font-semibold text-neutral-700 py-4 px-6">Descrição</TableHead>
+            <TableHead className="font-semibold text-neutral-700 py-4 px-6">Categoria</TableHead>
+            <TableHead className="text-right font-semibold text-neutral-700 py-4 px-6">Valor</TableHead>
+            <TableHead className="font-semibold text-neutral-700 py-4 px-6">Pagamento</TableHead>
+            <TableHead className="text-center font-semibold text-neutral-700 py-4 px-6 w-[120px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {transactions.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-10 text-muted-foreground font-inter">
-                {getEmptyMessage()}
+              <TableCell colSpan={6} className="text-center py-12 text-neutral-500">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center">
+                    <Clock className="h-6 w-6 text-neutral-400" />
+                  </div>
+                  <p className="text-sm font-medium">{getEmptyMessage()}</p>
+                </div>
               </TableCell>
             </TableRow>
           ) : (
             transactions.map((transaction, index) => (
-              <TableRow key={transaction.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                <TableCell className="font-medium font-inter">
-                  {format(transaction.date, 'dd/MM/yyyy')}
+              <TableRow key={transaction.id} className={`hover:bg-neutral-50/50 transition-colors border-b border-neutral-100 ${index % 2 === 0 ? 'bg-white' : 'bg-neutral-25'}`}>
+                <TableCell className="font-medium text-neutral-900 py-4 px-6">
+                  <div className="text-sm font-medium">
+                    {format(transaction.date, 'dd/MM/yyyy')}
+                  </div>
                 </TableCell>
-                <TableCell className="font-inter">
-                  <div className="flex flex-col gap-1">
-                    {transaction.description}
+                <TableCell className="py-4 px-6">
+                  <div className="flex flex-col gap-2">
+                    <span className="font-medium text-neutral-900 text-sm">{transaction.description}</span>
                     {renderBadge ? renderBadge(transaction) : defaultRenderBadge(transaction)}
                   </div>
                 </TableCell>
-                <TableCell className="font-inter">
-                  {formatCategoryName(transaction.category)}
+                <TableCell className="py-4 px-6">
+                  <span className="text-sm text-neutral-600 bg-neutral-100 px-2 py-1 rounded-md">
+                    {formatCategoryName(transaction.category)}
+                  </span>
                 </TableCell>
-                <TableCell className={`text-right font-mono font-inter ${transaction.type === 'income' ? 'text-income-force' : 'text-expense-force'}`}>
-                  {formatCurrency(transaction.amount)}
+                <TableCell className={`text-right font-semibold py-4 px-6 ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className="text-sm font-mono">
+                    {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                  </span>
                 </TableCell>
-                <TableCell className="font-inter">
-                  {transaction.paymentMethod ? PAYMENT_METHODS[transaction.paymentMethod] : '-'}
+                <TableCell className="py-4 px-6">
+                  <span className="text-xs text-neutral-500 bg-neutral-50 px-2 py-1 rounded-md">
+                    {transaction.paymentMethod ? PAYMENT_METHODS[transaction.paymentMethod] : 'N/A'}
+                  </span>
                 </TableCell>
-                <TableCell>
-                  <div className="flex justify-end space-x-2">
+                <TableCell className="py-4 px-6">
+                  <div className="flex justify-center space-x-1">
                     {onEdit && !transaction.isRecurringPayment && (
                       <Button
                         onClick={() => handleEditClick(transaction)}
                         variant="ghost"
-                        size="icon"
+                        size="sm"
+                        className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3 w-3" />
                       </Button>
                     )}
                     {onDelete && (
                       <Button
                         onClick={() => onDelete(transaction.id)}
                         variant="ghost"
-                        size="icon"
+                        size="sm"
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
                         title={transaction.isRecurringPayment ? 
                           "Excluir esta transação (para cancelar o pagamento, use o card de despesas fixas)" : 
                           "Excluir esta transação"}
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     )}
                   </div>

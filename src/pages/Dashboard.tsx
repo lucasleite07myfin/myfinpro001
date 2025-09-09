@@ -102,13 +102,13 @@ const Dashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-4 md:mb-6">
           <TooltipHelper content={tooltipContent.dashboard.chart}>
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 h-full">
               <FinanceChart data={monthlyData} transactions={transactions} />
             </div>
           </TooltipHelper>
           
           <TooltipHelper content={tooltipContent.dashboard.recurringExpenses}>
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 h-full">
               <RecurringExpensesCard 
                 expenses={recurringExpenses}
                 currentMonth={currentMonth}
@@ -123,21 +123,19 @@ const Dashboard: React.FC = () => {
           </TooltipHelper>
         </div>
 
-        <div className="mb-4 md:mb-6">
-          <h2 className="text-base md:text-lg font-semibold text-[#EE680D] mb-3 md:mb-4">Transações Recentes</h2>
+        <div className="mt-6 mb-4 md:mb-6">
+          <h2 className="text-xl font-semibold mb-4 text-neutral-800">Transações Recentes</h2>
           <TooltipHelper content={tooltipContent.dashboard.transactionsTable}>
-            <div>
-              {recentTransactions.length === 0 ? (
-                <EmptyState
-                  title="Nenhuma transação encontrada"
-                  description="Comece adicionando suas primeiras receitas e despesas para acompanhar suas finanças."
-                  actionLabel="Adicionar Transação"
-                  onAction={() => {/* Implementar navegação para adicionar transação */}}
-                />
-              ) : (
-                <TransactionsTable transactions={recentTransactions} />
-              )}
-            </div>
+            {recentTransactions.length === 0 ? (
+              <EmptyState
+                title="Nenhuma transação encontrada"
+                description="Comece adicionando suas primeiras receitas e despesas para acompanhar suas finanças."
+                actionLabel="Adicionar Transação"
+                onAction={() => {/* Implementar navegação para adicionar transação */}}
+              />
+            ) : (
+              <TransactionsTable transactions={recentTransactions} />
+            )}
           </TooltipHelper>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
 import MainLayout from '@/components/MainLayout';
+import EmptyState from '@/components/EmptyState';
 import TransactionsTable from '@/components/TransactionsTable';
 import MonthSelector from '@/components/MonthSelector';
 import AddTransactionModal from '@/components/AddTransactionModal';
@@ -686,53 +687,42 @@ const Expenses: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Transactions Table */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-lg">
-                  Transações do Mês
-                  <Badge variant="outline" className="ml-2">
-                    {currentMonthExpenses.length} {currentMonthExpenses.length === 1 ? 'item' : 'itens'}
-                  </Badge>
-                </CardTitle>
-                {stats.highestTransaction > 0 && (
-                  <Badge variant="secondary">
-                    Maior: {formatCurrency(stats.highestTransaction)}
-                  </Badge>
-                )}
-              </div>
-              <CardDescription>
-                Visualize e gerencie todas as suas despesas do período selecionado
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[600px]">
-                {isLoading ? (
-                  <div className="p-6 space-y-3">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="flex items-center space-x-4">
-                        <Skeleton className="h-12 w-12 rounded-full" />
-                        <div className="space-y-2 flex-1">
-                          <Skeleton className="h-4 w-[250px]" />
-                          <Skeleton className="h-4 w-[200px]" />
-                        </div>
-                        <Skeleton className="h-4 w-[100px]" />
-                      </div>
-                    ))}
+          {/* Recent Expense Transactions */}
+        </div>
+
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold mb-4 text-neutral-800">Despesas Recentes</h2>
+          {isLoading ? (
+            <div className="p-6 space-y-3 bg-white rounded-lg border">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
                   </div>
-                ) : (
-                  <TransactionsTable 
-                    transactions={currentMonthExpenses} 
-                    onDelete={handleDeleteTransaction}
-                    onEdit={handleEditTransaction}
-                    type="expense"
-                    renderBadge={renderTransactionBadge}
-                  />
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                  <Skeleton className="h-4 w-[100px]" />
+                </div>
+              ))}
+            </div>
+          ) : currentMonthExpenses.length === 0 ? (
+            <EmptyState
+              title="Nenhuma despesa encontrada"
+              description="Comece adicionando suas primeiras despesas para acompanhar seus gastos."
+              actionLabel="Adicionar Despesa"
+              onAction={() => setIsAddModalOpen(true)}
+            />
+          ) : (
+            <TransactionsTable 
+              transactions={[...currentMonthExpenses]
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .slice(0, 5)} 
+              onDelete={handleDeleteTransaction}
+              onEdit={handleEditTransaction}
+              type="expense"
+              renderBadge={renderTransactionBadge}
+            />
+          )}
         </div>
 
         {/* Modal de adição */}

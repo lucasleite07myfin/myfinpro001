@@ -207,7 +207,7 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh]">
+      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-3">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Wallet className="h-5 w-5 text-[#EE680D]" />
@@ -238,7 +238,7 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
                   )}
                 </div>
                 <h3 className="font-semibold mb-2">{formData.name || 'Nome do patrimônio'}</h3>
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Atual:</span>
                     <span className="font-medium text-green-600">R$ {formattedValue || '0,00'}</span>
@@ -275,7 +275,7 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
               Informações Básicas
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="type" className="text-sm font-medium">Categoria *</Label>
                 <Select
@@ -322,7 +322,7 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
               Valores Financeiros
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="value" className="text-sm font-medium">Valor atual (R$) *</Label>
                 <Input
@@ -359,7 +359,7 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
               Datas
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="evaluationDate" className="text-sm font-medium">Data da avaliação *</Label>
                 <Popover>
@@ -446,8 +446,8 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
                     setFormData({ ...formData, insured: checked === true })
                   }
                 />
-                <Label htmlFor="insured" className="text-sm font-medium flex items-center gap-2">
-                  <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100 flex items-center gap-1">
+                <Label htmlFor="insured" className="text-sm font-medium flex items-start gap-2">
+                  <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100 flex items-center gap-1 text-xs">
                     <Shield className="h-3 w-3" />
                     Este bem está segurado?
                   </Badge>
@@ -471,7 +471,7 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 pt-3">
+          <DialogFooter className="flex-col sm:flex-row gap-2 pt-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>

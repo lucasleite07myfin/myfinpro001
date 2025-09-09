@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, BarChart } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import MainLayout from '@/components/MainLayout';
@@ -15,7 +15,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
@@ -41,8 +40,6 @@ const projectedData = [
 const CashFlow: React.FC = () => {
   const { currentMonth, setCurrentMonth } = useBusiness();
   const [view, setView] = useState<'monthly' | 'accumulated'>('monthly');
-  const [chartMode, setChartMode] = useState<'historical' | 'projection'>('historical');
-  const [showDetailedTable, setShowDetailedTable] = useState(false);
   
   const calculateTotals = () => {
     const historical = projectedData.filter(item => item.income !== null && item.expenses !== null);
@@ -53,69 +50,19 @@ const CashFlow: React.FC = () => {
     return { totalIncome, totalExpenses, totalBalance };
   };
 
-  const calculateTrends = () => {
-    const historical = projectedData.filter(item => item.income !== null && item.expenses !== null);
-    const lastThreeMonths = historical.slice(-3);
-    const avgBalance = lastThreeMonths.reduce((sum, item) => sum + (item.balance || 0), 0) / lastThreeMonths.length;
-    const isGrowing = lastThreeMonths.every((item, index) => 
-      index === 0 || (item.balance || 0) >= (lastThreeMonths[index - 1].balance || 0)
-    );
-    
-    const projections = projectedData.filter(item => item.projection !== null);
-    const bestProjectedMonth = projections.reduce((max, item) => 
-      (item.projection || 0) > (max.projection || 0) ? item : max, projections[0]
-    );
-    
-    return { avgBalance, isGrowing, bestProjectedMonth, lastThreeMonths };
-  };
 
-  const generateInsights = () => {
-    const { isGrowing, bestProjectedMonth, lastThreeMonths } = calculateTrends();
-    const insights = [];
-
-    if (isGrowing) {
-      insights.push({
-        type: 'success',
-        icon: TrendingUp,
-        title: 'Tendência Positiva',
-        description: 'Seu saldo vem crescendo nos últimos 3 meses consecutivos'
-      });
-    }
-
-    if (bestProjectedMonth) {
-      insights.push({
-        type: 'info',
-        icon: CheckCircle,
-        title: 'Melhor Projeção',
-        description: `Se as projeções se confirmarem, ${bestProjectedMonth.month} será o melhor mês com ${formatCurrency(bestProjectedMonth.projection || 0)}`
-      });
-    }
-
-    const currentBalance = lastThreeMonths[lastThreeMonths.length - 1]?.balance || 0;
-    if (currentBalance < 15000) {
-      insights.push({
-        type: 'warning',
-        icon: AlertTriangle,
-        title: 'Atenção ao Saldo',
-        description: 'Saldo atual abaixo da média histórica. Considere revisar gastos.'
-      });
-    }
-
-    return insights;
-  };
   
   const { totalIncome, totalExpenses, totalBalance } = calculateTotals();
-  const insights = generateInsights();
 
-  // Chart configuration for modern Recharts
+  // Chart configuration for modern Recharts with income/expense colors
   const chartConfig: ChartConfig = {
     income: {
       label: "Entradas",
-      color: "hsl(var(--chart-1))",
+      color: "#22c55e", // Green for income
     },
     expenses: {
-      label: "Saídas",
-      color: "hsl(var(--chart-2))",
+      label: "Saídas", 
+      color: "#ef4444", // Red for expenses
     },
     balance: {
       label: "Saldo",
@@ -347,158 +294,161 @@ const CashFlow: React.FC = () => {
         </div>
       </div>
 
-      {/* Análises Inteligentes */}
-      {insights.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-neutral-800 mb-4">Análises Inteligentes</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {insights.map((insight, index) => {
-              const Icon = insight.icon;
-              return (
-                <Alert key={index} className={
-                  insight.type === 'success' ? 'border-green-200 bg-green-50' :
-                  insight.type === 'warning' ? 'border-yellow-200 bg-yellow-50' :
-                  'border-blue-200 bg-blue-50'
-                }>
-                  <Icon className={`h-4 w-4 ${
-                    insight.type === 'success' ? 'text-green-600' :
-                    insight.type === 'warning' ? 'text-yellow-600' :
-                    'text-blue-600'
-                  }`} />
-                  <AlertTitle className={
-                    insight.type === 'success' ? 'text-green-800' :
-                    insight.type === 'warning' ? 'text-yellow-800' :
-                    'text-blue-800'
-                  }>
-                    {insight.title}
-                  </AlertTitle>
-                  <AlertDescription className={
-                    insight.type === 'success' ? 'text-green-700' :
-                    insight.type === 'warning' ? 'text-yellow-700' :
-                    'text-blue-700'
-                  }>
-                    {insight.description}
-                  </AlertDescription>
-                </Alert>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      
-      {/* Modern Chart with proper containment */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Fluxo de Caixa {view === 'accumulated' ? 'Acumulado' : 'Mensal'}</CardTitle>
-          <CardDescription>
-            {view === 'accumulated' 
-              ? 'Valores acumulados ao longo do ano' 
-              : 'Comparação mensal de entradas, saídas e projeções'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-hidden">
-          <div className="h-[400px] w-full">
-            <ChartContainer config={chartConfig}>
-              {view === 'monthly' ? (
-                <BarChart
-                  accessibilityLayer
-                  data={projectedData}
-                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    tickFormatter={(value) => value}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent 
-                      formatter={(value, name) => [
-                        value ? formatCurrency(Number(value)) : '-',
-                        name
-                      ]}
-                      hideLabel={false}
-                    />}
-                  />
-                  <Bar 
-                    dataKey="income" 
-                    name="Entradas"
-                    fill="var(--color-income)" 
-                    radius={[4, 4, 0, 0]} 
-                  />
-                  <Bar 
-                    dataKey="expenses" 
-                    name="Saídas"
-                    fill="var(--color-expenses)" 
-                    radius={[4, 4, 0, 0]} 
-                  />
-                </BarChart>
-              ) : (
-                <BarChart
-                  accessibilityLayer
-                  data={projectedData.map((item, index, arr) => ({
-                    ...item,
-                    accIncome: arr.slice(0, index + 1).reduce((sum, i) => sum + (i.income || 0), 0),
-                    accExpenses: arr.slice(0, index + 1).reduce((sum, i) => sum + (i.expenses || 0), 0),
-                  }))}
-                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    tickFormatter={(value) => value}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent 
-                      formatter={(value, name) => [
-                        formatCurrency(Number(value)),
-                        name
-                      ]}
-                      hideLabel={false}
-                    />}
-                  />
-                  <Bar 
-                    dataKey="accIncome" 
-                    name="Entradas Acumuladas"
-                    fill="var(--color-income)" 
-                    radius={[4, 4, 0, 0]} 
-                  />
-                  <Bar 
-                    dataKey="accExpenses" 
-                    name="Saídas Acumuladas"
-                    fill="var(--color-expenses)" 
-                    radius={[4, 4, 0, 0]} 
-                  />
-                </BarChart>
-              )}
-            </ChartContainer>
-          </div>
-        </CardContent>
-        <CardFooter className="flex-col items-start gap-2 text-sm">
-          <div className="flex gap-2 font-medium leading-none">
-            {totalBalance >= 0 ? (
-              <>
-                Saldo positivo de {formatCurrency(totalBalance)} <TrendingUp className="h-4 w-4" />
-              </>
-            ) : (
-              <>
-                Déficit de {formatCurrency(Math.abs(totalBalance))} <TrendingDown className="h-4 w-4" />
-              </>
-            )}
-          </div>
-          <div className="leading-none text-muted-foreground">
-            Dados históricos e projeções para o período de 12 meses
-          </div>
-        </CardFooter>
-      </Card>
+      {/* Cash Flow Chart */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4 text-neutral-800">
+          Fluxo de Caixa {view === 'accumulated' ? 'Acumulado' : 'Mensal'}
+        </h2>
+        
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">
+                  Análise de Fluxo {view === 'accumulated' ? 'Acumulado' : 'Mensal'}
+                </CardTitle>
+                <p className="text-neutral-500 text-sm mt-1">
+                  {view === 'accumulated' 
+                    ? 'Valores acumulados ao longo do período' 
+                    : 'Entradas e saídas por mês'
+                  }
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {totalBalance >= 0 ? (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="text-sm font-medium">Superávit</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-red-600">
+                    <TrendingDown className="h-4 w-4" />
+                    <span className="text-sm font-medium">Déficit</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="h-[400px] w-full">
+              <ChartContainer config={chartConfig} className="h-full w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  {view === 'monthly' ? (
+                    <BarChart
+                      data={projectedData}
+                      margin={{ top: 20, right: 30, bottom: 20, left: 20 }}
+                    >
+                      <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="month"
+                        tickLine={false}
+                        tickMargin={10}
+                        axisLine={false}
+                        fontSize={12}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        fontSize={12}
+                        tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                      />
+                      <ChartTooltip
+                        content={<ChartTooltipContent 
+                          formatter={(value, name) => [
+                            value ? formatCurrency(Number(value)) : 'Sem dados',
+                            name
+                          ]}
+                          className="bg-white border border-gray-200 shadow-md rounded-lg p-3"
+                        />}
+                      />
+                      <Bar 
+                        dataKey="income" 
+                        name="Entradas"
+                        fill="var(--color-income)" 
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={60}
+                      />
+                      <Bar 
+                        dataKey="expenses" 
+                        name="Saídas"
+                        fill="var(--color-expenses)" 
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={60}
+                      />
+                    </BarChart>
+                  ) : (
+                    <BarChart
+                      data={projectedData.map((item, index, arr) => ({
+                        ...item,
+                        accIncome: arr.slice(0, index + 1).reduce((sum, i) => sum + (i.income || 0), 0),
+                        accExpenses: arr.slice(0, index + 1).reduce((sum, i) => sum + (i.expenses || 0), 0),
+                      }))}
+                      margin={{ top: 20, right: 30, bottom: 20, left: 20 }}
+                    >
+                      <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="month"
+                        tickLine={false}
+                        tickMargin={10}
+                        axisLine={false}
+                        fontSize={12}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        fontSize={12}
+                        tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                      />
+                      <ChartTooltip
+                        content={<ChartTooltipContent 
+                          formatter={(value, name) => [
+                            formatCurrency(Number(value)),
+                            name
+                          ]}
+                          className="bg-white border border-gray-200 shadow-md rounded-lg p-3"
+                        />}
+                      />
+                      <Bar 
+                        dataKey="accIncome" 
+                        name="Entradas Acumuladas"
+                        fill="var(--color-income)" 
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={60}
+                      />
+                      <Bar 
+                        dataKey="accExpenses" 
+                        name="Saídas Acumuladas"
+                        fill="var(--color-expenses)" 
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={60}
+                      />
+                    </BarChart>
+                  )}
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
+            
+            <div className="mt-6 pt-6 border-t">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <p className="text-sm text-neutral-500">Total de Entradas</p>
+                  <p className="text-lg font-bold text-green-600">{formatCurrency(totalIncome)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-neutral-500">Total de Saídas</p>
+                  <p className="text-lg font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-neutral-500">Resultado</p>
+                  <p className={`text-lg font-bold ${totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(totalBalance)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       
       {/* Tabela Detalhada com Tabs */}
       <Card>
@@ -521,7 +471,7 @@ const CashFlow: React.FC = () => {
                       <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Entradas</th>
                       <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Saídas</th>
                       <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Saldo</th>
-                      <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Status</th>
+                      <th className="px-6 py-3 bg-neutral-50 text-center text-xs font-medium text-neutral-500 uppercase">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -539,7 +489,7 @@ const CashFlow: React.FC = () => {
                         }`}>
                           {formatCurrency(item.balance || 0)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                           <Badge variant="secondary">Realizado</Badge>
                         </td>
                       </tr>
@@ -556,8 +506,8 @@ const CashFlow: React.FC = () => {
                     <tr>
                       <th className="px-6 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase">Mês</th>
                       <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Projeção</th>
-                      <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Confiança</th>
-                      <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Status</th>
+                      <th className="px-6 py-3 bg-neutral-50 text-center text-xs font-medium text-neutral-500 uppercase">Confiança</th>
+                      <th className="px-6 py-3 bg-neutral-50 text-center text-xs font-medium text-neutral-500 uppercase">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -569,13 +519,13 @@ const CashFlow: React.FC = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-purple-600">
                             {formatCurrency(item.projection || 0)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                            <div className="flex items-center gap-2">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                            <div className="flex items-center justify-center gap-2">
                               <Progress value={confidence} className="w-16 h-2" />
                               <span className="text-xs text-neutral-500">{confidence}%</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                             <Badge variant="outline" className="text-purple-600 border-purple-200">
                               Projetado
                             </Badge>

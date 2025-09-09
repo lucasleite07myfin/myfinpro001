@@ -309,7 +309,7 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh]">
+      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-3">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Bitcoin className="h-5 w-5 text-[#EE680D]" />
@@ -336,7 +336,7 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
                 <h3 className="font-semibold mb-2">
                   {formData.symbol ? `${formData.symbol.toUpperCase()} (${quantityValue})` : 'Criptomoeda'}
                 </h3>
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Quantidade:</span>
                     <span className="font-medium">{quantityValue.toFixed(8)}</span>
@@ -391,7 +391,7 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
               Informações da Moeda
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="symbol" className="text-sm font-medium">
                   Símbolo da moeda *
@@ -423,7 +423,7 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
                   
                   {/* Dropdown com sugestões */}
                   {openCoinSelector && (searchTerm.length > 0 || usedCoins.length > 0) && (
-                    <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-80 overflow-y-auto">
+                    <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-60 sm:max-h-80 overflow-y-auto">
                       {coinsLoading ? (
                         <div className="flex items-center gap-2 p-3">
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -614,7 +614,7 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 pt-3">
+          <DialogFooter className="flex-col sm:flex-row gap-2 pt-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>

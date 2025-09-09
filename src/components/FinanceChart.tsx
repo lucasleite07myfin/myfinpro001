@@ -88,7 +88,7 @@ const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
 
   return (
     <TooltipProvider>
-      <Card className="w-full">
+      <Card className="w-full h-full flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-lg">
             {chartType === 'line' ? 'Evolução Financeira (12 meses)' : 'Despesas por Categoria'}
