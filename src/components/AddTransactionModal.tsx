@@ -13,7 +13,7 @@ import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, PAYMENT_METHODS, PaymentMethod, TransactionType, Goal, FinanceContextType, BusinessContextType, Transaction } from '@/types/finance';
 import { formatCurrency, formatNumberToCurrency } from '@/utils/formatters';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Info, Target, TrendingUp, Calendar as CalendarIcon } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
@@ -27,6 +27,7 @@ interface AddTransactionModalProps {
   onOpenChange: (open: boolean) => void;
   initialData?: Transaction;
   mode?: 'add' | 'edit';
+  defaultTransactionType?: TransactionType;
   showEditConfirmation?: boolean;
   onConfirmEdit?: () => void;
   onCancelEdit?: () => void;
@@ -36,7 +37,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   open,
   onOpenChange,
   initialData,
-  mode = 'add'
+  mode = 'add',
+  defaultTransactionType
 }) => {
   const { mode: appMode } = useAppMode();
   const financeContext = appMode === 'personal' ? useFinance() : useBusiness();
@@ -49,7 +51,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   } = financeContext as FinanceContextType | BusinessContextType;
 
   const [activeTab, setActiveTab] = useState('transaction');
-  const [transactionType, setTransactionType] = useState<TransactionType>('expense');
+  const [transactionType, setTransactionType] = useState<TransactionType>(defaultTransactionType || 'expense');
 
   // Common state for forms
   const [date, setDate] = useState<Date>(new Date());
@@ -93,7 +95,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   const resetForm = () => {
     setActiveTab('transaction');
-    setTransactionType('expense');
+    setTransactionType(defaultTransactionType || 'expense');
     setDate(new Date());
     setDescription('');
     setCategory('');
@@ -141,7 +143,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   const handleSubmitTransaction = () => {
     if (!description || !category || !amount || !date) {
-      toast({ title: 'Erro', description: 'Preencha todos os campos obrigatórios' });
+      toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
@@ -158,13 +160,13 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         // Cast para o tipo correto que sabemos que tem editTransaction
         const context = financeContext as FinanceContextType;
         context.editTransaction({ ...transactionData, id: initialData.id });
-        toast({ title: 'Sucesso', description: 'Transação atualizada com sucesso!' });
+        toast.success('Transação atualizada com sucesso!');
     } else {
         if (category === 'Outros' && customCategory.trim() && addCustomCategory) {
             addCustomCategory(transactionType, customCategory.trim());
         }
         addTransaction(transactionData);
-        toast({ title: 'Sucesso', description: 'Transação adicionada com sucesso!' });
+        toast.success('Transação adicionada com sucesso!');
     }
     
     onOpenChange(false);
@@ -172,7 +174,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   const handleSubmitRecurring = () => {
     if (!description || !category || !dueDay || parseInt(dueDay) < 1 || parseInt(dueDay) > 31) {
-        toast({ title: 'Campos inválidos', description: 'Preencha os campos obrigatórios corretamente.' });
+        toast.error('Preencha os campos obrigatórios corretamente.');
         return;
     }
     const finalCategory = category === 'Outros' && customCategory.trim() ? `Outros: ${customCategory.trim()}` : category;
@@ -192,7 +194,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   const handleSubmitGoalContribution = () => {
     if (!selectedGoal || !amount) {
-        toast({ title: 'Campos inválidos', description: 'Selecione uma meta e informe o valor.' });
+        toast.error('Selecione uma meta e informe o valor.');
         return;
     }
     const selectedGoalObj = goals.find(g => g.id === selectedGoal);
@@ -228,22 +230,24 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   const renderTransactionForm = () => (
     <>
-      <Tabs value={transactionType} onValueChange={(value) => setTransactionType(value as TransactionType)} className="w-full mb-4">
-        <TabsList className="grid w-full grid-cols-2 bg-gray-100">
-          <TabsTrigger 
-            value="income" 
-            className="data-[state=active]:bg-green-500 data-[state=active]:text-white"
-          >
-            Receita
-          </TabsTrigger>
-          <TabsTrigger 
-            value="expense" 
-            className="data-[state=active]:bg-red-500 data-[state=active]:text-white"
-          >
-            Despesa
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {!defaultTransactionType && (
+        <Tabs value={transactionType} onValueChange={(value) => setTransactionType(value as TransactionType)} className="w-full mb-4">
+          <TabsList className="grid w-full grid-cols-2 bg-gray-100">
+            <TabsTrigger 
+              value="income" 
+              className="data-[state=active]:bg-green-500 data-[state=active]:text-white"
+            >
+              Receita
+            </TabsTrigger>
+            <TabsTrigger 
+              value="expense" 
+              className="data-[state=active]:bg-red-500 data-[state=active]:text-white"
+            >
+              Despesa
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
       <div className="space-y-4">
         <TooltipHelper content={tooltipContent.modals.fields.date} delayDuration={500}>
           <div className="space-y-2">
@@ -401,76 +405,112 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       </div>
   );
 
+  const getModalTitle = () => {
+    if (mode === 'edit') return 'Editar Transação';
+    if (defaultTransactionType === 'income') return 'Adicionar Receita';
+    if (defaultTransactionType === 'expense') return 'Adicionar Despesa';
+    return 'Adicionar Transação';
+  };
+
+  const getModalBadge = () => {
+    if (defaultTransactionType === 'income') {
+      return <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">Receita</span>;
+    }
+    if (defaultTransactionType === 'expense') {
+      return <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm font-medium">Despesa</span>;
+    }
+    return null;
+  };
+
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">
-              {mode === 'edit' ? 'Editar Transação' : 'Adicionar Transação'}
+            <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+              {getModalTitle()}
+              {getModalBadge()}
             </DialogTitle>
             <DialogDescription>
-              Selecione o tipo de entrada que deseja adicionar.
+              {defaultTransactionType ? 
+                `Preencha os dados para ${defaultTransactionType === 'income' ? 'a nova receita' : 'a nova despesa'}.` :
+                'Selecione o tipo de entrada que deseja adicionar.'
+              }
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs value={activeTab} onValueChange={mode === 'edit' ? undefined : setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger 
-                value="transaction" 
-                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white"
-              >
-                Transação
-              </TabsTrigger>
-              <TabsTrigger 
-                value="recurring" 
-                disabled={mode === 'edit'}
-                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Recorrente
-              </TabsTrigger>
-              <TabsTrigger 
-                value="goals" 
-                disabled={mode === 'edit'}
-                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Metas
-              </TabsTrigger>
-              <TabsTrigger 
-                value="invest" 
-                disabled={mode === 'edit'}
-                className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Investir
-              </TabsTrigger>
-            </TabsList>
-            
+          {defaultTransactionType ? (
             <form onSubmit={handleSubmit}>
               <div style={{ minHeight: '350px' }}>
-                <TabsContent value="transaction" className="mt-4">
-                  {renderTransactionForm()}
-                </TabsContent>
-                <TabsContent value="recurring" className="mt-4">
-                  {renderRecurringForm()}
-                </TabsContent>
-                <TabsContent value="goals" className="mt-4">
-                  {renderGoalsForm()}
-                </TabsContent>
-                <TabsContent value="invest" className="mt-4">
-                  {renderInvestForm()}
-                </TabsContent>
+                {renderTransactionForm()}
               </div>
-
               <DialogFooter className="border-t pt-4 mt-6">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={activeTab === 'invest'} style={{ backgroundColor: '#EE680D' }}>
+                <Button type="submit" style={{ backgroundColor: '#EE680D' }}>
                   Salvar
                 </Button>
               </DialogFooter>
             </form>
-          </Tabs>
+          ) : (
+            <Tabs value={activeTab} onValueChange={mode === 'edit' ? undefined : setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger 
+                  value="transaction" 
+                  className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white"
+                >
+                  Transação
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="recurring" 
+                  disabled={mode === 'edit'}
+                  className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Recorrente
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="goals" 
+                  disabled={mode === 'edit'}
+                  className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Metas
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="invest" 
+                  disabled={mode === 'edit'}
+                  className="data-[state=active]:bg-[#EE680D] data-[state=active]:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Investir
+                </TabsTrigger>
+              </TabsList>
+              
+              <form onSubmit={handleSubmit}>
+                <div style={{ minHeight: '350px' }}>
+                  <TabsContent value="transaction" className="mt-4">
+                    {renderTransactionForm()}
+                  </TabsContent>
+                  <TabsContent value="recurring" className="mt-4">
+                    {renderRecurringForm()}
+                  </TabsContent>
+                  <TabsContent value="goals" className="mt-4">
+                    {renderGoalsForm()}
+                  </TabsContent>
+                  <TabsContent value="invest" className="mt-4">
+                    {renderInvestForm()}
+                  </TabsContent>
+                </div>
+                <DialogFooter className="border-t pt-4 mt-6">
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={activeTab === 'invest'} style={{ backgroundColor: '#EE680D' }}>
+                    Salvar
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Tabs>
+          )}
         </DialogContent>
       </Dialog>
     </TooltipProvider>

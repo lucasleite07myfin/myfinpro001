@@ -1,6 +1,4 @@
-
 import React, { ReactNode, forwardRef } from 'react';
-import { Button } from '@/components/ui/button';
 
 interface FloatingActionButtonProps {
   children: ReactNode;
@@ -10,15 +8,64 @@ interface FloatingActionButtonProps {
 const FloatingActionButton = forwardRef<HTMLButtonElement, FloatingActionButtonProps>(
   ({ children, onClick }, ref) => {
     return (
-      <Button
-        ref={ref}
-        className="fixed bottom-4 md:bottom-6 right-4 md:right-6 rounded-full w-14 h-14 md:w-16 md:h-16 shadow-lg z-20
-                  bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700
-                  animate-pulse text-white"
-        onClick={onClick}
-      >
-        {children}
-      </Button>
+      <>
+        <style>{`
+          @keyframes fab-pulse {
+            0%, 100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.8;
+            }
+          }
+          
+          .floating-action-button {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            transition: all 0.3s ease;
+            animation: fab-pulse 2s infinite;
+          }
+          
+          .floating-action-button:hover {
+            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+            transform: scale(1.1);
+          }
+          
+          .floating-action-button:focus {
+            outline: 2px solid #fb923c;
+            outline-offset: 2px;
+          }
+          
+          @media (min-width: 768px) {
+            .floating-action-button {
+              bottom: 1.5rem;
+              right: 1.5rem;
+              width: 4rem;
+              height: 4rem;
+            }
+          }
+        `}</style>
+        <button
+          ref={ref}
+          onClick={onClick}
+          className="floating-action-button"
+        >
+          {children}
+        </button>
+      </>
     );
   }
 );

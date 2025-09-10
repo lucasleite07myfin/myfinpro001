@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 
@@ -63,11 +63,7 @@ const ResetPassword = () => {
     }
 
     // Se não há tokens válidos, redireciona para auth
-    toast({
-      title: 'Link inválido',
-      description: 'O link de recuperação é inválido ou expirou.',
-      variant: 'destructive',
-    });
+    toast.error('O link de recuperação é inválido ou expirou.');
     navigate('/auth');
   }, [searchParams, navigate]);
 
@@ -81,21 +77,14 @@ const ResetPassword = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Senha alterada com sucesso!',
-        description: 'Sua senha foi redefinida. Você pode fazer login agora.',
-      });
+      toast.success('Sua senha foi redefinida. Você pode fazer login agora.');
       
       // Faz logout e redireciona para login
       await supabase.auth.signOut();
       navigate('/auth');
     } catch (error: any) {
       console.error('Erro ao redefinir senha:', error);
-      toast({
-        title: 'Erro ao redefinir senha',
-        description: 'Ocorreu um erro ao redefinir sua senha. Tente novamente.',
-        variant: 'destructive',
-      });
+      toast.error('Ocorreu um erro ao redefinir sua senha. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }

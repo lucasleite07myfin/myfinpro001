@@ -203,40 +203,7 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
             </Badge>
           </CardTitle>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="high-value-filter"
-                checked={showHighValue}
-                onCheckedChange={setShowHighValue}
-              />
-              <label htmlFor="high-value-filter" className="text-sm">
-                Mostrar apenas acima de R$ 10.000
-              </label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="auto-update"
-                checked={autoUpdateEnabled}
-                onCheckedChange={setAutoUpdateEnabled}
-              />
-              <label htmlFor="auto-update" className="text-sm flex items-center gap-1">
-                {autoUpdateEnabled ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-                Atualização automática
-              </label>
-            </div>
-
             <div className="flex items-center gap-2">
-              <Button 
-                size="sm"
-                variant="outline" 
-                onClick={manualUpdate}
-                disabled={isUpdating}
-                className="flex items-center gap-1"
-              >
-                <RefreshCw className={`h-4 w-4 ${isUpdating ? 'animate-spin' : ''}`} />
-                {isUpdating ? 'Atualizando...' : 'Atualizar'}
-              </Button>
               
               <Button 
                 size="sm"

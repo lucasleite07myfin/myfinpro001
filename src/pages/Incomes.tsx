@@ -22,7 +22,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { 
   FileText, 
   FileSpreadsheet, 
@@ -137,10 +137,7 @@ const Incomes: React.FC = () => {
   const confirmDelete = () => {
     if (transactionToDelete) {
       deleteTransaction(transactionToDelete);
-      toast({
-        title: "Sucesso",
-        description: "Receita excluída com sucesso!",
-      });
+      toast.success("Receita excluída com sucesso!");
     }
     setDeleteDialogOpen(false);
     setTransactionToDelete(null);
@@ -179,10 +176,7 @@ const Incomes: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Sucesso",
-      description: "Arquivo CSV exportado com sucesso!",
-    });
+    toast.success("Arquivo CSV exportado com sucesso!");
     setIsLoading(false);
   };
 
@@ -218,10 +212,7 @@ const Incomes: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Sucesso",
-      description: "Arquivo Excel exportado com sucesso!",
-    });
+    toast.success("Arquivo Excel exportado com sucesso!");
     setIsLoading(false);
   };
 
@@ -289,10 +280,7 @@ const Incomes: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Sucesso",
-      description: "Arquivo PDF exportado com sucesso! (HTML formatado para impressão)",
-    });
+    toast.success("Arquivo PDF exportado com sucesso! (HTML formatado para impressão)");
     setIsLoading(false);
   };
 
@@ -530,6 +518,7 @@ const Incomes: React.FC = () => {
           open={isAddModalOpen}
           onOpenChange={setIsAddModalOpen}
           mode="add"
+          defaultTransactionType="income"
         />
 
         {/* Modal de edição */}
@@ -543,6 +532,7 @@ const Incomes: React.FC = () => {
           }}
           initialData={editingTransaction || undefined}
           mode={editingTransaction ? 'edit' : 'add'}
+          defaultTransactionType="income"
         />
 
         {/* Alert Dialog de confirmação de exclusão */}

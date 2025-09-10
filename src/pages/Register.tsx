@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CustomTabTriggers } from '@/components/ui/custom-tabs';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { validateCPF, validateCNPJ } from '@/utils/documentValidator';
 
 // Schema for registration validation
@@ -70,10 +70,7 @@ const Register = () => {
     setShowPassword(true);
     setShowConfirmPassword(true);
     
-    toast({
-      title: 'Senha forte gerada',
-      description: 'Uma senha forte foi gerada e preenchida para você.',
-    });
+    toast.success('Uma senha forte foi gerada e preenchida para você.');
   };
 
   const onSubmit = (values: RegisterFormValues) => {
@@ -81,18 +78,10 @@ const Register = () => {
     let isValid = true;
     
     if (userType === 'personal' && !validateCPF(values.document)) {
-      toast({
-        title: 'CPF inválido',
-        description: 'Por favor, verifique o CPF informado.',
-        variant: 'destructive',
-      });
+      toast.error('Por favor, verifique o CPF informado.');
       isValid = false;
     } else if (userType === 'business' && !validateCNPJ(values.document)) {
-      toast({
-        title: 'CNPJ inválido',
-        description: 'Por favor, verifique o CNPJ informado.',
-        variant: 'destructive',
-      });
+      toast.error('Por favor, verifique o CNPJ informado.');
       isValid = false;
     }
 
@@ -103,10 +92,7 @@ const Register = () => {
       setTimeout(() => {
         console.log('Registration attempt:', { ...values, userType });
         
-        toast({
-          title: 'Cadastro realizado',
-          description: 'Sua conta foi criada com sucesso!',
-        });
+        toast.success('Sua conta foi criada com sucesso!');
         
         setIsSubmitting(false);
         // Navigate to login page after successful registration

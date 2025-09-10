@@ -5,28 +5,20 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { User, Mail, KeyRound } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
 
 const Profile = () => {
-  const { toast } = useToast();
-  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Perfil atualizado",
-      description: "Suas informações foram atualizadas com sucesso.",
-    });
+    toast.success("Suas informações foram atualizadas com sucesso.");
   };
   
   const handlePasswordReset = () => {
-    toast({
-      title: "Email enviado",
-      description: "Verifique seu email para redefinir sua senha.",
-    });
+    toast.success("Verifique seu email para redefinir sua senha.");
   };
   
   return (

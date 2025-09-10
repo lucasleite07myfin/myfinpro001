@@ -23,7 +23,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { 
   FileText, 
   FileSpreadsheet, 
@@ -194,10 +194,7 @@ const Expenses: React.FC = () => {
     // Delete the transaction
     deleteTransaction(transactionToDelete.id);
     
-    toast({
-      title: "Sucesso",
-      description: "Despesa excluída com sucesso!",
-    });
+    toast.success("Despesa excluída com sucesso!");
     
     // Reset state
     setDeleteDialogOpen(false);
@@ -240,10 +237,7 @@ const Expenses: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Sucesso",
-      description: "Arquivo CSV exportado com sucesso!",
-    });
+    toast.success("Arquivo CSV exportado com sucesso!");
     setIsLoading(false);
   };
 
@@ -284,10 +278,7 @@ const Expenses: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Sucesso",
-      description: "Arquivo Excel exportado com sucesso!",
-    });
+    toast.success("Arquivo Excel exportado com sucesso!");
     setIsLoading(false);
   };
 
@@ -363,10 +354,7 @@ const Expenses: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Sucesso",
-      description: "Arquivo PDF exportado com sucesso! (HTML formatado para impressão)",
-    });
+    toast.success("Arquivo PDF exportado com sucesso! (HTML formatado para impressão)");
     setIsLoading(false);
   };
 
@@ -730,6 +718,7 @@ const Expenses: React.FC = () => {
           open={isAddModalOpen}
           onOpenChange={setIsAddModalOpen}
           mode="add"
+          defaultTransactionType="expense"
         />
 
         {/* Modal de edição */}
@@ -743,6 +732,7 @@ const Expenses: React.FC = () => {
           }}
           initialData={editingTransaction || undefined}
           mode={editingTransaction ? 'edit' : 'add'}
+          defaultTransactionType="expense"
         />
 
         {/* Alert Dialog de confirmação de exclusão */}

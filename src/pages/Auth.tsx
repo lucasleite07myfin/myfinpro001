@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 const Auth = () => {
@@ -31,11 +31,7 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !fullName) {
-      toast({
-        title: 'Campos obrigatórios',
-        description: 'Por favor, preencha todos os campos.',
-        variant: 'destructive'
-      });
+      toast.error('Por favor, preencha todos os campos.');
       return;
     }
 
@@ -57,10 +53,7 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
-        toast({
-          title: 'Conta criada com sucesso!',
-          description: 'Verifique seu email para confirmar a conta.',
-        });
+        toast.success('Verifique seu email para confirmar a conta.');
         
         // Limpa os campos
         setEmail('');
@@ -79,11 +72,7 @@ const Auth = () => {
         message = 'Email inválido. Verifique o formato.';
       }
       
-      toast({
-        title: 'Erro no cadastro',
-        description: message,
-        variant: 'destructive'
-      });
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -92,11 +81,7 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast({
-        title: 'Campos obrigatórios',
-        description: 'Por favor, informe email e senha.',
-        variant: 'destructive'
-      });
+      toast.error('Por favor, informe email e senha.');
       return;
     }
 
@@ -117,10 +102,7 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
-        toast({
-          title: 'Login realizado com sucesso!',
-          description: 'Redirecionando...',
-        });
+        toast.success('Redirecionando...');
         
         // Força recarregamento da página para estado limpo
         window.location.href = '/';
@@ -135,11 +117,7 @@ const Auth = () => {
         message = 'Confirme seu email antes de fazer login.';
       }
       
-      toast({
-        title: 'Erro no login',
-        description: message,
-        variant: 'destructive'
-      });
+      toast.error(message);
     } finally {
       setLoading(false);
     }

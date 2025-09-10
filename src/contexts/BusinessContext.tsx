@@ -384,34 +384,78 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     }
   };
 
-  const updateRecurringExpense = (expense: RecurringExpense) => {
-    setRecurringExpenses(prev => prev.map(item => item.id === expense.id ? expense : item));
+  const updateRecurringExpense = async (expense: RecurringExpense) => {
+    try {
+      const { error } = await supabase
+        .from('emp_recurring_expenses')
+        .update({
+          description: expense.description,
+          category: expense.category,
+          amount: expense.amount,
+          due_day: expense.dueDay,
+          payment_method: expense.paymentMethod,
+          repeat_months: expense.repeatMonths,
+          monthly_values: expense.monthlyValues,
+        })
+        .eq('id', expense.id);
+
+      if (error) throw error;
+
+      setRecurringExpenses(prev => prev.map(item => item.id === expense.id ? expense : item));
+      toast.success('Despesa recorrente atualizada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao atualizar despesa recorrente:', error);
+      toast.error('Erro ao atualizar despesa recorrente');
+    }
   };
 
-  const deleteRecurringExpense = (id: string) => {
-    setRecurringExpenses(prev => prev.filter(item => item.id !== id));
+  const deleteRecurringExpense = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('emp_recurring_expenses')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setRecurringExpenses(prev => prev.filter(item => item.id !== id));
+      toast.success('Despesa recorrente excluída com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir despesa recorrente:', error);
+      toast.error('Erro ao excluir despesa recorrente');
+    }
   };
 
-  const markRecurringAsPaid = (id: string, year: number, month: number) => {
+  const markRecurringAsPaid = async (id: string, year: number, month: number) => {
     const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
-    
-    setRecurringExpenses(prev => prev.map(expense => {
-      if (expense.id === id) {
-        const paidMonths = expense.paidMonths || [];
-        if (paidMonths.includes(monthKey)) {
-          return {
-            ...expense,
-            paidMonths: paidMonths.filter(m => m !== monthKey)
-          };
-        } else {
-          return {
-            ...expense,
-            paidMonths: [...paidMonths, monthKey]
-          };
-        }
-      }
-      return expense;
-    }));
+    const expense = recurringExpenses.find(e => e.id === id);
+    if (!expense) return;
+
+    const paidMonths = expense.paidMonths || [];
+    const isPaid = paidMonths.includes(monthKey);
+
+    let newPaidMonths: string[];
+
+    if (isPaid) {
+      newPaidMonths = paidMonths.filter(m => m !== monthKey);
+    } else {
+      newPaidMonths = [...paidMonths, monthKey];
+    }
+
+    try {
+      const { error } = await supabase
+        .from('emp_recurring_expenses')
+        .update({ paid_months: newPaidMonths })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setRecurringExpenses(prev => prev.map(e => e.id === id ? { ...e, paidMonths: newPaidMonths } : e));
+      toast.success(`Despesa marcada como ${!isPaid ? 'paga' : 'não paga'}`);
+    } catch (error) {
+      console.error('Erro ao atualizar despesa recorrente:', error);
+      toast.error('Erro ao atualizar despesa recorrente');
+    }
   };
 
   // Find transaction for a recurring expense in a specific month
@@ -757,24 +801,115 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     toast.success('Passivo excluído com sucesso!');
   };
 
-  // Functions for managing investments (mantendo local por enquanto)
-  const addInvestment = (investment: Investment) => {
-    const id = Date.now().toString(); // ID temporário
-    setInvestments(prev => [...prev, { ...investment, id }]);
+  // Functions for managing investments (salvando no banco de dados)
+  const addInvestment = async (investment: Investment) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data, error } = await supabase
+        .from('emp_assets')
+        .insert({
+          user_id: user.id,
+          name: investment.name,
+          type: 'Investimento',
+          value: investment.value,
+          notes: JSON.stringify({
+            installments: investment.installments,
+            installmentValue: investment.installmentValue,
+            startDate: investment.startDate.toISOString(),
+            paidInstallments: investment.paidInstallments,
+            description: investment.description,
+            investmentType: investment.type
+          })
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setInvestments(prev => [...prev, investment]);
+      toast.success('Investimento salvo com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar investimento:', error);
+      toast.error('Erro ao salvar investimento');
+    }
   };
 
-  const updateInvestment = (investment: Investment) => {
-    setInvestments(prev => prev.map(item => item.id === investment.id ? investment : item));
+  const updateInvestment = async (investment: Investment) => {
+    try {
+      const { error } = await supabase
+        .from('emp_assets')
+        .update({
+          name: investment.name,
+          value: investment.value,
+          notes: JSON.stringify({
+            installments: investment.installments,
+            installmentValue: investment.installmentValue,
+            startDate: investment.startDate.toISOString(),
+            paidInstallments: investment.paidInstallments,
+            description: investment.description,
+            investmentType: investment.type
+          })
+        })
+        .eq('id', investment.id);
+
+      if (error) throw error;
+
+      setInvestments(prev => prev.map(item => item.id === investment.id ? investment : item));
+      toast.success('Investimento atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao atualizar investimento:', error);
+      toast.error('Erro ao atualizar investimento');
+    }
   };
 
-  const deleteInvestment = (id: string) => {
-    setInvestments(prev => prev.filter(item => item.id !== id));
+  const deleteInvestment = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('emp_assets')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setInvestments(prev => prev.filter(item => item.id !== id));
+      toast.success('Investimento excluído com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir investimento:', error);
+      toast.error('Erro ao excluir investimento');
+    }
   };
 
-  const updatePaidInstallments = (id: string, paidInstallments: number) => {
-    setInvestments(prev => prev.map(item => 
-      item.id === id ? { ...item, paidInstallments } : item
-    ));
+  const updatePaidInstallments = async (id: string, paidInstallments: number) => {
+    try {
+      const investment = investments.find(inv => inv.id === id);
+      if (!investment) return;
+
+      const { error } = await supabase
+        .from('emp_assets')
+        .update({
+          notes: JSON.stringify({
+            installments: investment.installments,
+            installmentValue: investment.installmentValue,
+            startDate: investment.startDate.toISOString(),
+            paidInstallments: paidInstallments,
+            description: investment.description,
+            investmentType: investment.type
+          })
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setInvestments(prev => prev.map(item => 
+        item.id === id ? { ...item, paidInstallments } : item
+      ));
+      toast.success('Parcelas pagas atualizadas!');
+    } catch (error) {
+      console.error('Erro ao atualizar parcelas pagas:', error);
+      toast.error('Erro ao atualizar parcelas pagas');
+    }
   };
 
   // Função auxiliar para atualizar dados mensais

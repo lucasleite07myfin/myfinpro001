@@ -413,139 +413,171 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   };
 
   // Nova função para definir o valor mensal de uma despesa
-  const setMonthlyExpenseValue = (expenseId: string, month: string, value: number | null) => {
-    setRecurringExpenses(recurringExpenses.map(e => {
-      if (e.id === expenseId) {
-        const monthlyValues = { ...(e.monthlyValues || {}) };
-        
-        if (value === null) {
-          // Remove o valor específico para este mês
-          delete monthlyValues[month];
-        } else {
-          // Define o valor específico para este mês
-          monthlyValues[month] = value;
-        }
-        
-        return { ...e, monthlyValues };
+  const setMonthlyExpenseValue = async (expenseId: string, month: string, value: number | null) => {
+    try {
+      const expense = recurringExpenses.find(e => e.id === expenseId);
+      if (!expense) throw new Error("Despesa recorrente não encontrada");
+
+      const monthlyValues = { ...(expense.monthlyValues || {}) };
+      if (value === null) {
+        delete monthlyValues[month];
+      } else {
+        monthlyValues[month] = value;
       }
-      return e;
-    }));
-  };
 
-  const editRecurringExpense = (expense: RecurringExpense) => {
-    setRecurringExpenses(recurringExpenses.map(e => e.id === expense.id ? expense : e));
-    
-    // Se o valor principal foi alterado (não para um valor mensal específico)
-    // e há transações associadas a esta despesa, atualize apenas as futuras
-    const relatedTransactions = transactions.filter(t => 
-      t.description === `${expense.description} (Despesa Fixa)` &&
-      t.isRecurringPayment
-    );
-    
-    if (relatedTransactions.length > 0) {
-      // Aqui só atualizamos as transações do mês atual em diante
-      // para não afetar os valores históricos
-      const updatedTransactions = transactions.map(t => {
-        const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
-        const isCurrentOrFutureMonth = transactionMonth >= currentMonth;
-        
-        if (t.description === `${expense.description} (Despesa Fixa)` && 
-            t.isRecurringPayment && 
-            isCurrentOrFutureMonth) {
-          // Para transações futuras, usamos o valor específico do mês se existir
-          // ou o valor padrão se não existir um valor específico
-          const monthValue = getMonthlyExpenseValue(expense.id, transactionMonth);
-          return { ...t, amount: monthValue !== null ? monthValue : expense.amount };
-        }
-        return t;
-      });
-      
-      setTransactions(updatedTransactions);
+      const { error } = await supabase
+        .from('recurring_expenses')
+        .update({ monthly_values: monthlyValues })
+        .eq('id', expenseId);
+
+      if (error) throw error;
+
+      setRecurringExpenses(recurringExpenses.map(e => e.id === expenseId ? { ...e, monthlyValues } : e));
+      toast.success('Valor mensal atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao atualizar valor mensal:', error);
+      toast.error('Erro ao atualizar valor mensal');
     }
-    
-    toast.success('Despesa fixa atualizada com sucesso!');
   };
 
-  const deleteRecurringExpense = (id: string) => {
-    // Obter a despesa antes de removê-la
-    const expenseToDelete = recurringExpenses.find(e => e.id === id);
-    
-    if (expenseToDelete) {
-      // Remover a despesa recorrente
-      setRecurringExpenses(recurringExpenses.filter(e => e.id !== id));
-      
-      // Remover todas as transações associadas a esta despesa recorrente
-      const updatedTransactions = transactions.filter(t => 
-        !(t.description === `${expenseToDelete.description} (Despesa Fixa)` && t.isRecurringPayment)
+  const editRecurringExpense = async (expense: RecurringExpense) => {
+    try {
+      const { error } = await supabase
+        .from('recurring_expenses')
+        .update({
+          description: expense.description,
+          category: expense.category,
+          amount: expense.amount,
+          due_day: expense.dueDay,
+          payment_method: expense.paymentMethod,
+          repeat_months: expense.repeatMonths,
+          monthly_values: expense.monthlyValues,
+        })
+        .eq('id', expense.id);
+
+      if (error) throw error;
+
+      setRecurringExpenses(recurringExpenses.map(e => e.id === expense.id ? expense : e));
+
+      const relatedTransactions = transactions.filter(t => 
+        t.recurringExpenseId === expense.id &&
+        t.isRecurringPayment
       );
-      
-      if (updatedTransactions.length !== transactions.length) {
+
+      if (relatedTransactions.length > 0) {
+        const updatedTransactions = transactions.map(t => {
+          const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
+          const isCurrentOrFutureMonth = transactionMonth >= currentMonth;
+
+          if (t.recurringExpenseId === expense.id && 
+              t.isRecurringPayment && 
+              isCurrentOrFutureMonth) {
+            const monthValue = getMonthlyExpenseValue(expense.id, transactionMonth);
+            return { ...t, amount: monthValue !== null ? monthValue : expense.amount };
+          }
+          return t;
+        });
+        
         setTransactions(updatedTransactions);
       }
+
+      toast.success('Despesa fixa atualizada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao atualizar despesa recorrente:', error);
+      toast.error('Erro ao atualizar despesa recorrente');
     }
-    
-    toast.success('Despesa fixa excluída com sucesso!');
   };
 
-  const markRecurringExpenseAsPaid = (id: string, month: string, paid: boolean) => {
-    setRecurringExpenses(recurringExpenses.map(e => {
-      if (e.id === id) {
-        const paidMonths = [...(e.paidMonths || [])];
-        
-        if (paid && !paidMonths.includes(month)) {
-          paidMonths.push(month);
-          
-          // Adiciona uma transação correspondente
-          const date = new Date();
-          const [year, monthNum] = month.split('-');
-          date.setFullYear(parseInt(year));
-          date.setMonth(parseInt(monthNum) - 1);
-          date.setDate(e.dueDay);
-          
-          // Determina o valor a ser usado: valor específico do mês ou valor padrão
-          const amount = getMonthlyExpenseValue(e.id, month) || e.amount;
-          
-          // Só adiciona a transação se houver um valor definido
-          if (amount > 0) {
-            // Adiciona a transação de pagamento
-            const transaction: Omit<Transaction, 'id'> = {
-              date,
-              description: `${e.description} (Despesa Fixa)`,
-              category: e.category,
-              amount,
-              type: 'expense',
-              paymentMethod: e.paymentMethod,
-              isRecurringPayment: true
-            };
-            
-            addTransaction(transaction);
-          }
-        } else if (!paid && paidMonths.includes(month)) {
-          // Remove o mês da lista de pagos
-          const index = paidMonths.indexOf(month);
-          if (index > -1) {
-            paidMonths.splice(index, 1);
-          }
-          
-          // Remove a transação correspondente, se existir
-          const transactionsToRemove = transactions.filter(t => 
-            t.description === `${e.description} (Despesa Fixa)` &&
-            t.isRecurringPayment &&
-            `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}` === month
-          );
-          
-          transactionsToRemove.forEach(t => {
-            deleteTransaction(t.id);
+  const deleteRecurringExpense = async (id: string) => {
+    try {
+      const expenseToDelete = recurringExpenses.find(e => e.id === id);
+      if (!expenseToDelete) throw new Error("Despesa recorrente não encontrada");
+
+      // Deleta as transações associadas
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('recurring_expense_id', id);
+
+      if (transactionError) throw transactionError;
+
+      // Deleta a despesa recorrente
+      const { error } = await supabase
+        .from('recurring_expenses')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Atualiza o estado local
+      setRecurringExpenses(recurringExpenses.filter(e => e.id !== id));
+      setTransactions(transactions.filter(t => t.recurringExpenseId !== id));
+      
+      toast.success('Despesa fixa excluída com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir despesa recorrente:', error);
+      toast.error('Erro ao excluir despesa recorrente');
+    }
+  };
+
+  const markRecurringExpenseAsPaid = async (id: string, month: string, paid: boolean) => {
+    try {
+      const expense = recurringExpenses.find(e => e.id === id);
+      if (!expense) throw new Error("Despesa recorrente não encontrada");
+
+      const paidMonths = [...(expense.paidMonths || [])];
+      const isAlreadyPaid = paidMonths.includes(month);
+
+      if (paid && !isAlreadyPaid) {
+        paidMonths.push(month);
+      } else if (!paid && isAlreadyPaid) {
+        const index = paidMonths.indexOf(month);
+        if (index > -1) {
+          paidMonths.splice(index, 1);
+        }
+      }
+
+      const { error } = await supabase
+        .from('recurring_expenses')
+        .update({ paid_months: paidMonths })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setRecurringExpenses(recurringExpenses.map(e => e.id === id ? { ...e, paidMonths } : e));
+
+      if (paid && !isAlreadyPaid) {
+        const amount = getMonthlyExpenseValue(id, month) || expense.amount;
+        if (amount > 0) {
+          const date = new Date(`${month}-01T12:00:00`);
+          date.setDate(expense.dueDay);
+          addTransaction({
+            date,
+            description: `${expense.description} (Pagamento Fixo)`,
+            category: expense.category,
+            amount,
+            type: 'expense',
+            paymentMethod: expense.paymentMethod,
+            isRecurringPayment: true,
+            recurringExpenseId: id,
           });
         }
-        
-        return { ...e, isPaid: paid, paidMonths };
+      } else if (!paid && isAlreadyPaid) {
+        const transactionToDelete = transactions.find(t => 
+          t.recurringExpenseId === id && 
+          `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}` === month
+        );
+        if (transactionToDelete) {
+          deleteTransaction(transactionToDelete.id);
+        }
       }
-      return e;
-    }));
-    
-    toast.success(`Despesa fixa marcada como ${paid ? 'paga' : 'não paga'}!`);
-    updateMonthlyData();
+
+      toast.success(`Despesa marcada como ${paid ? 'paga' : 'não paga'}!`);
+      updateMonthlyData();
+    } catch (error) {
+      console.error('Erro ao marcar despesa como paga:', error);
+      toast.error('Erro ao marcar despesa como paga');
+    }
   };
 
   const isRecurringExpensePaid = (id: string, month: string) => {
@@ -808,35 +840,44 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   };
 
   // Função auxiliar para atualizar dados mensais
-  const updateMonthlyData = () => {
-    // Na implementação real, você calcularia isso com base nas transações reais
-    // Para este exemplo, manteremos os dados gerados aleatoriamente
-    const currentMonthTransactions = transactions.filter(t => {
-      const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
-      return transactionMonth === currentMonth;
-    });
+  const updateMonthlyData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const currentMonthIncome = currentMonthTransactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const currentMonthExpense = currentMonthTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    // Atualiza o mês atual nos dados mensais
-    setMonthlyData(prevData => {
-      return prevData.map(d => {
-        if (d.month === currentMonth) {
-          return {
-            ...d,
-            incomeTotal: currentMonthIncome,
-            expenseTotal: currentMonthExpense
-          };
-        }
-        return d;
+      const currentMonthTransactions = transactions.filter(t => {
+        const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
+        return transactionMonth === currentMonth;
       });
-    });
+
+      const incomeTotal = currentMonthTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const expenseTotal = currentMonthTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const { error } = await supabase
+        .from('monthly_finance_data')
+        .upsert({ 
+          user_id: user.id, 
+          month: currentMonth, 
+          income_total: incomeTotal, 
+          expense_total: expenseTotal 
+        }, { onConflict: 'user_id, month' });
+
+      if (error) throw error;
+
+      setMonthlyData(prevData => prevData.map(d => 
+        d.month === currentMonth 
+          ? { ...d, incomeTotal, expenseTotal } 
+          : d
+      ));
+    } catch (error) {
+      console.error('Erro ao atualizar dados mensais:', error);
+      toast.error('Erro ao atualizar dados mensais');
+    }
   };
 
   // Calcula os totais do mês atual

@@ -32,7 +32,7 @@ import {
 import AddSupplierModal from '@/components/AddSupplierModal';
 import { Supplier } from '@/types/supplier';
 import { formatCEP } from '@/utils/documentValidator';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 const Suppliers: React.FC = () => {
   const { suppliers, deleteSupplier } = useBusiness();
@@ -185,11 +185,7 @@ const Suppliers: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Sucesso",
-      description: "Arquivo CSV de fornecedores exportado com sucesso!",
-      variant: "default"
-    });
+    toast.success("Arquivo CSV de fornecedores exportado com sucesso!");
   };
   
   // Export suppliers to Excel
@@ -229,11 +225,7 @@ const Suppliers: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Sucesso",
-      description: "Arquivo Excel de fornecedores exportado com sucesso!",
-      variant: "default"
-    });
+    toast.success("Arquivo Excel de fornecedores exportado com sucesso!");
   };
   
   // Export suppliers to PDF (HTML for printing)
@@ -299,11 +291,7 @@ const Suppliers: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Sucesso",
-      description: "Arquivo PDF de fornecedores exportado com sucesso! (HTML formatado para impressão)",
-      variant: "default"
-    });
+    toast.success("Arquivo PDF de fornecedores exportado com sucesso! (HTML formatado para impressão)");
   };
   
   return (

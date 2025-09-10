@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Schema for forgot password validation
 const forgotPasswordSchema = z.object({
@@ -41,20 +41,13 @@ const ForgotPassword = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Email enviado',
-        description: 'Um link para redefinir sua senha foi enviado para seu email.',
-      });
+      toast.success('Um link para redefinir sua senha foi enviado para seu email.');
       
       // Redirect back to auth after success
       navigate('/auth');
     } catch (error: any) {
       console.error('Erro ao enviar email de recuperação:', error);
-      toast({
-        title: 'Erro ao enviar email',
-        description: 'Erro ao enviar email de recuperação. Tente novamente.',
-        variant: 'destructive',
-      });
+      toast.error('Erro ao enviar email de recuperação. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }

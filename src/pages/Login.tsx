@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CustomTabTriggers } from '@/components/ui/custom-tabs';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { validateCPF, validateCNPJ } from '@/utils/documentValidator';
 
 // Schema for login validation
@@ -45,18 +45,10 @@ const Login = () => {
     let isValid = true;
 
     if (loginType === 'cpf' && !validateCPF(values.identifier)) {
-      toast({
-        title: 'CPF inválido',
-        description: 'Por favor, verifique o CPF informado.',
-        variant: 'destructive',
-      });
+      toast.error('Por favor, verifique o CPF informado.');
       isValid = false;
     } else if (loginType === 'cnpj' && !validateCNPJ(values.identifier)) {
-      toast({
-        title: 'CNPJ inválido',
-        description: 'Por favor, verifique o CNPJ informado.',
-        variant: 'destructive',
-      });
+      toast.error('Por favor, verifique o CNPJ informado.');
       isValid = false;
     }
 
@@ -65,10 +57,7 @@ const Login = () => {
       console.log('Login attempt:', { ...values, loginType });
       
       // Simulate successful login
-      toast({
-        title: 'Login realizado',
-        description: 'Você foi autenticado com sucesso!',
-      });
+      toast.success('Você foi autenticado com sucesso!');
       
       // Navigate to the main page
       navigate('/');
@@ -88,10 +77,7 @@ const Login = () => {
     form.setValue('password', password);
     setShowPassword(true);
     
-    toast({
-      title: 'Senha forte gerada',
-      description: 'Uma senha forte foi gerada e preenchida para você.',
-    });
+    toast.success('Uma senha forte foi gerada e preenchida para você.');
   };
 
   // Label and placeholder based on login type
