@@ -914,33 +914,30 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
   // Função auxiliar para atualizar dados mensais
   const updateMonthlyData = () => {
-    // Calculamos com base nas transações reais
-    const currentMonthTransactions = transactions.filter(t => {
-      const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
-      return transactionMonth === currentMonth;
-    });
-
-    const currentMonthIncome = currentMonthTransactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const currentMonthExpense = currentMonthTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    // Atualiza o mês atual nos dados mensais
-    setMonthlyData(prevData => {
-      return prevData.map(d => {
-        if (d.month === currentMonth) {
-          return {
-            ...d,
-            incomeTotal: currentMonthIncome,
-            expenseTotal: currentMonthExpense
-          };
-        }
-        return d;
+    // Recalcular dados para todos os meses com base nas transações
+    const updatedMonthlyData = monthlyData.map(monthItem => {
+      const monthTransactions = transactions.filter(t => {
+        const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
+        return transactionMonth === monthItem.month;
       });
+
+      const incomeTotal = monthTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const expenseTotal = monthTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      return {
+        ...monthItem,
+        incomeTotal,
+        expenseTotal
+      };
     });
+
+    // Atualizar os dados mensais no estado
+    setMonthlyData(updatedMonthlyData);
   };
 
   // Calcula os totais do mês atual

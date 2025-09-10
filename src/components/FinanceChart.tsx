@@ -128,10 +128,36 @@ const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
                     tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                   />
                   <ChartTooltip 
-                    cursor={false}
-                    content={<ChartTooltipContent 
-                      formatter={(value) => [formatCurrency(Number(value)), ""]}
-                    />} 
+                    cursor={{ strokeDasharray: '3 3', stroke: 'hsl(var(--muted-foreground))' }}
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload || !payload.length) return null;
+                      
+                      return (
+                        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 min-w-[160px]">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                            {label}
+                          </p>
+                          <div className="space-y-1">
+                            {payload.map((entry: any, index: number) => (
+                              <div key={index} className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: entry.color }}
+                                  />
+                                  <span className="text-sm text-gray-600 dark:text-gray-300">
+                                    {entry.dataKey}
+                                  </span>
+                                </div>
+                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                  {formatCurrency(Number(entry.value))}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }}
                   />
                   <Line 
                     type="monotone" 
@@ -157,7 +183,7 @@ const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
                   <ChartTooltip 
                     cursor={false}
                     content={<ChartTooltipContent 
-                      formatter={(value, name, props) => [
+                      formatter={(value, name) => [
                         formatCurrency(Number(value)), 
                         name,
                         `${((Number(value) / pieChartData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}%`

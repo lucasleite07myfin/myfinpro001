@@ -845,35 +845,45 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const currentMonthTransactions = transactions.filter(t => {
-        const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
-        return transactionMonth === currentMonth;
+      // Recalcular dados para todos os meses com base nas transações
+      const updatedMonthlyData = monthlyData.map(monthItem => {
+        const monthTransactions = transactions.filter(t => {
+          const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
+          return transactionMonth === monthItem.month;
+        });
+
+        const incomeTotal = monthTransactions
+          .filter(t => t.type === 'income')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        const expenseTotal = monthTransactions
+          .filter(t => t.type === 'expense')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        return {
+          ...monthItem,
+          incomeTotal,
+          expenseTotal
+        };
       });
 
-      const incomeTotal = currentMonthTransactions
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
+      // Atualizar apenas o mês atual no Supabase (para não sobrecarregar)
+      const currentMonthData = updatedMonthlyData.find(d => d.month === currentMonth);
+      if (currentMonthData) {
+        const { error } = await supabase
+          .from('monthly_finance_data')
+          .upsert({ 
+            user_id: user.id, 
+            month: currentMonth, 
+            income_total: currentMonthData.incomeTotal, 
+            expense_total: currentMonthData.expenseTotal 
+          }, { onConflict: 'user_id, month' });
 
-      const expenseTotal = currentMonthTransactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
+        if (error) throw error;
+      }
 
-      const { error } = await supabase
-        .from('monthly_finance_data')
-        .upsert({ 
-          user_id: user.id, 
-          month: currentMonth, 
-          income_total: incomeTotal, 
-          expense_total: expenseTotal 
-        }, { onConflict: 'user_id, month' });
-
-      if (error) throw error;
-
-      setMonthlyData(prevData => prevData.map(d => 
-        d.month === currentMonth 
-          ? { ...d, incomeTotal, expenseTotal } 
-          : d
-      ));
+      // Atualizar os dados mensais no estado
+      setMonthlyData(updatedMonthlyData);
     } catch (error) {
       console.error('Erro ao atualizar dados mensais:', error);
       toast.error('Erro ao atualizar dados mensais');

@@ -27,6 +27,8 @@ const ResetPassword = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isValidSession, setIsValidSession] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -40,31 +42,65 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
-    // Verifica se há tokens de recuperação na URL ou se está vindo do email
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    const type = searchParams.get('type');
-    const token = searchParams.get('token');
-    
-    // Se está vindo do link do email (type=recovery e token presente)
-    if (type === 'recovery' && token) {
-      // O Supabase automaticamente processará o token e redirecionará
-      return;
-    }
-    
-    // Se já tem os tokens na URL
-    if (accessToken && refreshToken) {
-      // Define a sessão com os tokens recebidos
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-      return;
-    }
+    const handlePasswordReset = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Verifica se há tokens de recuperação na URL
+        const accessToken = searchParams.get('access_token');
+        const refreshToken = searchParams.get('refresh_token');
+        const type = searchParams.get('type');
+        
+        console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+        
+        // Se está vindo do link do email com tokens
+        if (accessToken && refreshToken && type === 'recovery') {
+          console.log('Setting session with tokens from URL');
+          
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          
+          if (error) {
+            console.error('Erro ao definir sessão:', error);
+            throw error;
+          }
+          
+          console.log('Session set successfully:', data);
+          setIsValidSession(true);
+          return;
+        }
+        
+        // Verifica se já existe uma sessão válida
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Erro ao obter sessão:', sessionError);
+          throw sessionError;
+        }
+        
+        if (session) {
+          console.log('Valid session found');
+          setIsValidSession(true);
+          return;
+        }
+        
+        // Se não há sessão válida, redireciona
+        console.log('No valid session found, redirecting to auth');
+        toast.error('O link de recuperação é inválido ou expirou.');
+        navigate('/auth');
+        
+      } catch (error) {
+        console.error('Erro no processo de reset:', error);
+        toast.error('O link de recuperação é inválido ou expirou.');
+        navigate('/auth');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    // Se não há tokens válidos, redireciona para auth
-    toast.error('O link de recuperação é inválido ou expirou.');
-    navigate('/auth');
+    handlePasswordReset();
   }, [searchParams, navigate]);
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
@@ -89,6 +125,25 @@ const ResetPassword = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Mostra loading enquanto verifica a sessão
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md shadow-lg">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin mb-4" />
+            <p className="text-muted-foreground">Verificando link de recuperação...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Se não tem sessão válida, não mostra o formulário
+  if (!isValidSession) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

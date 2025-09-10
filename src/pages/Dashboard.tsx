@@ -101,12 +101,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-4 md:mb-6">
-          <TooltipHelper content={tooltipContent.dashboard.chart}>
-            <div className="lg:col-span-2 h-full">
-              <FinanceChart data={monthlyData} transactions={transactions} />
-            </div>
-          </TooltipHelper>
-          
+          {/* Coluna esquerda: Despesas Recorrentes */}
           <TooltipHelper content={tooltipContent.dashboard.recurringExpenses}>
             <div className="lg:col-span-1 h-full">
               <RecurringExpensesCard 
@@ -121,22 +116,33 @@ const Dashboard: React.FC = () => {
               />
             </div>
           </TooltipHelper>
-        </div>
-
-        <div className="mt-6 mb-4 md:mb-6">
-          <h2 className="text-xl font-semibold mb-4 text-neutral-800">Transações Recentes</h2>
-          <TooltipHelper content={tooltipContent.dashboard.transactionsTable}>
-            {recentTransactions.length === 0 ? (
-              <EmptyState
-                title="Nenhuma transação encontrada"
-                description="Comece adicionando suas primeiras receitas e despesas para acompanhar suas finanças."
-                actionLabel="Adicionar Transação"
-                onAction={() => {/* Implementar navegação para adicionar transação */}}
-              />
-            ) : (
-              <TransactionsTable transactions={recentTransactions} />
-            )}
-          </TooltipHelper>
+          
+          {/* Coluna direita: Evolução Financeira e Transações Recentes */}
+          <div className="lg:col-span-2 space-y-6 md:space-y-8">
+            {/* Evolução Financeira */}
+            <TooltipHelper content={tooltipContent.dashboard.chart}>
+              <div>
+                <FinanceChart data={monthlyData} transactions={transactions} />
+              </div>
+            </TooltipHelper>
+            
+            {/* Transações Recentes */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-neutral-800 dark:text-white">Transações Recentes</h2>
+              <TooltipHelper content={tooltipContent.dashboard.transactionsTable}>
+                {recentTransactions.length === 0 ? (
+                  <EmptyState
+                    title="Nenhuma transação encontrada"
+                    description="Comece adicionando suas primeiras receitas e despesas para acompanhar suas finanças."
+                    actionLabel="Adicionar Transação"
+                    onAction={() => {/* Implementar navegação para adicionar transação */}}
+                  />
+                ) : (
+                  <TransactionsTable transactions={recentTransactions} />
+                )}
+              </TooltipHelper>
+            </div>
+          </div>
         </div>
       </div>
     </TooltipProvider>

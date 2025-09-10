@@ -91,14 +91,9 @@ const BusinessDashboard: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <TooltipHelper content={tooltipContent.dashboard.chart}>
-          <div className="lg:col-span-2">
-            <FinanceChart data={monthlyData} transactions={transactions} />
-          </div>
-        </TooltipHelper>
-        
+        {/* Coluna esquerda: Despesas Recorrentes */}
         <TooltipHelper content={tooltipContent.dashboard.recurringExpenses}>
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 h-full">
             <RecurringExpensesCard 
               expenses={recurringExpenses}
               currentMonth={currentMonth}
@@ -111,13 +106,24 @@ const BusinessDashboard: React.FC = () => {
             />
           </div>
         </TooltipHelper>
-      </div>
-
-      <div>
-        <h2 className="text-xl font-semibold mb-4 text-neutral-800">Transações Recentes</h2>
-        <TooltipHelper content={tooltipContent.dashboard.transactionsTable}>
-          <TransactionsTable transactions={recentTransactions} />
-        </TooltipHelper>
+        
+        {/* Coluna direita: Evolução Financeira e Transações Recentes */}
+        <div className="lg:col-span-2 space-y-6 md:space-y-8">
+          {/* Evolução Financeira */}
+          <TooltipHelper content={tooltipContent.dashboard.chart}>
+            <div>
+              <FinanceChart data={monthlyData} transactions={transactions} />
+            </div>
+          </TooltipHelper>
+          
+          {/* Transações Recentes */}
+          <div>
+            <h2 className="text-xl font-semibold mb-4 text-neutral-800 dark:text-white">Transações Recentes</h2>
+            <TooltipHelper content={tooltipContent.dashboard.transactionsTable}>
+              <TransactionsTable transactions={recentTransactions} />
+            </TooltipHelper>
+          </div>
+        </div>
       </div>
     </div>
   );
