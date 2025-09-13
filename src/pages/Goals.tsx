@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { PlusCircle, PiggyBank, Edit, Trash2, Target, Calendar, TrendingUp, Coins } from 'lucide-react';
 import AddGoalModal from '@/components/AddGoalModal';
-import AddTransactionModal from '@/components/AddTransactionModal';
+import AddGoalContributionModal from '@/components/AddGoalContributionModal';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
@@ -296,10 +296,11 @@ const Goals: React.FC = () => {
           mode={editingGoal ? 'edit' : 'add'}
         />
 
-        {/* Transaction Modal for Goal Contribution */}
-        <AddTransactionModal 
+        {/* Goal Contribution Modal */}
+        <AddGoalContributionModal 
           open={isTransactionModalOpen} 
           onOpenChange={handleCloseTransactionModal}
+          goal={selectedGoalForContribution}
         />
 
         {/* Delete Confirmation Dialog */}
