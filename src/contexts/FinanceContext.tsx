@@ -44,6 +44,7 @@ interface FinanceContextType {
   setMonthlyExpenseValue: (expenseId: string, month: string, value: number | null) => void;
   addGoal: (goal: Omit<Goal, 'id'>) => void;
   editGoal: (goal: Goal) => void;
+  updateGoal: (id: string, goal: Partial<Goal>) => void;
   deleteGoal: (id: string) => void;
   addAsset: (asset: Omit<Asset, 'id'>) => void;
   editAsset: (asset: Asset) => void;
@@ -646,6 +647,34 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     }
   };
 
+  const updateGoal = async (id: string, goalUpdate: Partial<Goal>) => {
+    try {
+      const existingGoal = goals.find(g => g.id === id);
+      if (!existingGoal) throw new Error('Meta não encontrada');
+
+      const updatedGoal = { ...existingGoal, ...goalUpdate };
+
+      const { error } = await supabase
+        .from('goals')
+        .update({
+          name: updatedGoal.name,
+          target_amount: updatedGoal.targetAmount,
+          current_amount: updatedGoal.currentAmount,
+          target_date: updatedGoal.targetDate.toISOString().split('T')[0],
+          saving_location: updatedGoal.savingLocation
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setGoals(goals.map(g => g.id === id ? updatedGoal : g));
+      toast.success('Meta atualizada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao atualizar meta:', error);
+      toast.error('Erro ao atualizar meta');
+    }
+  };
+
   const deleteGoal = async (id: string) => {
     try {
       const { error } = await supabase
@@ -937,6 +966,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     setMonthlyExpenseValue,
     addGoal,
     editGoal,
+    updateGoal,
     deleteGoal,
     addAsset,
     editAsset,

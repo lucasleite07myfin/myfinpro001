@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { PlusCircle, PiggyBank, Edit, Trash2, Target, Calendar, TrendingUp, Coins } from 'lucide-react';
 import AddGoalModal from '@/components/AddGoalModal';
+import AddTransactionModal from '@/components/AddTransactionModal';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
@@ -24,6 +25,8 @@ const Goals: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [goalToDelete, setGoalToDelete] = useState<Goal | null>(null);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [selectedGoalForContribution, setSelectedGoalForContribution] = useState<Goal | null>(null);
 
   const handleEditGoal = (goal: Goal) => {
     setEditingGoal(goal);
@@ -42,6 +45,16 @@ const Goals: React.FC = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingGoal(null);
+  };
+
+  const handleAddContribution = (goal: Goal) => {
+    setSelectedGoalForContribution(goal);
+    setIsTransactionModalOpen(true);
+  };
+
+  const handleCloseTransactionModal = () => {
+    setIsTransactionModalOpen(false);
+    setSelectedGoalForContribution(null);
   };
 
   const getProgressColor = (percentage: number) => {
@@ -214,6 +227,22 @@ const Goals: React.FC = () => {
                         </div>
                       </div>
                       
+                      {/* Add Value Button */}
+                      {percentage < 100 && (
+                        <div className="flex justify-center">
+                          <TooltipHelper content="Adicionar contribuição rápida para esta meta">
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              onClick={() => handleAddContribution(goal)}
+                            >
+                              <PlusCircle className="h-4 w-4 mr-2" />
+                              Adicionar Valor
+                            </Button>
+                          </TooltipHelper>
+                        </div>
+                      )}
+                      
                       {/* Financial Details */}
                       <div className="space-y-3">
                         <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
@@ -265,6 +294,12 @@ const Goals: React.FC = () => {
           onOpenChange={handleCloseModal}
           initialData={editingGoal}
           mode={editingGoal ? 'edit' : 'add'}
+        />
+
+        {/* Transaction Modal for Goal Contribution */}
+        <AddTransactionModal 
+          open={isTransactionModalOpen} 
+          onOpenChange={handleCloseTransactionModal}
         />
 
         {/* Delete Confirmation Dialog */}
