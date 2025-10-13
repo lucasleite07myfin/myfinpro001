@@ -302,15 +302,16 @@ const Incomes: React.FC = () => {
                 Gerencie e acompanhe suas receitas mensais
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
               <TooltipHelper content="Adicionar nova receita">
                 <Button 
                   onClick={() => setIsAddModalOpen(true)}
-                  className="flex items-center gap-2 bg-[#EE680D] hover:bg-[#EE680D]/90"
+                  className="flex items-center justify-center gap-2 bg-[#EE680D] hover:bg-[#EE680D]/90 w-full sm:w-auto whitespace-nowrap"
                 >
                   <Plus className="h-4 w-4" />
-                  Nova Receita
+                  <span className="hidden sm:inline">Nova Receita</span>
+                  <span className="sm:hidden">Nova</span>
                 </Button>
               </TooltipHelper>
             </div>

@@ -89,10 +89,11 @@ const Goals: React.FC = () => {
             <TooltipHelper content={tooltipContent.actions.add}>
               <Button 
                 onClick={() => setIsModalOpen(true)} 
-                className="flex items-center gap-2 bg-[#EE680D] hover:bg-[#EE680D]/90"
+                className="flex items-center justify-center gap-2 bg-[#EE680D] hover:bg-[#EE680D]/90 w-full sm:w-auto whitespace-nowrap"
               >
                 <PlusCircle className="h-4 w-4" />
-                Nova Meta
+                <span className="hidden sm:inline">Nova Meta</span>
+                <span className="sm:hidden">Nova</span>
               </Button>
             </TooltipHelper>
           </div>

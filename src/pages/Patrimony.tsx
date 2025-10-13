@@ -246,17 +246,18 @@ const Patrimony: React.FC = () => {
                 Gerencie e acompanhe seus bens e investimentos
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto">
               <TooltipHelper content="Adicionar novo patrimônio">
                 <Button 
                   onClick={() => {
                     setEditingAsset(null);
                     setIsModalOpen(true);
                   }}
-                  className="flex items-center gap-2 bg-[#EE680D] hover:bg-[#EE680D]/90"
+                  className="flex items-center justify-center gap-2 bg-[#EE680D] hover:bg-[#EE680D]/90 w-full sm:w-auto whitespace-nowrap"
                 >
                   <Plus className="h-4 w-4" />
-                  Adicionar Patrimônio
+                  <span className="hidden sm:inline">Adicionar Patrimônio</span>
+                  <span className="sm:hidden">Patrimônio</span>
                 </Button>
               </TooltipHelper>
               <TooltipHelper content="Adicionar criptomoeda">
@@ -266,17 +267,19 @@ const Patrimony: React.FC = () => {
                     setIsCryptoModalOpen(true);
                   }}
                   variant="secondary" 
-                  className="flex items-center gap-2 border-2 border-orange-500"
+                  className="flex items-center justify-center gap-2 border-2 border-orange-500 w-full sm:w-auto whitespace-nowrap"
                 >
                   <Bitcoin className="h-4 w-4" />
-                  Adicionar Cripto
+                  <span className="hidden sm:inline">Adicionar Cripto</span>
+                  <span className="sm:hidden">Cripto</span>
                 </Button>
               </TooltipHelper>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
+                  <Button variant="outline" className="flex items-center justify-center gap-2 w-full sm:w-auto whitespace-nowrap">
                     <FileText className="h-4 w-4" />
-                    Exportar
+                    <span className="hidden sm:inline">Exportar</span>
+                    <span className="sm:hidden">Export</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

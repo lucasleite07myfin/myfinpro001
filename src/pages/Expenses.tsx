@@ -403,15 +403,16 @@ const Expenses: React.FC = () => {
                 Gerencie e acompanhe suas despesas mensais
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
               <TooltipHelper content="Adicionar nova despesa">
                 <Button 
                   onClick={() => setIsAddModalOpen(true)}
-                  className="flex items-center gap-2 bg-red-500 hover:bg-red-600"
+                  className="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 w-full sm:w-auto whitespace-nowrap"
                 >
                   <Plus className="h-4 w-4" />
-                  Nova Despesa
+                  <span className="hidden sm:inline">Nova Despesa</span>
+                  <span className="sm:hidden">Nova</span>
                 </Button>
               </TooltipHelper>
             </div>

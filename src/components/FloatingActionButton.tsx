@@ -21,7 +21,7 @@ const FloatingActionButton = forwardRef<HTMLButtonElement, FloatingActionButtonP
           
           .floating-action-button {
             position: fixed;
-            bottom: 1rem;
+            bottom: 1.5rem;
             right: 1rem;
             width: 3.5rem;
             height: 3.5rem;
@@ -51,10 +51,25 @@ const FloatingActionButton = forwardRef<HTMLButtonElement, FloatingActionButtonP
           
           @media (min-width: 768px) {
             .floating-action-button {
-              bottom: 1.5rem;
-              right: 1.5rem;
+              bottom: 2rem;
+              right: 2rem;
               width: 4rem;
               height: 4rem;
+            }
+          }
+          
+          /* Safe area for mobile devices */
+          @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .floating-action-button {
+              bottom: calc(1.5rem + env(safe-area-inset-bottom));
+              right: calc(1rem + env(safe-area-inset-right));
+            }
+            
+            @media (min-width: 768px) {
+              .floating-action-button {
+                bottom: calc(2rem + env(safe-area-inset-bottom));
+                right: calc(2rem + env(safe-area-inset-right));
+              }
             }
           }
         `}</style>
