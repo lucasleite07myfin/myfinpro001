@@ -1,11 +1,12 @@
 import React from 'react';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusiness } from '@/contexts/BusinessContext';
+import { useAuth } from '@/hooks/useAuth';
 import StatsCard from '@/components/StatsCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatPercent } from '@/utils/formatters';
 import FinanceChart from '@/components/FinanceChart';
-import { Coins, TrendingDown, Wallet, PiggyBank } from 'lucide-react';
+import { ArrowUp, ArrowDown, CreditCard, PiggyBank } from 'lucide-react';
 import TransactionsTable from '@/components/TransactionsTable';
 import RecurringExpensesCard from '@/components/RecurringExpensesCard';
 import TooltipHelper from '@/components/TooltipHelper';
@@ -13,6 +14,7 @@ import { tooltipContent } from '@/data/tooltipContent';
 
 const BusinessDashboard: React.FC = () => {
   const { mode } = useAppMode();
+  const { user } = useAuth();
   const { 
     transactions, 
     monthlyData, 
@@ -32,6 +34,15 @@ const BusinessDashboard: React.FC = () => {
   // Calculate profit margin
   const profitMargin = income > 0 ? ((income - expense) / income) * 100 : 0;
 
+  // Obter primeiro nome do usuário
+  const getFirstName = () => {
+    const fullName = user?.user_metadata?.full_name;
+    if (fullName) {
+      return fullName.split(' ')[0];
+    }
+    return user?.email?.split('@')[0] || 'Usuário';
+  };
+
   // Get recent transactions
   const recentTransactions = [...transactions]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -39,55 +50,60 @@ const BusinessDashboard: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-start">
-        <h1 className="text-2xl font-bold dark:text-white">Dashboard Empresarial</h1>
+      <div className="mb-2 md:mb-3 flex justify-between items-start">
+        <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white">Olá, {getFirstName()}</h1>
       </div>
-      
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
-        <TooltipHelper content={tooltipContent.dashboard.receitasCard}>
-          <StatsCard
-            title="Receitas do Mês"
-            value={income}
-            isCurrency
-            icon={<Coins className="h-5 w-5 text-income-force" />}
-            trend={12}
-            description="Comparado ao mês anterior"
-          />
-        </TooltipHelper>
-        
-        <TooltipHelper content={tooltipContent.dashboard.despesasCard}>
-          <StatsCard
-            title="Despesas do Mês"
-            value={expense}
-            isCurrency
-            icon={<TrendingDown className="h-5 w-5 text-expense-force" />}
-            trend={-5}
-            description="Comparado ao mês anterior"
-            trendInverted
-          />
-        </TooltipHelper>
-        
-        <TooltipHelper content={tooltipContent.dashboard.lucroCard}>
-          <StatsCard
-            title="Lucro Operacional"
-            value={balance}
-            isCurrency
-            icon={<Wallet className="h-5 w-5" />}
-            trend={15}
-            description="Comparado ao mês anterior"
-          />
-        </TooltipHelper>
-        
-        <TooltipHelper content={tooltipContent.dashboard.margemCard}>
-          <StatsCard
-            title="Margem de Lucro"
-            value={profitMargin}
-            isPercentage
-            icon={<PiggyBank className="h-5 w-5" />}
-            trend={5}
-            description="Comparado ao mês anterior"
-          />
-        </TooltipHelper>
+
+      <div className="mb-4 md:mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
+          <TooltipHelper content={tooltipContent.dashboard.receitasCard}>
+            <div className="w-full">
+              <StatsCard 
+                title="Receitas" 
+                value={income} 
+                isCurrency 
+                isPositive
+                icon={<ArrowUp className="h-4 w-4 md:h-5 md:w-5 text-income-force" />} 
+              />
+            </div>
+          </TooltipHelper>
+          
+          <TooltipHelper content={tooltipContent.dashboard.despesasCard}>
+            <div className="w-full">
+              <StatsCard 
+                title="Despesas" 
+                value={expense} 
+                isCurrency 
+                isPositive={false}
+                icon={<ArrowDown className="h-4 w-4 md:h-5 md:w-5 text-expense-force" />} 
+              />
+            </div>
+          </TooltipHelper>
+          
+          <TooltipHelper content={tooltipContent.dashboard.lucroCard}>
+            <div className="w-full">
+              <StatsCard 
+                title="Fluxo de Caixa" 
+                value={balance} 
+                isCurrency 
+                isPositive={balance >= 0}
+                icon={<CreditCard className="h-4 w-4 md:h-5 md:w-5" />} 
+              />
+            </div>
+          </TooltipHelper>
+          
+          <TooltipHelper content={tooltipContent.dashboard.margemCard}>
+            <div className="w-full">
+              <StatsCard 
+                title="Margem de Lucro" 
+                value={profitMargin} 
+                isPercentage 
+                isPositive={profitMargin >= 0}
+                icon={<PiggyBank className="h-4 w-4 md:h-5 md:w-5" />} 
+              />
+            </div>
+          </TooltipHelper>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
