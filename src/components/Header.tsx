@@ -81,13 +81,13 @@ const Header: React.FC = () => {
             {/* Logo */}
             <TooltipHelper content={tooltipContent.header.logo}>
               <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-                <img src="/lovable-uploads/3ac31d22-79b8-44f6-b7ba-5baf7d682784.png" alt="MyFin Pro Logo" className="h-12 md:h-14 mr-3" />
-                <div>
+                <img src="/lovable-uploads/3ac31d22-79b8-44f6-b7ba-5baf7d682784.png" alt="MyFin Pro Logo" className="h-12 md:h-14 mr-0 md:mr-3" />
+                <div className="hidden md:block">
                   <h1 className="text-xl md:text-2xl font-bold text-foreground">
                     {mode === 'personal' ? 'MyFin Pro' : 'MyFin Pro Empresas'}
                   </h1>
                   {mode === 'business' && business?.companyName && <p className="text-muted-foreground text-xs md:text-sm">{business.companyName}</p>}
-                  {mode === 'personal' && <p className="hidden md:block text-muted-foreground text-sm">Seu controle financeiro completo</p>}
+                  {mode === 'personal' && <p className="text-muted-foreground text-sm">Seu controle financeiro completo</p>}
                 </div>
               </div>
             </TooltipHelper>
