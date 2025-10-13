@@ -3,26 +3,23 @@ import MainLayout from '@/components/MainLayout';
 import BadgesGallery from '@/components/BadgesGallery';
 import { Badge, UserBadge } from '@/types/alerts';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 const Badges: React.FC = () => {
-  const { user } = useAuth();
   const [allBadges, setAllBadges] = useState<Badge[]>([]);
   const [userBadges, setUserBadges] = useState<UserBadge[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      loadBadgesData();
-    }
-  }, [user]);
+    loadBadges();
+  }, []);
 
-  const loadBadgesData = async () => {
+  const loadBadges = async () => {
     try {
-      setLoading(true);
-      
-      // Load all available badges
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Carregar todos os badges
       const { data: badgesData, error: badgesError } = await supabase
         .from('badges')
         .select('*')
@@ -30,33 +27,32 @@ const Badges: React.FC = () => {
 
       if (badgesError) throw badgesError;
 
-      // Load user's earned badges
+      // Carregar badges do usuário
       const { data: userBadgesData, error: userBadgesError } = await supabase
         .from('user_badges')
         .select('*')
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id);
 
       if (userBadgesError) throw userBadgesError;
 
-      // Convert to component format
       if (badgesData) {
-        const badges: Badge[] = badgesData.map(item => ({
-          id: item.id,
-          code: item.code,
-          name: item.name,
-          description: item.description,
-          icon: item.icon
+        const mappedBadges: Badge[] = badgesData.map(b => ({
+          id: b.id,
+          code: b.code,
+          name: b.name,
+          description: b.description,
+          icon: b.icon
         }));
-        setAllBadges(badges);
+        setAllBadges(mappedBadges);
       }
 
       if (userBadgesData) {
-        const earnedBadges: UserBadge[] = userBadgesData.map(item => ({
-          id: item.id,
-          badgeId: item.badge_id || '',
-          earnedAt: new Date(item.earned_at)
+        const mappedUserBadges: UserBadge[] = userBadgesData.map(ub => ({
+          id: ub.id,
+          badgeId: ub.badge_id!,
+          earnedAt: new Date(ub.earned_at!)
         }));
-        setUserBadges(earnedBadges);
+        setUserBadges(mappedUserBadges);
       }
     } catch (error) {
       console.error('Erro ao carregar badges:', error);
