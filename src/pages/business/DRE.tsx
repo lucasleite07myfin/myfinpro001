@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import MainLayout from '@/components/MainLayout';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,8 @@ import { formatCurrency, formatMonth } from '@/utils/formatters';
 import MonthSelector from '@/components/MonthSelector';
 import StatsCard from '@/components/StatsCard';
 import { toast } from '@/components/ui/sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 // Tipo para a DRE
 interface DREItem {
@@ -39,25 +41,116 @@ interface DespesaOperacional {
 }
 
 const DRE: React.FC = () => {
+  const { user } = useAuth();
   const { currentMonth, setCurrentMonth } = useBusiness();
-  const [aliquotaImposto, setAliquotaImposto] = useState(0.15); // 15% padrão
-  const [receitaBruta, setReceitaBruta] = useState(25000);
-  const [cmv, setCmv] = useState(8000);
-  const [receitasFinanceiras, setReceitasFinanceiras] = useState(500);
-  const [despesasFinanceiras, setDespesasFinanceiras] = useState(1200);
+  const [aliquotaImposto, setAliquotaImposto] = useState(0.15);
+  const [receitaBruta, setReceitaBruta] = useState(0);
+  const [cmv, setCmv] = useState(0);
+  const [receitasFinanceiras, setReceitasFinanceiras] = useState(0);
+  const [despesasFinanceiras, setDespesasFinanceiras] = useState(0);
+  const [deducoesVendas, setDeducoesVendas] = useState<DeducaoVendas[]>([]);
+  const [despesasOperacionais, setDespesasOperacionais] = useState<DespesaOperacional[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Estados para linhas personalizáveis
-  const [deducoesVendas, setDeducoesVendas] = useState<DeducaoVendas[]>([
-    { id: '1', name: 'Impostos sobre Vendas', value: 2750 },
-    { id: '2', name: 'Devoluções', value: 500 },
-    { id: '3', name: 'Descontos Comerciais', value: 300 }
-  ]);
+  // Load data from database when component mounts or month changes
+  useEffect(() => {
+    if (user) {
+      loadDREData();
+    }
+  }, [user, currentMonth]);
 
-  const [despesasOperacionais, setDespesasOperacionais] = useState<DespesaOperacional[]>([
-    { id: '1', name: 'Despesas com Vendas', value: 3200 },
-    { id: '2', name: 'Despesas Administrativas', value: 4500 },
-    { id: '3', name: 'Despesas Gerais', value: 2100 }
-  ]);
+  // Save data to database whenever it changes (debounced)
+  useEffect(() => {
+    if (user && !loading) {
+      const timeoutId = setTimeout(() => {
+        saveDREData();
+      }, 1000); // Save after 1 second of inactivity
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [aliquotaImposto, receitaBruta, cmv, receitasFinanceiras, despesasFinanceiras, deducoesVendas, despesasOperacionais]);
+
+  const loadDREData = async () => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('dre_data')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('month', currentMonth)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (data) {
+        setReceitaBruta(Number(data.receita_bruta) || 0);
+        setCmv(Number(data.cmv) || 0);
+        setReceitasFinanceiras(Number(data.receitas_financeiras) || 0);
+        setDespesasFinanceiras(Number(data.despesas_financeiras) || 0);
+        setAliquotaImposto(Number(data.aliquota_imposto) || 0.15);
+        setDeducoesVendas(Array.isArray(data.deducoes_vendas) ? data.deducoes_vendas as unknown as DeducaoVendas[] : []);
+        setDespesasOperacionais(Array.isArray(data.despesas_operacionais) ? data.despesas_operacionais as unknown as DespesaOperacional[] : []);
+      } else {
+        // Reset to defaults if no data found
+        setReceitaBruta(0);
+        setCmv(0);
+        setReceitasFinanceiras(0);
+        setDespesasFinanceiras(0);
+        setAliquotaImposto(0.15);
+        setDeducoesVendas([]);
+        setDespesasOperacionais([]);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados DRE:', error);
+      toast.error('Erro ao carregar dados da DRE');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveDREData = async () => {
+    try {
+      const dreData = {
+        month: currentMonth,
+        receita_bruta: receitaBruta,
+        cmv: cmv,
+        receitas_financeiras: receitasFinanceiras,
+        despesas_financeiras: despesasFinanceiras,
+        aliquota_imposto: aliquotaImposto,
+        deducoes_vendas: deducoesVendas as any,
+        despesas_operacionais: despesasOperacionais as any,
+      };
+
+      // Check if record exists
+      const { data: existing } = await supabase
+        .from('dre_data')
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('month', currentMonth)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing
+        const { error } = await supabase
+          .from('dre_data')
+          .update(dreData)
+          .eq('id', existing.id);
+        
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from('dre_data')
+          .insert([{ ...dreData, user_id: user?.id }]);
+        
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Erro ao salvar dados DRE:', error);
+      toast.error('Erro ao salvar dados da DRE');
+    }
+  };
 
   // Cálculos da DRE
   const totalDeducoes = useMemo(() => {

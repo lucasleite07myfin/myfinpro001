@@ -1,50 +1,57 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/MainLayout';
 import FinancialHealthCards from '@/components/FinancialHealthCards';
 import { HealthSnapshot } from '@/types/alerts';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 const FinancialHealth: React.FC = () => {
+  const { user } = useAuth();
   const [currentHealth, setCurrentHealth] = useState<HealthSnapshot | null>(null);
   const [historicalData, setHistoricalData] = useState<HealthSnapshot[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data para demonstração
   useEffect(() => {
-    const mockCurrentHealth: HealthSnapshot = {
-      id: '1',
-      snapshotDate: new Date(),
-      savingsRatePct: 22.5,
-      debtIncomePct: 25.0,
-      monthsEmergencyFund: 4.2,
-      netWorthGrowth12m: 8.7,
-      createdAt: new Date()
-    };
+    if (user) {
+      loadHealthData();
+    }
+  }, [user]);
 
-    const mockHistoricalData: HealthSnapshot[] = [
-      {
-        id: '2',
-        snapshotDate: new Date('2024-01-01'),
-        savingsRatePct: 18.3,
-        debtIncomePct: 30.0,
-        monthsEmergencyFund: 2.8,
-        netWorthGrowth12m: 5.2,
-        createdAt: new Date('2024-01-01')
-      },
-      {
-        id: '3',
-        snapshotDate: new Date('2024-02-01'),
-        savingsRatePct: 20.1,
-        debtIncomePct: 28.5,
-        monthsEmergencyFund: 3.5,
-        netWorthGrowth12m: 6.8,
-        createdAt: new Date('2024-02-01')
-      },
-      mockCurrentHealth
-    ];
+  const loadHealthData = async () => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('health_snapshots')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('snapshot_date', { ascending: true });
 
-    setCurrentHealth(mockCurrentHealth);
-    setHistoricalData(mockHistoricalData);
-  }, []);
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // Convert database format to component format
+        const snapshots: HealthSnapshot[] = data.map(item => ({
+          id: item.id,
+          snapshotDate: new Date(item.snapshot_date),
+          savingsRatePct: item.savings_rate_pct || 0,
+          debtIncomePct: item.debt_income_pct || 0,
+          monthsEmergencyFund: item.months_emergency_fund || 0,
+          netWorthGrowth12m: item.net_worth_growth_12m || 0,
+          createdAt: new Date(item.created_at)
+        }));
+
+        setHistoricalData(snapshots);
+        setCurrentHealth(snapshots[snapshots.length - 1]); // Most recent
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados de saúde financeira:', error);
+      toast.error('Erro ao carregar dados de saúde financeira');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <MainLayout>
@@ -56,10 +63,14 @@ const FinancialHealth: React.FC = () => {
           </p>
         </div>
         
-        <FinancialHealthCards 
-          currentHealth={currentHealth}
-          historicalData={historicalData}
-        />
+        {loading ? (
+          <div className="text-center py-10">Carregando...</div>
+        ) : (
+          <FinancialHealthCards 
+            currentHealth={currentHealth}
+            historicalData={historicalData}
+          />
+        )}
       </div>
     </MainLayout>
   );

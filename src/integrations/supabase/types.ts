@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -219,6 +219,51 @@ export type Database = {
           created_at?: string | null
           id?: string
           type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dre_data: {
+        Row: {
+          aliquota_imposto: number
+          cmv: number
+          created_at: string
+          deducoes_vendas: Json | null
+          despesas_financeiras: number
+          despesas_operacionais: Json | null
+          id: string
+          month: string
+          receita_bruta: number
+          receitas_financeiras: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aliquota_imposto?: number
+          cmv?: number
+          created_at?: string
+          deducoes_vendas?: Json | null
+          despesas_financeiras?: number
+          despesas_operacionais?: Json | null
+          id?: string
+          month: string
+          receita_bruta?: number
+          receitas_financeiras?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aliquota_imposto?: number
+          cmv?: number
+          created_at?: string
+          deducoes_vendas?: Json | null
+          despesas_financeiras?: number
+          despesas_operacionais?: Json | null
+          id?: string
+          month?: string
+          receita_bruta?: number
+          receitas_financeiras?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -1029,6 +1074,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      users: {
+        Row: {
+          app_mode: string | null
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          password_hash: string
+          updated_at: string | null
+        }
+        Insert: {
+          app_mode?: string | null
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          password_hash: string
+          updated_at?: string | null
+        }
+        Update: {
+          app_mode?: string | null
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          password_hash?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
