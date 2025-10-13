@@ -43,7 +43,7 @@ const BusinessDashboard: React.FC = () => {
         <h1 className="text-2xl font-bold dark:text-white">Dashboard Empresarial</h1>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
         <TooltipHelper content={tooltipContent.dashboard.receitasCard}>
           <StatsCard
             title="Receitas do Mês"
