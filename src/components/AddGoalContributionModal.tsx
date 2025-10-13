@@ -25,7 +25,7 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
 }) => {
   const { mode } = useAppMode();
   const financeContext = mode === 'personal' ? useFinance() : useBusiness();
-  const { addTransaction, updateGoal } = financeContext;
+  const { addTransaction } = financeContext;
   
   const [amount, setAmount] = useState('');
   const [formattedAmount, setFormattedAmount] = useState('');
@@ -74,10 +74,19 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
 
       // Update goal current amount
       const newCurrentAmount = goal.currentAmount + finalAmount;
-      await updateGoal(goal.id, {
+      const updatedGoal: Goal = {
         ...goal,
         currentAmount: Math.max(0, newCurrentAmount) // Garantir que não fique negativo
-      });
+      };
+      
+      // Use the appropriate updateGoal method based on mode
+      if (mode === 'personal') {
+        const personalContext = financeContext as ReturnType<typeof useFinance>;
+        await personalContext.updateGoal(goal.id, { currentAmount: updatedGoal.currentAmount });
+      } else {
+        const businessContext = financeContext as ReturnType<typeof useBusiness>;
+        businessContext.updateGoal(updatedGoal);
+      }
 
       toast.success(
         `${isAdding ? 'Contribuição' : 'Retirada'} de ${formatCurrency(contributionAmount)} ${isAdding ? 'adicionada à' : 'removida da'} meta "${goal.name}"`
