@@ -1,6 +1,7 @@
 import React from 'react';
 import { PiggyBank, CreditCard, ArrowDown, ArrowUp } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
+import { useAuth } from '@/hooks/useAuth';
 import EmptyState from '@/components/EmptyState';
 import StatsCard from '@/components/StatsCard';
 import FinanceChart from '@/components/FinanceChart';
@@ -12,6 +13,7 @@ import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
 
 const Dashboard: React.FC = () => {
+  const { user } = useAuth();
   const { 
     monthlyData, 
     currentMonth, 
@@ -29,6 +31,15 @@ const Dashboard: React.FC = () => {
 
   const { income, expense, balance, savingRate } = getMonthTotals();
 
+  // Obter primeiro nome do usuário
+  const getFirstName = () => {
+    const fullName = user?.user_metadata?.full_name;
+    if (fullName) {
+      return fullName.split(' ')[0];
+    }
+    return user?.email?.split('@')[0] || 'Usuário';
+  };
+
   // Filtrar transações para o mês atual
   const currentMonthTransactions = transactions.filter(t => {
     const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
@@ -44,7 +55,7 @@ const Dashboard: React.FC = () => {
     <TooltipProvider>
       <div>
         <div className="mb-2 md:mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white">Dashboard - Visão Rápida</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white">Olá, {getFirstName()}</h1>
           <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
         </div>
 
