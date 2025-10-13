@@ -589,8 +589,25 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     setGoals(prev => prev.map(item => item.id === goal.id ? goal : item));
   };
 
-  const deleteGoal = (id: string) => {
-    setGoals(prev => prev.filter(item => item.id !== id));
+  const deleteGoal = async (id: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { error } = await supabase
+        .from('emp_goals')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setGoals(prev => prev.filter(item => item.id !== id));
+      toast.success('Meta excluída com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir meta:', error);
+      toast.error('Erro ao excluir meta');
+    }
   };
 
   const addGoalContribution = (goalId: string, amount: number) => {
