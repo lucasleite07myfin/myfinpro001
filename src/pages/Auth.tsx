@@ -267,7 +267,7 @@ const Auth = () => {
                         disabled={loading}
                         className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 pr-10"
                         required
-                        minLength={6}
+                        minLength={8}
                       />
                       <Button
                         type="button"

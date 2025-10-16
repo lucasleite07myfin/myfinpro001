@@ -14,8 +14,13 @@ import { Loader2 } from 'lucide-react';
 
 // Schema for password reset validation
 const resetPasswordSchema = z.object({
-  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
-  confirmPassword: z.string().min(6, 'A confirmação da senha deve ter pelo menos 6 caracteres'),
+  password: z.string()
+    .min(8, 'A senha deve ter pelo menos 8 caracteres')
+    .regex(/[A-Z]/, 'Deve conter pelo menos uma letra maiúscula')
+    .regex(/[a-z]/, 'Deve conter pelo menos uma letra minúscula')
+    .regex(/[0-9]/, 'Deve conter pelo menos um número')
+    .regex(/[^A-Za-z0-9]/, 'Deve conter pelo menos um caractere especial'),
+  confirmPassword: z.string().min(8, 'A confirmação da senha deve ter pelo menos 8 caracteres'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "As senhas não coincidem",
   path: ["confirmPassword"],

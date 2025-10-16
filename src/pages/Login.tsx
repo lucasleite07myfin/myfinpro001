@@ -17,7 +17,7 @@ import { validateCPF, validateCNPJ } from '@/utils/documentValidator';
 // Schema for login validation
 const loginSchema = z.object({
   identifier: z.string().min(1, 'Este campo é obrigatório'),
-  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+  password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
