@@ -21,30 +21,36 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CustomTabs, CustomTabTriggers } from '@/components/ui/custom-tabs';
 
-const projectedData = [
-  { month: 'Jan', income: 50000, expenses: 35000, balance: 15000, projection: 15000 },
-  { month: 'Fev', income: 45000, expenses: 30000, balance: 15000, projection: 15000 },
-  { month: 'Mar', income: 60000, expenses: 40000, balance: 20000, projection: 20000 },
-  { month: 'Abr', income: 48000, expenses: 38000, balance: 10000, projection: 10000 },
-  { month: 'Mai', income: 55000, expenses: 42000, balance: 13000, projection: 13000 },
-  { month: 'Jun', income: 65000, expenses: 45000, balance: 20000, projection: 20000 },
-  // Add historical data
-  { month: 'Jul', income: 70000, expenses: 50000, balance: 20000, projection: null },
-  { month: 'Ago', income: 72000, expenses: 48000, balance: 24000, projection: null },
-  { month: 'Set', income: 68000, expenses: 52000, balance: 16000, projection: null },
-  { month: 'Out', income: null, expenses: null, balance: null, projection: 18000 },
-  { month: 'Nov', income: null, expenses: null, balance: null, projection: 20000 },
-  { month: 'Dez', income: null, expenses: null, balance: null, projection: 22000 }
-];
-
 const CashFlow: React.FC = () => {
-  const { currentMonth, setCurrentMonth } = useBusiness();
+  const { currentMonth, setCurrentMonth, monthlyData, transactions } = useBusiness();
   const [view, setView] = useState<'monthly' | 'accumulated'>('monthly');
   
+  // Process data for the chart
+  const chartData = React.useMemo(() => {
+    const now = new Date();
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    return Array.from({ length: 12 }, (_, i) => {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+      const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
+      const monthName = monthNames[monthDate.getMonth()];
+      
+      // Find the monthly data for this month
+      const monthData = monthlyData.find(m => m.month === monthStr);
+      
+      return {
+        month: monthName,
+        income: monthData?.incomeTotal || 0,
+        expenses: monthData?.expenseTotal || 0,
+        balance: (monthData?.incomeTotal || 0) - (monthData?.expenseTotal || 0),
+        projection: null
+      };
+    });
+  }, [monthlyData]);
+  
   const calculateTotals = () => {
-    const historical = projectedData.filter(item => item.income !== null && item.expenses !== null);
-    const totalIncome = historical.reduce((sum, item) => sum + (item.income || 0), 0);
-    const totalExpenses = historical.reduce((sum, item) => sum + (item.expenses || 0), 0);
+    const totalIncome = chartData.reduce((sum, item) => sum + item.income, 0);
+    const totalExpenses = chartData.reduce((sum, item) => sum + item.expenses, 0);
     const totalBalance = totalIncome - totalExpenses;
     
     return { totalIncome, totalExpenses, totalBalance };
@@ -76,9 +82,9 @@ const CashFlow: React.FC = () => {
 
   const exportToCSV = () => {
     // Preparar dados para exportação
-    const csvHeader = 'Mês,Entradas,Saídas,Saldo,Projeção\n';
-    const csvData = projectedData.map(item => {
-      return `${item.month},${item.income !== null ? item.income : ''},${item.expenses !== null ? item.expenses : ''},${item.balance !== null ? item.balance : ''},${item.projection !== null ? item.projection : ''}`;
+    const csvHeader = 'Mês,Entradas,Saídas,Saldo\n';
+    const csvData = chartData.map(item => {
+      return `${item.month},${item.income},${item.expenses},${item.balance}`;
     }).join('\n');
     
     const csvContent = csvHeader + csvData;
@@ -103,15 +109,14 @@ const CashFlow: React.FC = () => {
     excelContent += '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Fluxo de Caixa</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
     excelContent += '<body>';
     excelContent += '<table>';
-    excelContent += '<tr><th>Mês</th><th>Entradas</th><th>Saídas</th><th>Saldo</th><th>Projeção</th></tr>';
+    excelContent += '<tr><th>Mês</th><th>Entradas</th><th>Saídas</th><th>Saldo</th></tr>';
     
-    projectedData.forEach(item => {
+    chartData.forEach(item => {
       excelContent += `<tr>`;
       excelContent += `<td>${item.month}</td>`;
-      excelContent += `<td>${item.income !== null ? formatCurrency(item.income) : ''}</td>`;
-      excelContent += `<td>${item.expenses !== null ? formatCurrency(item.expenses) : ''}</td>`;
-      excelContent += `<td>${item.balance !== null ? formatCurrency(item.balance) : ''}</td>`;
-      excelContent += `<td>${item.projection !== null ? formatCurrency(item.projection) : ''}</td>`;
+      excelContent += `<td>${formatCurrency(item.income)}</td>`;
+      excelContent += `<td>${formatCurrency(item.expenses)}</td>`;
+      excelContent += `<td>${formatCurrency(item.balance)}</td>`;
       excelContent += `</tr>`;
     });
     
@@ -151,20 +156,18 @@ const CashFlow: React.FC = () => {
               <th>Entradas</th>
               <th>Saídas</th>
               <th>Saldo</th>
-              <th>Projeção</th>
             </tr>
           </thead>
           <tbody>
     `;
     
-    projectedData.forEach(item => {
+    chartData.forEach(item => {
       pdfContent += `
         <tr>
           <td>${item.month}</td>
-          <td>${item.income !== null ? formatCurrency(item.income) : '-'}</td>
-          <td>${item.expenses !== null ? formatCurrency(item.expenses) : '-'}</td>
-          <td>${item.balance !== null ? formatCurrency(item.balance) : '-'}</td>
-          <td>${item.projection !== null ? formatCurrency(item.projection) : '-'}</td>
+          <td>${formatCurrency(item.income)}</td>
+          <td>${formatCurrency(item.expenses)}</td>
+          <td>${formatCurrency(item.balance)}</td>
         </tr>
       `;
     });
@@ -177,7 +180,6 @@ const CashFlow: React.FC = () => {
               <td>${formatCurrency(totalIncome)}</td>
               <td>${formatCurrency(totalExpenses)}</td>
               <td>${formatCurrency(totalBalance)}</td>
-              <td>-</td>
             </tr>
           </tfoot>
         </table>
@@ -251,7 +253,7 @@ const CashFlow: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-income">{formatCurrency(totalIncome)}</p>
-              <Badge variant="secondary" className="mt-2">9 meses</Badge>
+              <Badge variant="secondary" className="mt-2">12 meses</Badge>
             </CardContent>
           </Card>
           
@@ -264,7 +266,7 @@ const CashFlow: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-expense">{formatCurrency(totalExpenses)}</p>
-              <Badge variant="secondary" className="mt-2">9 meses</Badge>
+              <Badge variant="secondary" className="mt-2">12 meses</Badge>
             </CardContent>
           </Card>
           
@@ -335,7 +337,7 @@ const CashFlow: React.FC = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   {view === 'monthly' ? (
                     <BarChart
-                      data={projectedData}
+                      data={chartData}
                       margin={{ top: 20, right: 30, bottom: 20, left: 20 }}
                     >
                       <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -378,10 +380,10 @@ const CashFlow: React.FC = () => {
                     </BarChart>
                   ) : (
                     <BarChart
-                      data={projectedData.map((item, index, arr) => ({
+                      data={chartData.map((item, index, arr) => ({
                         ...item,
-                        accIncome: arr.slice(0, index + 1).reduce((sum, i) => sum + (i.income || 0), 0),
-                        accExpenses: arr.slice(0, index + 1).reduce((sum, i) => sum + (i.expenses || 0), 0),
+                        accIncome: arr.slice(0, index + 1).reduce((sum, i) => sum + i.income, 0),
+                        accExpenses: arr.slice(0, index + 1).reduce((sum, i) => sum + i.expenses, 0),
                       }))}
                       margin={{ top: 20, right: 30, bottom: 20, left: 20 }}
                     >
@@ -475,25 +477,32 @@ const CashFlow: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {projectedData.filter(item => item.income !== null && item.expenses !== null).map((item, index) => (
+                    {chartData.filter(item => item.income > 0 || item.expenses > 0).map((item, index) => (
                       <tr key={index}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{item.month}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-neutral-800">
-                          {formatCurrency(item.income || 0)}
+                          {formatCurrency(item.income)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-neutral-800">
-                          {formatCurrency(item.expenses || 0)}
+                          {formatCurrency(item.expenses)}
                         </td>
                         <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
-                          (item.balance || 0) >= 0 ? 'text-income' : 'text-expense'
+                          item.balance >= 0 ? 'text-income' : 'text-expense'
                         }`}>
-                          {formatCurrency(item.balance || 0)}
+                          {formatCurrency(item.balance)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                           <Badge variant="secondary">Realizado</Badge>
                         </td>
                       </tr>
                     ))}
+                    {chartData.filter(item => item.income > 0 || item.expenses > 0).length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-neutral-500">
+                          Nenhuma transação registrada ainda. Adicione transações para visualizar o histórico.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -501,51 +510,12 @@ const CashFlow: React.FC = () => {
             
             <TabsContent value="projections" className="mt-4">
               <div className="overflow-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead>
-                    <tr>
-                      <th className="px-6 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase">Mês</th>
-                      <th className="px-6 py-3 bg-neutral-50 text-right text-xs font-medium text-neutral-500 uppercase">Projeção</th>
-                      <th className="px-6 py-3 bg-neutral-50 text-center text-xs font-medium text-neutral-500 uppercase">Confiança</th>
-                      <th className="px-6 py-3 bg-neutral-50 text-center text-xs font-medium text-neutral-500 uppercase">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {projectedData.filter(item => item.projection !== null).map((item, index) => {
-                      const confidence = Math.floor(Math.random() * 30) + 70;
-                      return (
-                        <tr key={index}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{item.month}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-purple-600">
-                            {formatCurrency(item.projection || 0)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <Progress value={confidence} className="w-16 h-2" />
-                              <span className="text-xs text-neutral-500">{confidence}%</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                            <Badge variant="outline" className="text-purple-600 border-purple-200">
-                              Projetado
-                            </Badge>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-4 p-4 bg-purple-50 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <Info className="h-4 w-4 text-purple-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-purple-800">Como calculamos as projeções</p>
-                    <p className="text-xs text-purple-700 mt-1">
-                      As projeções são baseadas na média dos últimos 6 meses, ajustadas por sazonalidade e tendências de crescimento.
-                      A confiança diminui quanto mais distante for o mês projetado.
-                    </p>
-                  </div>
+                <div className="text-center py-12">
+                  <Info className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
+                  <p className="text-neutral-500 mb-2">Projeções em desenvolvimento</p>
+                  <p className="text-sm text-neutral-400">
+                    As projeções de fluxo de caixa serão baseadas no seu histórico de transações
+                  </p>
                 </div>
               </div>
             </TabsContent>
