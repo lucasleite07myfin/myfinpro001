@@ -375,12 +375,24 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  {EXPENSE_CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                  {getCurrentCategories().map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                 </SelectGroup>
               </SelectContent>
             </Select>
           </div>
         </TooltipHelper>
+        {category === 'Outros' && (
+          <div className="space-y-2">
+            <Label htmlFor="customCategory">Especificar categoria</Label>
+            <Input 
+              id="customCategory" 
+              value={customCategory} 
+              onChange={e => setCustomCategory(e.target.value)} 
+              placeholder="Digite o nome da categoria" 
+              className="bg-gray-50 border-gray-200" 
+            />
+          </div>
+        )}
         <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
           <div className="space-y-2">
             <Label htmlFor="amount">Valor (R$)</Label>
