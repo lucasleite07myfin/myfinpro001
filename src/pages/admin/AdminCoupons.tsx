@@ -63,10 +63,18 @@ const AdminCoupons = () => {
   };
 
   useEffect(() => {
-    if (isAdmin) {
+    console.log('🎯 AdminCoupons mounted/updated');
+    console.log('🎯 roleLoading:', roleLoading);
+    console.log('🎯 isAdmin:', isAdmin);
+    
+    if (isAdmin && !roleLoading) {
       fetchCoupons();
     }
-  }, [isAdmin]);
+    
+    return () => {
+      console.log('🎯 AdminCoupons cleanup');
+    };
+  }, [isAdmin, roleLoading]);
 
   const handleCreateCoupon = async () => {
     if (!code.trim()) {
@@ -135,7 +143,9 @@ const AdminCoupons = () => {
     return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
   };
 
+  // Enquanto carregando, mostrar skeleton
   if (roleLoading) {
+    console.log('⏳ Showing skeleton - still loading role');
     return (
       <div className="container mx-auto max-w-6xl p-4 space-y-6">
         <Skeleton className="h-12 w-64" />
@@ -144,9 +154,14 @@ const AdminCoupons = () => {
     );
   }
 
-  if (!roleLoading && !isAdmin) {
+  // Só redirecionar se NÃO for admin E já terminou de carregar
+  if (!isAdmin) {
+    console.log('⚠️ Redirecting: user is not admin');
     return <Navigate to="/" replace />;
   }
+
+  // Se chegou aqui, é admin e pode ver a página
+  console.log('✅ Rendering admin coupons page');
 
   return (
     <div className="container mx-auto max-w-6xl p-4 space-y-6">

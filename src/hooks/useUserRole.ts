@@ -8,13 +8,17 @@ export const useUserRole = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+    
     const checkRole = async () => {
       console.log('🔍 Checking role for user:', user?.id);
       
       if (!user) {
         console.log('❌ No user found');
-        setIsAdmin(false);
-        setLoading(false);
+        if (mounted) {
+          setIsAdmin(false);
+          setLoading(false);
+        }
         return;
       }
 
@@ -29,18 +33,29 @@ export const useUserRole = () => {
         console.log('📊 Query result:', { data, error });
         
         if (error) throw error;
-        setIsAdmin(!!data);
-        console.log('✅ Is admin:', !!data);
+        
+        if (mounted) {
+          setIsAdmin(!!data);
+          console.log('✅ Is admin:', !!data);
+        }
       } catch (error) {
         console.error('❌ Error checking user role:', error);
-        setIsAdmin(false);
+        if (mounted) {
+          setIsAdmin(false);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     checkRole();
-  }, [user]);
+    
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]);
 
   return { isAdmin, loading };
 };
