@@ -16,29 +16,23 @@ const BitcoinHeaderButton: React.FC = () => {
 
   const fetchBitcoinData = async () => {
     try {
-      const [priceResponse, historyResponse] = await Promise.all([
-        fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl,usd&include_24hr_change=true'),
-        fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1')
+      const [usdResponse, brlResponse] = await Promise.all([
+        fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT'),
+        fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCBRL')
       ]);
 
-      if (priceResponse.ok) {
-        const priceData = await priceResponse.json();
-        if (priceData.bitcoin) {
-          setPrices({
-            brl: priceData.bitcoin.brl,
-            usd: priceData.bitcoin.usd
-          });
-        }
-      }
+      if (usdResponse.ok && brlResponse.ok) {
+        const [usdData, brlData] = await Promise.all([
+          usdResponse.json(),
+          brlResponse.json()
+        ]);
 
-      if (historyResponse.ok) {
-        const historyData = await historyResponse.json();
-        if (historyData.prices && historyData.prices.length >= 2) {
-          const firstPrice = historyData.prices[0][1];
-          const lastPrice = historyData.prices[historyData.prices.length - 1][1];
-          const change = ((lastPrice - firstPrice) / firstPrice) * 100;
-          setPercentChange(change);
-        }
+        setPrices({
+          usd: parseFloat(usdData.lastPrice),
+          brl: parseFloat(brlData.lastPrice)
+        });
+
+        setPercentChange(parseFloat(usdData.priceChangePercent));
       }
       
       setIsLoading(false);
@@ -52,7 +46,7 @@ const BitcoinHeaderButton: React.FC = () => {
 
   useEffect(() => {
     fetchBitcoinData();
-    const interval = setInterval(fetchBitcoinData, 120000);
+    const interval = setInterval(fetchBitcoinData, 30000);
     return () => clearInterval(interval);
   }, []);
 
