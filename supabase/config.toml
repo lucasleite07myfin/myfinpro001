@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.validate-coupon]
 verify_jwt = false
+
+[functions.add-admin]
+verify_jwt = true
