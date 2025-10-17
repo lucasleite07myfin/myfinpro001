@@ -109,6 +109,9 @@
     /* Orange color for active states */
     --orange: 22 95% 49%;
 
+    /* Tabs background - lighter for personal mode */
+    --tabs-background: 0 0% 88%;
+
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 94%;
@@ -126,6 +129,9 @@
     --background: 0 0% 94%;
     --sidebar-background: 0 0% 92%;
     --sidebar-accent: 240 4.8% 90%;
+    
+    /* Tabs background - darker for business mode */
+    --tabs-background: 0 0% 80%;
   }
 }
 
