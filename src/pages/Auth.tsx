@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
@@ -15,6 +16,7 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberEmail, setRememberEmail] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,6 +28,13 @@ const Auth = () => {
       }
     };
     checkUser();
+
+    // Carrega email salvo do localStorage
+    const savedEmail = localStorage.getItem('remembered_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberEmail(true);
+    }
   }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -102,6 +111,13 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Salva ou remove email do localStorage
+        if (rememberEmail) {
+          localStorage.setItem('remembered_email', email);
+        } else {
+          localStorage.removeItem('remembered_email');
+        }
+
         toast.success('Redirecionando...');
         
         // Força recarregamento da página para estado limpo
@@ -197,6 +213,26 @@ const Auth = () => {
                         )}
                       </Button>
                     </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="remember-email"
+                      checked={rememberEmail}
+                      onCheckedChange={(checked) => {
+                        setRememberEmail(checked as boolean);
+                        if (!checked) {
+                          localStorage.removeItem('remembered_email');
+                        }
+                      }}
+                      disabled={loading}
+                    />
+                    <Label
+                      htmlFor="remember-email"
+                      className="text-sm font-medium text-foreground cursor-pointer"
+                    >
+                      Lembrar meu email
+                    </Label>
                   </div>
 
                   <Button
