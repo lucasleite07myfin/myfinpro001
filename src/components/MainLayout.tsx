@@ -8,6 +8,7 @@ import AddTransactionModal from './AddTransactionModal';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from './TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
+import { TrialBanner } from './TrialBanner';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -32,6 +33,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <div className={`min-h-screen flex flex-col bg-background`}>
         <Header />
         <main className="flex-grow container mx-auto px-4 py-2 md:py-3 overflow-x-hidden">
+          <TrialBanner />
           {children}
         </main>
         <TooltipHelper content={tooltipContent.modals.addTransaction}>

@@ -14,6 +14,7 @@ import Expenses from "./pages/Expenses";
 import Goals from "./pages/Goals";
 import Patrimony from "./pages/Patrimony";
 import Profile from "./pages/Profile";
+import Subscription from "./pages/Subscription";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -74,6 +75,7 @@ const ModeRoutes = () => {
             <Route path="/patrimonio" element={<ProtectedRoute><Patrimony /></ProtectedRoute>} />
             <Route path="/saude-financeira" element={<ProtectedRoute><FinancialHealth /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
             
             {/* Business routes */}
             <Route path="/fluxo-caixa" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />

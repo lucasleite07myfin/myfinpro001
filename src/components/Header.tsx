@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, ChartBar, User, LogOut } from 'lucide-react';
+import { Menu, X, ChartBar, User, LogOut, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import ModeToggle from './ModeToggle';
@@ -123,6 +123,10 @@ const Header: React.FC = () => {
                     <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer hover:bg-muted/50">
                       <User className="mr-2 h-4 w-4" />
                       <span>Perfil</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/subscription')} className="cursor-pointer hover:bg-muted/50">
+                      <Crown className="mr-2 h-4 w-4 text-yellow-500" />
+                      <span>Premium</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="bg-border" />
                     <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive hover:bg-muted/50">
