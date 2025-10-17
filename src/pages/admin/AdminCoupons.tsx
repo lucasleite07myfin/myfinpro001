@@ -144,7 +144,7 @@ const AdminCoupons = () => {
     );
   }
 
-  if (!isAdmin) {
+  if (!roleLoading && !isAdmin) {
     return <Navigate to="/" replace />;
   }
 
