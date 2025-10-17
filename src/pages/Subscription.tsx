@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { Crown, Check, AlertCircle, Sparkles, Loader2, Tag } from 'lucide-react';
+import { Crown, Check, AlertCircle, Sparkles, Loader2, Tag, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -135,12 +135,22 @@ const Subscription = () => {
 
   return (
     <div className="container mx-auto max-w-6xl p-4 space-y-6">
-      <div className="flex items-center gap-3">
-        <Crown className="h-8 w-8 text-yellow-500" />
-        <div>
-          <h1 className="text-3xl font-bold">MyFin Pro</h1>
-          <p className="text-muted-foreground">Escolha o plano ideal para você</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Crown className="h-8 w-8 text-yellow-500" />
+          <div>
+            <h1 className="text-3xl font-bold">MyFin Pro</h1>
+            <p className="text-muted-foreground">Escolha o plano ideal para você</p>
+          </div>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar ao Dashboard
+        </Button>
       </div>
 
       {/* Status Atual */}
@@ -155,9 +165,16 @@ const Subscription = () => {
 
       {isActive && !isTrial && (
         <Alert className="border-green-500 bg-green-50 dark:bg-green-950/20">
-          <Check className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800 dark:text-green-200">
-            ✅ Assinatura ativa até {formatDate(subscription?.current_period_end || null)}
+          <Check className="h-5 w-5 text-green-600" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <p className="text-green-800 dark:text-green-200 font-semibold text-lg">
+                ✅ Sistema Pago e Ativo
+              </p>
+              <p className="text-green-700 dark:text-green-300">
+                Sua assinatura está ativa e renovará automaticamente em {formatDate(subscription?.current_period_end || null)}
+              </p>
+            </div>
           </AlertDescription>
         </Alert>
       )}
@@ -359,7 +376,13 @@ const Subscription = () => {
             <CardDescription>Informações sobre sua assinatura atual</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className={`grid ${isTrial ? 'grid-cols-2' : 'grid-cols-3'} gap-4`}>
+              <div>
+                <p className="text-sm text-muted-foreground">Início da assinatura</p>
+                <p className="font-semibold">
+                  {formatDate(subscription?.current_period_start || null)}
+                </p>
+              </div>
               <div>
                 <p className="text-sm text-muted-foreground">Plano atual</p>
                 <p className="font-semibold">
@@ -368,12 +391,12 @@ const Subscription = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
-                <Badge variant={isTrial ? 'secondary' : 'default'}>
+                <Badge variant={isTrial ? 'secondary' : 'default'} className="w-fit">
                   {isTrial ? 'Em teste' : 'Ativo'}
                 </Badge>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Renovação</p>
+                <p className="text-sm text-muted-foreground">Próxima renovação</p>
                 <p className="font-semibold">
                   {formatDate(subscription?.current_period_end || null)}
                 </p>
@@ -398,6 +421,12 @@ const Subscription = () => {
             )}
           </CardContent>
           <CardFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/')}
+            >
+              Voltar ao Dashboard
+            </Button>
             <Button
               variant="destructive"
               onClick={handleCancel}
