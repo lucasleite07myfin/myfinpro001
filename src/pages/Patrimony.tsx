@@ -296,7 +296,7 @@ const Patrimony: React.FC = () => {
           </div>
 
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 tablet:grid-cols-4 lg:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -421,7 +421,7 @@ const Patrimony: React.FC = () => {
 
           {/* Charts Section */}
           {filteredAssets.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 tablet:grid-cols-2 lg:grid-cols-2 gap-6">
               {/* Historical Chart */}
               {historyData.length > 0 && (
                 <Card>

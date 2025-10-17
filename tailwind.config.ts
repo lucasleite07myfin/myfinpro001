@@ -18,6 +18,9 @@ export default {
 				'2xl': '1400px'
 			}
 		},
+		screens: {
+			'tablet': '900px',
+		},
 		extend: {
 			fontFamily: {
 				'inter': ['Inter', 'sans-serif'],

@@ -55,7 +55,7 @@ const BusinessDashboard: React.FC = () => {
       </div>
 
       <div className="mb-4 md:mb-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
+        <div className="grid grid-cols-2 tablet:grid-cols-4 lg:grid-cols-4 gap-2 md:gap-4">
           <TooltipHelper content={tooltipContent.dashboard.receitasCard}>
             <div className="w-full">
               <StatsCard 
@@ -106,7 +106,7 @@ const BusinessDashboard: React.FC = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 tablet:grid-cols-3 lg:grid-cols-3 gap-6">
         {/* Coluna esquerda: Despesas Recorrentes */}
         <TooltipHelper content={tooltipContent.dashboard.recurringExpenses}>
           <div className="lg:col-span-1 h-full">
