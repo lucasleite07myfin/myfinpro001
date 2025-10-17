@@ -21,6 +21,7 @@ import { tooltipContent } from '@/data/tooltipContent';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { ManageCustomCategories } from '@/components/ManageCustomCategories';
 
 interface AddTransactionModalProps {
   open: boolean;
@@ -45,10 +46,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const {
     addTransaction,
     addRecurringExpense,
-    goals,
-    customCategories,
-    addCustomCategory
-  } = financeContext as FinanceContextType | BusinessContextType;
+    goals
+  } = financeContext;
+  
+  // Safely access properties that may not exist in BusinessContext
+  const customCategories = 'customCategories' in financeContext ? financeContext.customCategories : { income: [], expense: [] };
+  const addCustomCategory = 'addCustomCategory' in financeContext ? financeContext.addCustomCategory : undefined;
+  const editCustomCategory = 'editCustomCategory' in financeContext ? financeContext.editCustomCategory : undefined;
+  const deleteCustomCategory = 'deleteCustomCategory' in financeContext ? financeContext.deleteCustomCategory : undefined;
 
   const [activeTab, setActiveTab] = useState('transaction');
   const [transactionType, setTransactionType] = useState<TransactionType>(defaultTransactionType || 'expense');
@@ -317,6 +322,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
               <SelectContent>
+                {editCustomCategory && deleteCustomCategory && (
+                  <ManageCustomCategories 
+                    categories={customCategories[transactionType]}
+                    type={transactionType}
+                    onEdit={(id, oldName, newName) => editCustomCategory(id, transactionType, oldName, newName)}
+                    onDelete={(categoryName) => deleteCustomCategory(transactionType, categoryName)}
+                  />
+                )}
                 <SelectGroup>
                   {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                 </SelectGroup>
@@ -374,6 +387,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
               <SelectContent>
+                {editCustomCategory && deleteCustomCategory && (
+                  <ManageCustomCategories 
+                    categories={customCategories.expense}
+                    type="expense"
+                    onEdit={(id, oldName, newName) => editCustomCategory(id, 'expense', oldName, newName)}
+                    onDelete={(categoryName) => deleteCustomCategory('expense', categoryName)}
+                  />
+                )}
                 <SelectGroup>
                   {getCurrentCategories().map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                 </SelectGroup>

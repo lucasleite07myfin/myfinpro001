@@ -55,6 +55,8 @@ interface FinanceContextType {
   getMonthTotals: () => { income: number; expense: number; balance: number; savingRate: number };
   customCategories: CustomCategories;
   addCustomCategory: (type: 'income' | 'expense', category: string) => void;
+  editCustomCategory: (id: string, type: 'income' | 'expense', oldName: string, newName: string) => Promise<void>;
+  deleteCustomCategory: (type: 'income' | 'expense', categoryName: string) => Promise<boolean>;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -339,6 +341,109 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       toast.success('Categoria personalizada adicionada!');
     } catch (error) {
       toast.error('Erro ao adicionar categoria');
+    }
+  };
+
+  const editCustomCategory = async (
+    id: string, 
+    type: 'income' | 'expense', 
+    oldName: string, 
+    newName: string
+  ) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const categoryToUpdate = newName.startsWith('Outros: ') ? newName : `Outros: ${newName}`;
+      
+      // Atualizar no banco
+      const { error: updateError } = await supabase
+        .from('custom_categories')
+        .update({ name: categoryToUpdate })
+        .eq('user_id', user.id)
+        .eq('name', oldName);
+
+      if (updateError) throw updateError;
+
+      // Atualizar transações que usam essa categoria
+      const { error: transactionsError } = await supabase
+        .from('transactions')
+        .update({ category: categoryToUpdate })
+        .eq('user_id', user.id)
+        .eq('category', oldName);
+
+      if (transactionsError) throw transactionsError;
+
+      // Atualizar despesas recorrentes
+      const { error: recurringError } = await supabase
+        .from('recurring_expenses')
+        .update({ category: categoryToUpdate })
+        .eq('user_id', user.id)
+        .eq('category', oldName);
+
+      if (recurringError) throw recurringError;
+
+      // Atualizar estado local
+      setCustomCategories(prev => ({
+        ...prev,
+        [type]: prev[type].map(cat => cat === oldName ? categoryToUpdate : cat)
+      }));
+
+      // Recarregar transações
+      await loadData();
+
+      toast.success('Categoria atualizada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao editar categoria:', error);
+      toast.error('Erro ao editar categoria');
+    }
+  };
+
+  const deleteCustomCategory = async (type: 'income' | 'expense', categoryName: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      // Verificar se há transações usando essa categoria
+      const { data: transactionsWithCategory } = await supabase
+        .from('transactions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('category', categoryName);
+
+      const { data: recurringWithCategory } = await supabase
+        .from('recurring_expenses')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('category', categoryName);
+
+      if ((transactionsWithCategory && transactionsWithCategory.length > 0) || 
+          (recurringWithCategory && recurringWithCategory.length > 0)) {
+        toast.error('Não é possível excluir categoria em uso. Altere as transações primeiro.');
+        return false;
+      }
+
+      // Excluir do banco
+      const { error } = await supabase
+        .from('custom_categories')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('name', categoryName);
+
+      if (error) throw error;
+
+      // Atualizar estado local
+      setCustomCategories(prev => ({
+        ...prev,
+        [type]: prev[type].filter(cat => cat !== categoryName)
+      }));
+
+      toast.success('Categoria excluída com sucesso!');
+      return true;
+    } catch (error) {
+      console.error('Erro ao excluir categoria:', error);
+      toast.error('Erro ao excluir categoria');
+      return false;
     }
   };
 
@@ -989,7 +1094,9 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     deleteLiability,
     getMonthTotals,
     customCategories,
-    addCustomCategory
+    addCustomCategory,
+    editCustomCategory,
+    deleteCustomCategory
   };
 
   return (
