@@ -100,7 +100,7 @@ const Goals: React.FC = () => {
 
           {/* Stats Overview */}
           {goals.length > 0 && (
-            <div className="grid grid-cols-1 tablet:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
@@ -173,7 +173,7 @@ const Goals: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 tablet:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {goals.map((goal) => {
                 const percentage = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
                 const remainingAmount = goal.targetAmount - goal.currentAmount;

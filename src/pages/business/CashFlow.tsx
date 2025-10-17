@@ -243,7 +243,7 @@ const CashFlow: React.FC = () => {
       {/* Resumo Financeiro */}
       <div className="mb-8">
         <h2 className="text-lg font-semibold text-neutral-800 mb-4">Resumo Financeiro</h2>
-        <div className="grid grid-cols-1 tablet:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-neutral-500 font-normal flex items-center gap-2">
