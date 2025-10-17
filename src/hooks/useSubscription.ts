@@ -71,15 +71,32 @@ export const useSubscription = () => {
     setCreating(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+      // Timeout de 15 segundos
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: operação demorou muito')), 15000)
+      );
+
+      const invokePromise = supabase.functions.invoke('create-checkout-session', {
         body: { plan_type: planType, coupon_code: couponCode },
       });
+
+      const result = await Promise.race([invokePromise, timeoutPromise]) as any;
+      const { data, error } = result;
 
       if (error) throw error;
 
       if (data?.url) {
-        // Redirecionar para Stripe Checkout
-        window.location.href = data.url;
+        // Abrir em nova aba
+        const opened = window.open(data.url, '_blank');
+        
+        if (!opened) {
+          // Se bloqueado por popup blocker, usar fallback
+          toast.error('Por favor, permita pop-ups para este site');
+          window.location.href = data.url;
+        } else {
+          toast.success('Abrindo página de checkout...');
+          setCreating(false);
+        }
       } else {
         throw new Error('URL de checkout não recebida');
       }

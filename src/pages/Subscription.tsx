@@ -286,14 +286,14 @@ const Subscription = () => {
                 onClick={() => handleSelectPlan('monthly')}
                 disabled={creating}
               >
-                {creating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processando...
-                  </>
-                ) : (
-                  'Começar Teste Grátis'
-                )}
+                  {creating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Preparando checkout...
+                    </>
+                  ) : (
+                    'Começar Teste Grátis'
+                  )}
               </Button>
             </CardFooter>
           </Card>
@@ -357,7 +357,7 @@ const Subscription = () => {
                 {creating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processando...
+                    Preparando checkout...
                   </>
                 ) : (
                   'Começar Teste Grátis'
