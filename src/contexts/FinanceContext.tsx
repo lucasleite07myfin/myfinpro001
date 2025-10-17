@@ -382,7 +382,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       };
 
       setRecurringExpenses([...recurringExpenses, newExpense]);
-      toast.success('Despesa fixa adicionada com sucesso!');
+      toast.success('Despesa recorrente adicionada com sucesso!');
     } catch (error) {
       console.error('Erro ao adicionar despesa recorrente:', error);
       toast.error('Erro ao adicionar despesa recorrente');
