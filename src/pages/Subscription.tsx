@@ -155,10 +155,18 @@ const Subscription = () => {
 
       {/* Status Atual */}
       {isTrial && (
-        <Alert className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
-          <Sparkles className="h-4 w-4 text-yellow-600" />
-          <AlertDescription className="text-yellow-800 dark:text-yellow-200">
-            🎉 Você está no período de teste! <strong>{trialDaysLeft} {trialDaysLeft === 1 ? 'dia restante' : 'dias restantes'}</strong>
+        <Alert className="border-green-500 bg-green-50 dark:bg-green-950/20">
+          <Sparkles className="h-4 w-4 text-green-600" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <p className="text-green-800 dark:text-green-200 font-semibold text-lg">
+                ✅ Sistema Ativo (Período de Teste)
+              </p>
+              <p className="text-green-700 dark:text-green-300">
+                🎉 Você tem <strong>{trialDaysLeft} {trialDaysLeft === 1 ? 'dia restante' : 'dias restantes'}</strong> de teste grátis! 
+                Aproveite todos os recursos premium até {formatDate(subscription?.trial_end || null)}.
+              </p>
+            </div>
           </AlertDescription>
         </Alert>
       )}
