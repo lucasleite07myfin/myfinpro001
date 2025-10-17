@@ -14,7 +14,609 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assets: {
+        Row: {
+          acquisition_date: string | null
+          acquisition_value: number | null
+          created_at: string | null
+          evaluation_date: string | null
+          id: string
+          insured: boolean | null
+          last_price_brl: number | null
+          last_updated: string | null
+          location: string | null
+          name: string
+          notes: string | null
+          quantity: number | null
+          symbol: string | null
+          type: string
+          user_id: string
+          value: number
+          wallet: string | null
+        }
+        Insert: {
+          acquisition_date?: string | null
+          acquisition_value?: number | null
+          created_at?: string | null
+          evaluation_date?: string | null
+          id?: string
+          insured?: boolean | null
+          last_price_brl?: number | null
+          last_updated?: string | null
+          location?: string | null
+          name: string
+          notes?: string | null
+          quantity?: number | null
+          symbol?: string | null
+          type: string
+          user_id: string
+          value: number
+          wallet?: string | null
+        }
+        Update: {
+          acquisition_date?: string | null
+          acquisition_value?: number | null
+          created_at?: string | null
+          evaluation_date?: string | null
+          id?: string
+          insured?: boolean | null
+          last_price_brl?: number | null
+          last_updated?: string | null
+          location?: string | null
+          name?: string
+          notes?: string | null
+          quantity?: number | null
+          symbol?: string | null
+          type?: string
+          user_id?: string
+          value?: number
+          wallet?: string | null
+        }
+        Relationships: []
+      }
+      custom_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emp_assets: {
+        Row: {
+          acquisition_date: string | null
+          acquisition_value: number | null
+          created_at: string | null
+          evaluation_date: string | null
+          id: string
+          insured: boolean | null
+          last_price_brl: number | null
+          last_updated: string | null
+          location: string | null
+          name: string
+          notes: string | null
+          quantity: number | null
+          symbol: string | null
+          type: string
+          user_id: string
+          value: number
+          wallet: string | null
+        }
+        Insert: {
+          acquisition_date?: string | null
+          acquisition_value?: number | null
+          created_at?: string | null
+          evaluation_date?: string | null
+          id?: string
+          insured?: boolean | null
+          last_price_brl?: number | null
+          last_updated?: string | null
+          location?: string | null
+          name: string
+          notes?: string | null
+          quantity?: number | null
+          symbol?: string | null
+          type: string
+          user_id: string
+          value: number
+          wallet?: string | null
+        }
+        Update: {
+          acquisition_date?: string | null
+          acquisition_value?: number | null
+          created_at?: string | null
+          evaluation_date?: string | null
+          id?: string
+          insured?: boolean | null
+          last_price_brl?: number | null
+          last_updated?: string | null
+          location?: string | null
+          name?: string
+          notes?: string | null
+          quantity?: number | null
+          symbol?: string | null
+          type?: string
+          user_id?: string
+          value?: number
+          wallet?: string | null
+        }
+        Relationships: []
+      }
+      emp_goals: {
+        Row: {
+          created_at: string | null
+          current_amount: number | null
+          id: string
+          name: string
+          saving_location: string | null
+          target_amount: number
+          target_date: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_amount?: number | null
+          id?: string
+          name: string
+          saving_location?: string | null
+          target_amount: number
+          target_date?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_amount?: number | null
+          id?: string
+          name?: string
+          saving_location?: string | null
+          target_amount?: number
+          target_date?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emp_liabilities: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          type: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          type: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          type?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: []
+      }
+      emp_monthly_finance_data: {
+        Row: {
+          created_at: string | null
+          expense_total: number | null
+          id: string
+          income_total: number | null
+          month: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expense_total?: number | null
+          id?: string
+          income_total?: number | null
+          month: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expense_total?: number | null
+          id?: string
+          income_total?: number | null
+          month?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emp_recurring_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          description: string
+          due_day: number
+          id: string
+          is_paid: boolean | null
+          monthly_values: Json | null
+          paid_months: string[] | null
+          payment_method: string | null
+          repeat_months: number | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          description: string
+          due_day: number
+          id?: string
+          is_paid?: boolean | null
+          monthly_values?: Json | null
+          paid_months?: string[] | null
+          payment_method?: string | null
+          repeat_months?: number | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          description?: string
+          due_day?: number
+          id?: string
+          is_paid?: boolean | null
+          monthly_values?: Json | null
+          paid_months?: string[] | null
+          payment_method?: string | null
+          repeat_months?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emp_transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          date: string
+          description: string
+          goal_id: string | null
+          id: string
+          investment_id: string | null
+          is_goal_contribution: boolean | null
+          is_investment_contribution: boolean | null
+          is_recurring_payment: boolean | null
+          payment_method: string | null
+          recurring_expense_id: string | null
+          source: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          date: string
+          description: string
+          goal_id?: string | null
+          id?: string
+          investment_id?: string | null
+          is_goal_contribution?: boolean | null
+          is_investment_contribution?: boolean | null
+          is_recurring_payment?: boolean | null
+          payment_method?: string | null
+          recurring_expense_id?: string | null
+          source?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          date?: string
+          description?: string
+          goal_id?: string | null
+          id?: string
+          investment_id?: string | null
+          is_goal_contribution?: boolean | null
+          is_investment_contribution?: boolean | null
+          is_recurring_payment?: boolean | null
+          payment_method?: string | null
+          recurring_expense_id?: string | null
+          source?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          created_at: string | null
+          current_amount: number | null
+          id: string
+          name: string
+          saving_location: string | null
+          target_amount: number
+          target_date: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_amount?: number | null
+          id?: string
+          name: string
+          saving_location?: string | null
+          target_amount: number
+          target_date?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_amount?: number | null
+          id?: string
+          name?: string
+          saving_location?: string | null
+          target_amount?: number
+          target_date?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      liabilities: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          type: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          type: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          type?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: []
+      }
+      monthly_finance_data: {
+        Row: {
+          created_at: string | null
+          expense_total: number | null
+          id: string
+          income_total: number | null
+          month: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expense_total?: number | null
+          id?: string
+          income_total?: number | null
+          month: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expense_total?: number | null
+          id?: string
+          income_total?: number | null
+          month?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      recurring_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          description: string
+          due_day: number
+          id: string
+          is_paid: boolean | null
+          monthly_values: Json | null
+          paid_months: string[] | null
+          payment_method: string | null
+          repeat_months: number | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          description: string
+          due_day: number
+          id?: string
+          is_paid?: boolean | null
+          monthly_values?: Json | null
+          paid_months?: string[] | null
+          payment_method?: string | null
+          repeat_months?: number | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          description?: string
+          due_day?: number
+          id?: string
+          is_paid?: boolean | null
+          monthly_values?: Json | null
+          paid_months?: string[] | null
+          payment_method?: string | null
+          repeat_months?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          address: Json | null
+          bank_info: Json | null
+          contact_person: string | null
+          created_at: string | null
+          document: string | null
+          email: string | null
+          id: string
+          is_company: boolean | null
+          name: string
+          notes: string | null
+          other_product_type: string | null
+          payment_terms: string | null
+          phone: string | null
+          product_type: string | null
+          state_registration: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address?: Json | null
+          bank_info?: Json | null
+          contact_person?: string | null
+          created_at?: string | null
+          document?: string | null
+          email?: string | null
+          id?: string
+          is_company?: boolean | null
+          name: string
+          notes?: string | null
+          other_product_type?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          product_type?: string | null
+          state_registration?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: Json | null
+          bank_info?: Json | null
+          contact_person?: string | null
+          created_at?: string | null
+          document?: string | null
+          email?: string | null
+          id?: string
+          is_company?: boolean | null
+          name?: string
+          notes?: string | null
+          other_product_type?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          product_type?: string | null
+          state_registration?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          date: string
+          description: string
+          goal_id: string | null
+          id: string
+          investment_id: string | null
+          is_goal_contribution: boolean | null
+          is_investment_contribution: boolean | null
+          is_recurring_payment: boolean | null
+          payment_method: string | null
+          recurring_expense_id: string | null
+          source: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          date: string
+          description: string
+          goal_id?: string | null
+          id?: string
+          investment_id?: string | null
+          is_goal_contribution?: boolean | null
+          is_investment_contribution?: boolean | null
+          is_recurring_payment?: boolean | null
+          payment_method?: string | null
+          recurring_expense_id?: string | null
+          source?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          date?: string
+          description?: string
+          goal_id?: string | null
+          id?: string
+          investment_id?: string | null
+          is_goal_contribution?: boolean | null
+          is_investment_contribution?: boolean | null
+          is_recurring_payment?: boolean | null
+          payment_method?: string | null
+          recurring_expense_id?: string | null
+          source?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

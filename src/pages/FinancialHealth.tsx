@@ -1,5 +1,5 @@
 // @ts-nocheck
-// NOTA: Type checking desabilitado temporariamente porque as tabelas do banco ainda não foram criadas
+// NOTA: Tabelas health_snapshots e emp_health_snapshots serão criadas quando o sistema de saúde financeira for implementado
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/MainLayout';
 import FinancialHealthCards from '@/components/FinancialHealthCards';

@@ -1,5 +1,5 @@
 // @ts-nocheck
-// NOTA: Type checking desabilitado temporariamente porque as tabelas do banco ainda não foram criadas
+// NOTA: Tabela dre_data será criada quando o módulo DRE empresarial for implementado
 import React, { useState, useMemo, useEffect } from 'react';
 import MainLayout from '@/components/MainLayout';
 import { useBusiness } from '@/contexts/BusinessContext';

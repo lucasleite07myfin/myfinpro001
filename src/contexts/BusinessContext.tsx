@@ -1,7 +1,3 @@
-
-// @ts-nocheck
-// NOTA: Type checking desabilitado temporariamente porque as tabelas do banco de dados ainda não foram criadas
-// Para resolver permanentemente: criar as tabelas emp_transactions, emp_recurring_expenses, emp_goals, emp_assets, suppliers, emp_liabilities, emp_monthly_finance_data
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Transaction, RecurringExpense, Goal, Asset, Liability, MonthlyFinanceData, PaymentMethod } from '@/types/finance';
 import { Investment } from '@/components/AddInvestmentModal';

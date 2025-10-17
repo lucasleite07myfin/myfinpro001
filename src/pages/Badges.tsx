@@ -1,5 +1,6 @@
 // @ts-nocheck
-// NOTA: Type checking desabilitado temporariamente porque as tabelas do banco ainda não foram criadas
+// NOTA: Type checking desabilitado para este arquivo porque as tabelas badges e user_badges não foram criadas
+// Estas tabelas fazem parte do sistema de gamificação que será implementado futuramente
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/MainLayout';
 import BadgesGallery from '@/components/BadgesGallery';
