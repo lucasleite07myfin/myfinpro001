@@ -155,7 +155,7 @@ const AdminCoupons = () => {
   }
 
   // Só redirecionar se NÃO for admin E já terminou de carregar
-  if (!isAdmin) {
+  if (!roleLoading && !isAdmin) {
     console.log('⚠️ Redirecting: user is not admin');
     return <Navigate to="/" replace />;
   }
