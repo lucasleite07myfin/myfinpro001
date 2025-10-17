@@ -95,7 +95,6 @@ const Register = () => {
       
       // Simulate API call
       setTimeout(() => {
-        console.log('Registration attempt:', { ...values, userType });
         
         toast.success('Sua conta foi criada com sucesso!');
         

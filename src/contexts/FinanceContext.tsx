@@ -212,7 +212,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       }
 
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados');
     } finally {
       setLoading(false);
@@ -258,7 +257,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       toast.success('Transação adicionada com sucesso!');
       updateMonthlyData();
     } catch (error) {
-      console.error('Erro ao adicionar transação:', error);
       toast.error('Erro ao adicionar transação');
     }
   };
@@ -289,7 +287,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setTransactions(transactions.map(t => t.id === transaction.id ? transaction : t));
       updateMonthlyData();
     } catch (error) {
-      console.error('Erro ao atualizar transação:', error);
       toast.error('Erro ao atualizar transação');
     }
   };
@@ -307,7 +304,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       toast.success('Transação excluída com sucesso!');
       updateMonthlyData();
     } catch (error) {
-      console.error('Erro ao excluir transação:', error);
       toast.error('Erro ao excluir transação');
     }
   };
@@ -342,7 +338,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       toast.success('Categoria personalizada adicionada!');
     } catch (error) {
-      console.error('Erro ao adicionar categoria:', error);
       toast.error('Erro ao adicionar categoria');
     }
   };

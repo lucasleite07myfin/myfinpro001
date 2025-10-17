@@ -147,11 +147,31 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       return;
     }
 
+    // Validação de valor máximo (R$ 999.999.999,99)
+    const numericAmount = parseFloat(amount);
+    if (numericAmount > 999999999.99) {
+      toast.error('O valor não pode exceder R$ 999.999.999,99');
+      return;
+    }
+
+    // Validação de valor mínimo
+    if (numericAmount <= 0) {
+      toast.error('O valor deve ser maior que zero');
+      return;
+    }
+
+    // Sanitização da descrição (remover caracteres especiais perigosos)
+    const sanitizedDescription = description.trim().replace(/[<>]/g, '');
+    if (sanitizedDescription.length === 0) {
+      toast.error('A descrição não pode estar vazia');
+      return;
+    }
+
     const transactionData = {
       date,
-      description,
+      description: sanitizedDescription,
       category: category === 'Outros' && customCategory.trim() ? `Outros: ${customCategory.trim()}` : category,
-      amount: parseFloat(amount),
+      amount: numericAmount,
       type: transactionType,
       paymentMethod
     };
@@ -177,14 +197,29 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         toast.error('Preencha os campos obrigatórios corretamente.');
         return;
     }
+
+    // Validação de valor máximo
+    const numericAmount = parseFloat(amount);
+    if (numericAmount > 999999999.99) {
+      toast.error('O valor não pode exceder R$ 999.999.999,99');
+      return;
+    }
+
+    // Sanitização da descrição
+    const sanitizedDescription = description.trim().replace(/[<>]/g, '');
+    if (sanitizedDescription.length === 0) {
+      toast.error('A descrição não pode estar vazia');
+      return;
+    }
+
     const finalCategory = category === 'Outros' && customCategory.trim() ? `Outros: ${customCategory.trim()}` : category;
     if (category === 'Outros' && customCategory.trim() && addCustomCategory) {
         addCustomCategory('expense', customCategory.trim());
     }
     addRecurringExpense({
-        description,
+        description: sanitizedDescription,
         category: finalCategory,
-        amount: parseFloat(amount),
+        amount: numericAmount,
         dueDay: parseInt(dueDay),
         paymentMethod,
         repeatMonths: parseInt(repeatMonths)

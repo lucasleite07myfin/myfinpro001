@@ -268,6 +268,8 @@ const Auth = () => {
                         className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 pr-10"
                         required
                         minLength={8}
+                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
+                        title="A senha deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais"
                       />
                       <Button
                         type="button"
@@ -285,7 +287,7 @@ const Auth = () => {
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      A senha deve ter pelo menos 6 caracteres
+                      A senha deve ter pelo menos 8 caracteres com letras maiúsculas, minúsculas, números e caracteres especiais
                     </p>
                   </div>
 

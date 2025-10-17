@@ -23,11 +23,6 @@ const Header: React.FC = () => {
   const { user, signOut } = useAuth();
   const business = mode === 'business' ? useBusiness() : null;
 
-  useEffect(() => {
-    console.log('Header - Current mode:', mode);
-    console.log('Header - Current path:', currentPath);
-  }, [mode, currentPath]);
-
   const handleTabChange = (value: string) => {
     navigate(value);
     setMenuOpen(false);

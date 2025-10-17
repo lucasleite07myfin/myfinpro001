@@ -32,17 +32,14 @@ export const AppModeProvider: React.FC<AppModeProviderProps> = ({ children }) =>
   // Update localStorage when mode changes
   useEffect(() => {
     localStorage.setItem('myfinpro_mode', mode);
-    console.log('App mode changed to:', mode);
   }, [mode]);
 
   const setMode = (newMode: AppMode) => {
-    console.log('Setting app mode to:', newMode);
     setModeState(newMode);
   };
 
   const toggleMode = () => {
     const newMode = mode === 'personal' ? 'business' : 'personal';
-    console.log('Toggling app mode from', mode, 'to', newMode);
     setModeState(newMode);
   };
 

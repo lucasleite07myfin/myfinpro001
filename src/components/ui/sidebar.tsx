@@ -56,12 +56,6 @@ export const Sidebar = ({ children }: { children: ReactNode }) => {
   const { mode } = useAppMode();
   const location = useLocation();
 
-  // Add logging to check the current mode and path
-  useEffect(() => {
-    console.log('Current app mode:', mode);
-    console.log('Current path:', location.pathname);
-  }, [mode, location.pathname]);
-
   // Business menu items
   const businessMenuItems = [
     { 
@@ -141,11 +135,6 @@ export const Sidebar = ({ children }: { children: ReactNode }) => {
   ];
 
   const menuItems = mode === 'business' ? businessMenuItems : personalMenuItems;
-
-  // Log the menu items for debugging
-  useEffect(() => {
-    console.log('Menu items:', menuItems.map(item => item.name));
-  }, [menuItems]);
 
   return (
     <nav 

@@ -87,7 +87,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
       </div>
       
       {/* Scrollable Body */}
-      <div className="overflow-y-auto max-h-48">
+      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '300px' }}>
         <Table>
           <TableBody>
             {transactions.length === 0 ? (

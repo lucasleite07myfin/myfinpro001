@@ -20,6 +20,7 @@ import { useAppMode } from '@/contexts/AppModeContext';
 import { formatDateForInput, formatCurrencyInput, parseCurrencyToNumber } from '@/utils/formatters';
 import { Goal } from '@/types/finance';
 import { Target, Calendar, PiggyBank, DollarSign, TrendingUp, Edit, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AddGoalModalProps {
   open: boolean;
@@ -93,6 +94,39 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
     e.preventDefault();
     
     if (!name || !targetAmount || !currentAmount || !targetDate) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    // Validação de valores máximos
+    const targetValue = parseCurrencyToNumber(targetAmount);
+    const currentValue = parseCurrencyToNumber(currentAmount);
+
+    if (targetValue > 999999999.99) {
+      toast.error('O valor da meta não pode exceder R$ 999.999.999,99');
+      return;
+    }
+
+    if (currentValue > 999999999.99) {
+      toast.error('O valor atual não pode exceder R$ 999.999.999,99');
+      return;
+    }
+
+    // Validação de valores mínimos
+    if (targetValue <= 0) {
+      toast.error('O valor da meta deve ser maior que zero');
+      return;
+    }
+
+    if (currentValue < 0) {
+      toast.error('O valor atual não pode ser negativo');
+      return;
+    }
+
+    // Sanitização do nome
+    const sanitizedName = name.trim().replace(/[<>]/g, '');
+    if (sanitizedName.length === 0) {
+      toast.error('O nome da meta não pode estar vazio');
       return;
     }
 
@@ -101,9 +135,9 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
       : savingLocation;
 
     const goalData = {
-      name,
-      targetAmount: parseCurrencyToNumber(targetAmount),
-      currentAmount: parseCurrencyToNumber(currentAmount),
+      name: sanitizedName,
+      targetAmount: targetValue,
+      currentAmount: currentValue,
       targetDate: new Date(targetDate),
       savingLocation: finalSavingLocation
     };

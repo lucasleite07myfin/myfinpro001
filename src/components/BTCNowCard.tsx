@@ -43,7 +43,6 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
   // Função para buscar dados históricos do Bitcoin (24h)
   const fetchBitcoinHistory = async () => {
     try {
-      console.log('Buscando dados históricos do Bitcoin...');
       const response = await fetch(
         'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1'
       );
@@ -53,7 +52,6 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
       }
       
       const data = await response.json();
-      console.log('Dados históricos recebidos:', data);
       
       if (!data.prices || !Array.isArray(data.prices)) {
         throw new Error('Formato de dados inválido');
@@ -68,7 +66,6 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
         time: timestamp
       }));
       
-      console.log('Dados históricos processados:', historyData.length, 'pontos');
       setSparklineData(historyData);
       
       // Calcular tendência baseada no primeiro e último preço das últimas 24h
@@ -77,7 +74,6 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
         const lastPrice = historyData[historyData.length - 1].price;
         const change = ((lastPrice - firstPrice) / firstPrice) * 100;
         
-        console.log(`Tendência calculada: ${change.toFixed(2)}% (${firstPrice} -> ${lastPrice})`);
         setPercentChange(change);
         setCurrentTrend(change > 0 ? 'up' : change < 0 ? 'down' : 'neutral');
       }
@@ -107,7 +103,6 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
   // Função para buscar preço atual do Bitcoin
   const fetchBitcoinPrice = async () => {
     try {
-      console.log('Buscando preço atual do Bitcoin...');
       const response = await fetch(
         'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl,usd'
       );
@@ -117,7 +112,6 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
       }
       
       const data = await response.json();
-      console.log('Preço atual recebido:', data);
       
       if (!data.bitcoin) {
         throw new Error('Dados de preço não encontrados');
@@ -128,7 +122,6 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
         usd: data.bitcoin.usd
       };
       
-      console.log('Preços atualizados:', newPrices);
       setPrices(newPrices);
       setPriceChanged(true);
       
@@ -149,7 +142,6 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
   // Efeito para buscar dados iniciais
   useEffect(() => {
     const fetchData = async () => {
-      console.log('Iniciando busca de dados...');
       await Promise.all([
         fetchBitcoinHistory(),
         fetchBitcoinPrice()
@@ -160,13 +152,11 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
     
     // Atualizar preço a cada 2 minutos
     const interval = setInterval(() => {
-      console.log('Atualizando preço (intervalo)...');
       fetchBitcoinPrice();
     }, 120000);
     
     // Atualizar histórico a cada 30 minutos
     const historyInterval = setInterval(() => {
-      console.log('Atualizando histórico (intervalo)...');
       fetchBitcoinHistory();
     }, 1800000);
     
@@ -179,7 +169,6 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
   // Função para alternar a moeda
   const toggleCurrency = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log(`Alternando moeda de ${currency} para ${currency === 'BRL' ? 'USD' : 'BRL'}`);
     setCurrency(prev => prev === 'BRL' ? 'USD' : 'BRL');
     setPriceChanged(true);
     setTimeout(() => setPriceChanged(false), 500);

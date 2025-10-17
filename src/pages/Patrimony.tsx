@@ -86,7 +86,6 @@ const Patrimony: React.FC = () => {
   };
 
   const handleEditCrypto = (asset: Asset) => {
-    console.log('handleEditCrypto called with asset:', asset);
     setEditingCrypto(asset);
     setIsCryptoModalOpen(true);
   };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PiggyBank, CreditCard, ArrowDown, ArrowUp } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,13 +8,15 @@ import FinanceChart from '@/components/FinanceChart';
 import MonthSelector from '@/components/MonthSelector';
 import TransactionsTable from '@/components/TransactionsTable';
 import RecurringExpensesCard from '@/components/RecurringExpensesCard';
+import AddTransactionModal from '@/components/AddTransactionModal';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { 
+  const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
+  const {
     monthlyData, 
     currentMonth, 
     setCurrentMonth,
@@ -146,7 +148,7 @@ const Dashboard: React.FC = () => {
                     title="Nenhuma transação encontrada"
                     description="Comece adicionando suas primeiras receitas e despesas para acompanhar suas finanças."
                     actionLabel="Adicionar Transação"
-                    onAction={() => {/* Implementar navegação para adicionar transação */}}
+                    onAction={() => setIsAddTransactionModalOpen(true)}
                   />
                 ) : (
                   <TransactionsTable transactions={recentTransactions} />
@@ -156,6 +158,10 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+      <AddTransactionModal 
+        open={isAddTransactionModalOpen} 
+        onOpenChange={setIsAddTransactionModalOpen}
+      />
     </TooltipProvider>
   );
 };

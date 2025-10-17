@@ -56,11 +56,8 @@ const ResetPassword = () => {
         const refreshToken = searchParams.get('refresh_token');
         const type = searchParams.get('type');
         
-        console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
-        
         // Se está vindo do link do email com tokens
         if (accessToken && refreshToken && type === 'recovery') {
-          console.log('Setting session with tokens from URL');
           
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
@@ -68,11 +65,9 @@ const ResetPassword = () => {
           });
           
           if (error) {
-            console.error('Erro ao definir sessão:', error);
             throw error;
           }
           
-          console.log('Session set successfully:', data);
           setIsValidSession(true);
           return;
         }
@@ -81,23 +76,19 @@ const ResetPassword = () => {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
-          console.error('Erro ao obter sessão:', sessionError);
           throw sessionError;
         }
         
         if (session) {
-          console.log('Valid session found');
           setIsValidSession(true);
           return;
         }
         
         // Se não há sessão válida, redireciona
-        console.log('No valid session found, redirecting to auth');
         toast.error('O link de recuperação é inválido ou expirou.');
         navigate('/auth');
         
       } catch (error) {
-        console.error('Erro no processo de reset:', error);
         toast.error('O link de recuperação é inválido ou expirou.');
         navigate('/auth');
       } finally {
@@ -124,7 +115,6 @@ const ResetPassword = () => {
       await supabase.auth.signOut();
       navigate('/auth');
     } catch (error: any) {
-      console.error('Erro ao redefinir senha:', error);
       toast.error('Ocorreu um erro ao redefinir sua senha. Tente novamente.');
     } finally {
       setIsSubmitting(false);

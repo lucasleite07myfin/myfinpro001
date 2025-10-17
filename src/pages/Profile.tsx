@@ -31,7 +31,6 @@ const Profile = () => {
         setUserName(user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || '');
       }
     } catch (error) {
-      console.error('Erro ao carregar dados do usuário:', error);
       toast.error('Erro ao carregar informações do perfil');
     } finally {
       setLoading(false);
@@ -54,7 +53,6 @@ const Profile = () => {
 
       toast.success("Suas informações foram atualizadas com sucesso.");
     } catch (error) {
-      console.error('Erro ao atualizar perfil:', error);
       toast.error('Erro ao atualizar informações');
     } finally {
       setSaving(false);
@@ -71,7 +69,6 @@ const Profile = () => {
 
       toast.success("Verifique seu email para redefinir sua senha.");
     } catch (error) {
-      console.error('Erro ao enviar email de redefinição:', error);
       toast.error('Erro ao enviar email de redefinição');
     }
   };
