@@ -62,22 +62,30 @@ const BitcoinModal: React.FC<BitcoinModalProps> = ({ open, onOpenChange }) => {
   const [loading, setLoading] = useState(false);
   const [trend, setTrend] = useState<'up' | 'down' | 'neutral'>('neutral');
 
-  // Mapear timeframes para dias da API
-  const timeframeToDays = {
-    '1H': 1,
-    '4H': 1,
-    '1D': 7,
-    '1W': 30,
-    '1M': 90
+  // Mapear timeframes para intervalos Binance
+  const binanceIntervals = {
+    '1H': '1h',
+    '4H': '4h',
+    '1D': '1d',
+    '1W': '1w',
+    '1M': '1M'
+  };
+
+  const binanceLimits = {
+    '1H': 24,    // últimas 24 horas
+    '4H': 42,    // últimas 7 dias
+    '1D': 30,    // últimos 30 dias
+    '1W': 12,    // últimas 12 semanas
+    '1M': 12     // últimos 12 meses
   };
 
   // Função para buscar dados do Bitcoin
   const fetchBitcoinData = async () => {
     setLoading(true);
     try {
-      // Buscar preço atual com dados de mudança 24h
+      // Buscar preço atual e variação 24h da Binance
       const priceResponse = await fetch(
-        'https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false'
+        'https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT'
       );
       
       if (!priceResponse.ok) {
@@ -86,22 +94,30 @@ const BitcoinModal: React.FC<BitcoinModalProps> = ({ open, onOpenChange }) => {
       
       const priceData = await priceResponse.json();
       
-      if (priceData.market_data) {
-        const bitcoinPrice: BitcoinPrice = {
-          current_price: priceData.market_data.current_price.usd,
-          price_change_24h: priceData.market_data.price_change_24h || 0,
-          price_change_percentage_24h: priceData.market_data.price_change_percentage_24h || 0,
-          market_cap: priceData.market_data.market_cap.usd || 0,
-          volume_24h: priceData.market_data.total_volume.usd || 0
-        };
-        setCurrentPrice(bitcoinPrice);
-        setTrend(bitcoinPrice.price_change_percentage_24h >= 0 ? 'up' : 'down');
-      }
+      const lastPrice = parseFloat(priceData.lastPrice);
+      const priceChangePercent = parseFloat(priceData.priceChangePercent);
+      const priceChange = parseFloat(priceData.priceChange);
+      const volume = parseFloat(priceData.quoteVolume);
+      
+      // Supply fixo do Bitcoin: 19.5M BTC
+      const bitcoinSupply = 19500000;
+      const marketCap = lastPrice * bitcoinSupply;
+      
+      const bitcoinPrice: BitcoinPrice = {
+        current_price: lastPrice,
+        price_change_24h: priceChange,
+        price_change_percentage_24h: priceChangePercent,
+        market_cap: marketCap,
+        volume_24h: volume
+      };
+      setCurrentPrice(bitcoinPrice);
+      setTrend(priceChangePercent >= 0 ? 'up' : 'down');
 
-      // Buscar dados históricos para candlestick
-      const days = timeframeToDays[timeframe];
+      // Buscar dados históricos OHLC da Binance
+      const interval = binanceIntervals[timeframe];
+      const limit = binanceLimits[timeframe];
       const historyResponse = await fetch(
-        `https://api.coingecko.com/api/v3/coins/bitcoin/ohlc?vs_currency=usd&days=${days}`
+        `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`
       );
       
       if (!historyResponse.ok) {
@@ -111,20 +127,22 @@ const BitcoinModal: React.FC<BitcoinModalProps> = ({ open, onOpenChange }) => {
       const historyData = await historyResponse.json();
 
       if (Array.isArray(historyData) && historyData.length > 0) {
-        const processedData: CandlestickData[] = historyData.map((item: number[]) => {
-          const [timestamp, open, high, low, close] = item;
+        const processedData: CandlestickData[] = historyData.map((item: any[]) => {
+          const [timestamp, open, high, low, close, volume] = item;
+          const openNum = parseFloat(open);
+          const closeNum = parseFloat(close);
           const date = new Date(timestamp);
-          const isGreen = close >= open;
+          const isGreen = closeNum >= openNum;
           
           return {
             timestamp,
             date: date.toLocaleDateString('pt-BR'),
             time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-            open,
-            high,
-            low,
-            close,
-            volume: Math.random() * 1000000000, // Volume simulado
+            open: openNum,
+            high: parseFloat(high),
+            low: parseFloat(low),
+            close: closeNum,
+            volume: parseFloat(volume),
             isGreen
           };
         });
@@ -135,7 +153,7 @@ const BitcoinModal: React.FC<BitcoinModalProps> = ({ open, onOpenChange }) => {
       }
     } catch (error) {
       console.error('Erro ao buscar dados do Bitcoin:', error);
-      toast.error('Usando dados simulados - API indisponível');
+      toast.error('Erro ao carregar dados. Verifique sua conexão.');
       
       // Dados de fallback mais realistas
       const basePrice = 105000;
