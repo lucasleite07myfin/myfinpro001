@@ -22,7 +22,7 @@ const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { mode } = useAppMode();
   const { user, signOut } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, loading: roleLoading } = useUserRole();
   const business = mode === 'business' ? useBusiness() : null;
 
   const handleTabChange = (value: string) => {
@@ -130,7 +130,7 @@ const Header: React.FC = () => {
                       <Crown className="mr-2 h-4 w-4 text-yellow-500" />
                       <span>Premium</span>
                     </DropdownMenuItem>
-                    {isAdmin && (
+                    {isAdmin && !roleLoading && (
                       <>
                         <DropdownMenuSeparator className="bg-border" />
                         <DropdownMenuItem onClick={() => navigate('/admin/coupons')} className="cursor-pointer hover:bg-muted/50">

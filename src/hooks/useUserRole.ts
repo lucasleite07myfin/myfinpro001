@@ -17,7 +17,7 @@ export const useUserRole = () => {
         console.log('❌ No user found - waiting for auth');
         if (mounted) {
           setIsAdmin(false);
-          setLoading(false); // Importante: marcar como não loading
+          // ✅ NÃO marcar loading = false aqui - esperar autenticação completar
         }
         return;
       }
