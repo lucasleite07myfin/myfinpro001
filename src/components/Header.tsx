@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, ChartBar, User, LogOut, Crown } from 'lucide-react';
+import { Menu, X, ChartBar, User, LogOut, Crown, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import ModeToggle from './ModeToggle';
@@ -9,6 +9,7 @@ import BitcoinHeaderButton from './BitcoinHeaderButton';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import TooltipHelper from './TooltipHelper';
@@ -21,6 +22,7 @@ const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { mode } = useAppMode();
   const { user, signOut } = useAuth();
+  const { isAdmin } = useUserRole();
   const business = mode === 'business' ? useBusiness() : null;
 
   const handleTabChange = (value: string) => {
@@ -128,6 +130,15 @@ const Header: React.FC = () => {
                       <Crown className="mr-2 h-4 w-4 text-yellow-500" />
                       <span>Premium</span>
                     </DropdownMenuItem>
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuSeparator className="bg-border" />
+                        <DropdownMenuItem onClick={() => navigate('/admin/coupons')} className="cursor-pointer hover:bg-muted/50">
+                          <Settings className="mr-2 h-4 w-4 text-primary" />
+                          <span>Admin - Cupons</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator className="bg-border" />
                     <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive hover:bg-muted/50">
                       <LogOut className="mr-2 h-4 w-4" />
