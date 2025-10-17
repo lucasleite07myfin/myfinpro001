@@ -40,7 +40,9 @@ import {
   TrendingUp,
   Clock,
   CreditCard,
-  Trash2
+  Trash2,
+  ChevronUp,
+  Repeat
 } from 'lucide-react';
 import { EXPENSE_CATEGORIES, FinanceContextType, BusinessContextType, Transaction } from '@/types/finance';
 import {
@@ -60,6 +62,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Sheet,
@@ -71,12 +74,17 @@ import {
 } from "@/components/ui/sheet";
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const Expenses: React.FC = () => {
   const { mode } = useAppMode();
   // Use either finance or business context based on current mode
   const financeContext = mode === 'personal' ? useFinance() : useBusiness();
-  const { transactions, currentMonth, setCurrentMonth, deleteTransaction, goals, customCategories } = financeContext as FinanceContextType | BusinessContextType;
+  const { transactions, currentMonth, setCurrentMonth, deleteTransaction, goals, customCategories, recurringExpenses, deleteRecurringExpense } = financeContext as FinanceContextType | BusinessContextType;
   
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -89,6 +97,7 @@ const Expenses: React.FC = () => {
   const [transactionToDelete, setTransactionToDelete] = useState<{ id: string; message: string } | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecurringExpensesOpen, setIsRecurringExpensesOpen] = useState(false);
   
   // Get all expense categories including custom ones
   const getAllExpenseCategories = () => {
@@ -239,6 +248,16 @@ const Expenses: React.FC = () => {
     
     toast.success("Arquivo CSV exportado com sucesso!");
     setIsLoading(false);
+  };
+
+  const handleDeleteRecurringExpense = async (id: string, description: string) => {
+    try {
+      await deleteRecurringExpense(id);
+      toast.success(`Despesa recorrente "${description}" excluída permanentemente!`);
+    } catch (error) {
+      console.error('Erro ao excluir despesa recorrente:', error);
+      toast.error('Erro ao excluir despesa recorrente');
+    }
   };
 
   const exportToExcel = () => {
@@ -521,6 +540,160 @@ const Expenses: React.FC = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Seção de Gerenciamento de Despesas Recorrentes */}
+          <Collapsible
+            open={isRecurringExpensesOpen}
+            onOpenChange={setIsRecurringExpensesOpen}
+            className="space-y-2"
+          >
+            <Card>
+              <CollapsibleTrigger className="w-full">
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Repeat className="h-5 w-5 text-blue-600" />
+                      Gerenciar Despesas Recorrentes
+                      <Badge variant="secondary" className="ml-2">
+                        {recurringExpenses.length}
+                      </Badge>
+                    </CardTitle>
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      {isRecurringExpensesOpen ? (
+                        <>
+                          Recolher <ChevronUp className="h-4 w-4" />
+                        </>
+                      ) : (
+                        <>
+                          Expandir <ChevronDown className="h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground text-left">
+                    Visualize e gerencie suas despesas recorrentes cadastradas
+                  </p>
+                </CardHeader>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <CardContent className="pt-0 space-y-3">
+                  {recurringExpenses.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-muted-foreground">
+                        Nenhuma despesa recorrente cadastrada
+                      </p>
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-[400px] pr-4">
+                      <div className="space-y-2">
+                        {recurringExpenses
+                          .sort((a, b) => a.dueDay - b.dueDay)
+                          .map((expense) => {
+                            const nextDueDate = new Date();
+                            nextDueDate.setDate(expense.dueDay);
+                            if (nextDueDate < new Date()) {
+                              nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+                            }
+                            
+                            return (
+                              <Card key={expense.id} className="p-4 hover:shadow-md transition-shadow">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <h4 className="font-semibold text-base flex items-center gap-2">
+                                      {expense.description}
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                      <Badge variant="outline">{expense.category}</Badge>
+                                      <Badge variant="secondary" className="gap-1">
+                                        <Calendar className="h-3 w-3" />
+                                        Dia {expense.dueDay}
+                                      </Badge>
+                                      <Badge variant="secondary">
+                                        {formatCurrency(expense.amount)}
+                                      </Badge>
+                                      {expense.repeatMonths && (
+                                        <Badge variant="secondary">
+                                          {expense.repeatMonths === 1 ? '1 mês' : `${expense.repeatMonths} meses`}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                      Próximo vencimento: {nextDueDate.toLocaleDateString('pt-BR', { 
+                                        day: '2-digit', 
+                                        month: '2-digit', 
+                                        year: 'numeric' 
+                                      })}
+                                    </p>
+                                  </div>
+                                  <AlertDialog>
+                                    <TooltipHelper content="Excluir permanentemente">
+                                      <AlertDialogTrigger asChild>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon"
+                                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                    </TooltipHelper>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle className="flex items-center gap-2">
+                                          <Trash2 className="h-5 w-5 text-destructive" />
+                                          Excluir Despesa Recorrente
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          <div className="space-y-3">
+                                            <p>
+                                              Tem certeza que deseja excluir permanentemente a despesa recorrente 
+                                              <strong className="text-foreground"> "{expense.description}"</strong>?
+                                            </p>
+                                            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                                              <p className="text-sm text-destructive font-medium">
+                                                ⚠️ ATENÇÃO: Esta ação não pode ser desfeita!
+                                              </p>
+                                              <ul className="text-xs text-muted-foreground mt-2 space-y-1 list-disc list-inside">
+                                                <li>A despesa não aparecerá mais nos próximos meses</li>
+                                                <li>Transações já criadas não serão excluídas</li>
+                                                <li>Você precisará cadastrar novamente se mudar de ideia</li>
+                                              </ul>
+                                            </div>
+                                          </div>
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction 
+                                          onClick={() => handleDeleteRecurringExpense(expense.id, expense.description)}
+                                          className="bg-destructive hover:bg-destructive/90"
+                                        >
+                                          Excluir Permanentemente
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                              </Card>
+                            );
+                          })}
+                      </div>
+                    </ScrollArea>
+                  )}
+                  
+                  {recurringExpenses.length > 0 && (
+                    <div className="border-t pt-3 mt-3">
+                      <p className="text-sm text-muted-foreground text-center">
+                        📝 Total de <strong>{recurringExpenses.length}</strong> {recurringExpenses.length === 1 ? 'despesa recorrente cadastrada' : 'despesas recorrentes cadastradas'}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
 
           {/* Filters and Actions */}
           <Card>
