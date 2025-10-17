@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import type { DiscountCoupon } from '@/types/subscription';
@@ -33,6 +34,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const AdminCoupons = () => {
+  const { user } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const [coupons, setCoupons] = useState<DiscountCoupon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,17 +66,18 @@ const AdminCoupons = () => {
 
   useEffect(() => {
     console.log('🎯 AdminCoupons mounted/updated');
+    console.log('🎯 user:', user?.id);
     console.log('🎯 roleLoading:', roleLoading);
     console.log('🎯 isAdmin:', isAdmin);
     
-    if (isAdmin && !roleLoading) {
+    if (user && isAdmin && !roleLoading) {
       fetchCoupons();
     }
     
     return () => {
       console.log('🎯 AdminCoupons cleanup');
     };
-  }, [isAdmin, roleLoading]);
+  }, [user, isAdmin, roleLoading]);
 
   const handleCreateCoupon = async () => {
     if (!code.trim()) {
@@ -143,9 +146,9 @@ const AdminCoupons = () => {
     return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
   };
 
-  // Enquanto carregando, mostrar skeleton
-  if (roleLoading) {
-    console.log('⏳ Showing skeleton - still loading role');
+  // Aguardar tanto user quanto roleLoading
+  if (!user || roleLoading) {
+    console.log('⏳ Waiting for auth or role check - user:', !!user, 'roleLoading:', roleLoading);
     return (
       <div className="container mx-auto max-w-6xl p-4 space-y-6">
         <Skeleton className="h-12 w-64" />
@@ -154,14 +157,14 @@ const AdminCoupons = () => {
     );
   }
 
-  // Só redirecionar se NÃO for admin E já terminou de carregar
-  if (!roleLoading && !isAdmin) {
+  // Só redirecionar se user existe E não é admin
+  if (!isAdmin) {
     console.log('⚠️ Redirecting: user is not admin');
     return <Navigate to="/" replace />;
   }
 
-  // Se chegou aqui, é admin e pode ver a página
-  console.log('✅ Rendering admin coupons page');
+  // Se chegou aqui, é admin autenticado
+  console.log('✅ Rendering admin coupons page for user:', user.id);
 
   return (
     <div className="container mx-auto max-w-6xl p-4 space-y-6">

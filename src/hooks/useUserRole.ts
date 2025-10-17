@@ -14,10 +14,10 @@ export const useUserRole = () => {
       console.log('🔍 Checking role for user:', user?.id);
       
       if (!user) {
-        console.log('❌ No user found');
+        console.log('❌ No user found - waiting for auth');
         if (mounted) {
           setIsAdmin(false);
-          setLoading(false);
+          setLoading(false); // Importante: marcar como não loading
         }
         return;
       }
