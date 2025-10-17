@@ -29,6 +29,9 @@ import Investments from "./pages/business/Investments";
 import DRE from "./pages/business/DRE";
 import Suppliers from "./pages/business/Suppliers";
 
+// Admin pages
+import AdminCoupons from "./pages/admin/AdminCoupons";
+
 // Create a query client with mobile-friendly config
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -76,6 +79,9 @@ const ModeRoutes = () => {
             <Route path="/saude-financeira" element={<ProtectedRoute><FinancialHealth /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
+            
+            {/* Admin routes */}
+            <Route path="/admin/coupons" element={<ProtectedRoute><AdminCoupons /></ProtectedRoute>} />
             
             {/* Business routes */}
             <Route path="/fluxo-caixa" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
