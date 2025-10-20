@@ -302,8 +302,12 @@ export type Database = {
           monthly_values: Json | null
           paid_months: string[] | null
           payment_method: string | null
+          reminder_days_before: number | null
+          reminder_hours_before: number | null
           repeat_months: number | null
           user_id: string
+          whatsapp_phone: string | null
+          whatsapp_reminder_enabled: boolean | null
         }
         Insert: {
           amount: number
@@ -316,8 +320,12 @@ export type Database = {
           monthly_values?: Json | null
           paid_months?: string[] | null
           payment_method?: string | null
+          reminder_days_before?: number | null
+          reminder_hours_before?: number | null
           repeat_months?: number | null
           user_id: string
+          whatsapp_phone?: string | null
+          whatsapp_reminder_enabled?: boolean | null
         }
         Update: {
           amount?: number
@@ -330,8 +338,12 @@ export type Database = {
           monthly_values?: Json | null
           paid_months?: string[] | null
           payment_method?: string | null
+          reminder_days_before?: number | null
+          reminder_hours_before?: number | null
           repeat_months?: number | null
           user_id?: string
+          whatsapp_phone?: string | null
+          whatsapp_reminder_enabled?: boolean | null
         }
         Relationships: []
       }
@@ -512,8 +524,12 @@ export type Database = {
           monthly_values: Json | null
           paid_months: string[] | null
           payment_method: string | null
+          reminder_days_before: number | null
+          reminder_hours_before: number | null
           repeat_months: number | null
           user_id: string
+          whatsapp_phone: string | null
+          whatsapp_reminder_enabled: boolean | null
         }
         Insert: {
           amount: number
@@ -526,8 +542,12 @@ export type Database = {
           monthly_values?: Json | null
           paid_months?: string[] | null
           payment_method?: string | null
+          reminder_days_before?: number | null
+          reminder_hours_before?: number | null
           repeat_months?: number | null
           user_id: string
+          whatsapp_phone?: string | null
+          whatsapp_reminder_enabled?: boolean | null
         }
         Update: {
           amount?: number
@@ -540,8 +560,12 @@ export type Database = {
           monthly_values?: Json | null
           paid_months?: string[] | null
           payment_method?: string | null
+          reminder_days_before?: number | null
+          reminder_hours_before?: number | null
           repeat_months?: number | null
           user_id?: string
+          whatsapp_phone?: string | null
+          whatsapp_reminder_enabled?: boolean | null
         }
         Relationships: []
       }
@@ -725,6 +749,48 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_notifications_log: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          expense_type: string
+          id: string
+          message_content: string
+          phone_number: string
+          recurring_expense_id: string
+          sent_at: string | null
+          status: string | null
+          user_id: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          expense_type: string
+          id?: string
+          message_content: string
+          phone_number: string
+          recurring_expense_id: string
+          sent_at?: string | null
+          status?: string | null
+          user_id: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          expense_type?: string
+          id?: string
+          message_content?: string
+          phone_number?: string
+          recurring_expense_id?: string
+          sent_at?: string | null
+          status?: string | null
+          user_id?: string
+          whatsapp_message_id?: string | null
         }
         Relationships: []
       }
