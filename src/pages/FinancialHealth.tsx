@@ -7,12 +7,15 @@ import { HealthSnapshot } from '@/types/alerts';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAppMode } from '@/contexts/AppModeContext';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 const FinancialHealth: React.FC = () => {
   const { mode } = useAppMode();
   const [currentHealth, setCurrentHealth] = useState<HealthSnapshot | null>(null);
   const [historicalData, setHistoricalData] = useState<HealthSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [calculating, setCalculating] = useState(false);
 
   useEffect(() => {
     loadHealthData();
@@ -55,14 +58,48 @@ const FinancialHealth: React.FC = () => {
     }
   };
 
+  const handleCalculateNow = async () => {
+    setCalculating(true);
+    try {
+      const { error } = await supabase.functions.invoke('calculate-health', {
+        body: { mode: 'single_user' }
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Saúde financeira recalculada com sucesso!');
+      await loadHealthData();
+    } catch (error) {
+      console.error('Erro ao recalcular:', error);
+      toast.error('Erro ao recalcular saúde financeira');
+    } finally {
+      setCalculating(false);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Saúde Financeira</h1>
-          <p className="text-muted-foreground mt-1">
-            Acompanhe os indicadores da sua saúde financeira
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Saúde Financeira</h1>
+            <p className="text-muted-foreground mt-1">
+              Acompanhe os indicadores da sua saúde financeira
+            </p>
+            {currentHealth && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Última atualização: {currentHealth.snapshotDate.toLocaleDateString('pt-BR')}
+              </p>
+            )}
+          </div>
+          <Button
+            onClick={handleCalculateNow}
+            disabled={calculating}
+            variant="outline"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${calculating ? 'animate-spin' : ''}`} />
+            {calculating ? 'Calculando...' : 'Calcular Agora'}
+          </Button>
         </div>
         
         {loading ? (

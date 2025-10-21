@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, PiggyBank, CreditCard, Shield, Wallet } from 'lucide-react';
 import { HealthSnapshot } from '@/types/alerts';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface FinancialHealthCardsProps {
   currentHealth: HealthSnapshot | null;
@@ -103,9 +103,47 @@ const FinancialHealthCards: React.FC<FinancialHealthCardsProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center text-muted-foreground">
-              Mini-gráfico de linha dos últimos 12 meses seria implementado aqui usando recharts
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={historicalData.slice(0, 12).reverse().map(h => ({
+                date: h.snapshotDate.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
+                savingsRate: h.savingsRatePct || 0,
+                debtRatio: h.debtIncomePct || 0,
+                emergencyFund: h.monthsEmergencyFund || 0,
+              }))}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="date" className="text-xs" />
+                <YAxis className="text-xs" />
+                <RechartsTooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px'
+                  }}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="savingsRate" 
+                  stroke="hsl(var(--chart-1))" 
+                  name="Taxa de Poupança %"
+                  strokeWidth={2}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="debtRatio" 
+                  stroke="hsl(var(--chart-2))" 
+                  name="Endividamento %"
+                  strokeWidth={2}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="emergencyFund" 
+                  stroke="hsl(var(--chart-3))" 
+                  name="Reserva (meses)"
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       )}

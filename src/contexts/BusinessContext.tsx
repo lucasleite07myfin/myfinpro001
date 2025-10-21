@@ -52,9 +52,9 @@ interface BusinessContextType {
   editGoal: (goal: Goal) => void;
   companyName: string;
   setCompanyName: (name: string) => void;
-  // Add the missing methods
   getMonthlyExpenseValue: (expenseId: string, month: string) => number | null;
   setMonthlyExpenseValue: (expenseId: string, month: string, value: number | null) => void;
+  calculateHealthSnapshot: () => Promise<void>;
 }
 
 interface BusinessProviderProps {
@@ -1019,6 +1019,19 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     }
   };
 
+  const calculateHealthSnapshot = async () => {
+    try {
+      const { error } = await supabase.functions.invoke('calculate-health', {
+        body: { mode: 'single_user' }
+      });
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Erro ao calcular saúde financeira:', error);
+      throw error;
+    }
+  };
+
   // Context value
   const value = {
     transactions,
@@ -1066,9 +1079,9 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     editGoal,
     companyName,
     setCompanyName,
-    // Add the new methods to the context value
     getMonthlyExpenseValue,
     setMonthlyExpenseValue,
+    calculateHealthSnapshot
   };
 
   return (

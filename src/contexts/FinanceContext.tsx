@@ -57,6 +57,7 @@ interface FinanceContextType {
   addCustomCategory: (type: 'income' | 'expense', category: string) => void;
   editCustomCategory: (id: string, type: 'income' | 'expense', oldName: string, newName: string) => Promise<void>;
   deleteCustomCategory: (type: 'income' | 'expense', categoryName: string) => Promise<boolean>;
+  calculateHealthSnapshot: () => Promise<void>;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -1063,6 +1064,19 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     updateMonthlyData();
   }, [transactions, currentMonth]);
 
+  const calculateHealthSnapshot = async () => {
+    try {
+      const { error } = await supabase.functions.invoke('calculate-health', {
+        body: { mode: 'single_user' }
+      });
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Erro ao calcular saúde financeira:', error);
+      throw error;
+    }
+  };
+
   const value = {
     transactions,
     recurringExpenses,
@@ -1096,7 +1110,8 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     customCategories,
     addCustomCategory,
     editCustomCategory,
-    deleteCustomCategory
+    deleteCustomCategory,
+    calculateHealthSnapshot
   };
 
   return (

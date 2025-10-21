@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.add-admin]
 verify_jwt = true
+
+[functions.calculate-health]
+verify_jwt = false

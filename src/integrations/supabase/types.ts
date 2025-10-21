@@ -236,6 +236,57 @@ export type Database = {
         }
         Relationships: []
       }
+      emp_health_snapshots: {
+        Row: {
+          avg_monthly_expense: number | null
+          created_at: string | null
+          debt_income_pct: number | null
+          emergency_fund: number | null
+          id: string
+          months_emergency_fund: number | null
+          net_worth_growth_12m: number | null
+          savings_rate_pct: number | null
+          snapshot_date: string
+          total_assets: number | null
+          total_debt: number | null
+          total_expense: number | null
+          total_income: number | null
+          user_id: string
+        }
+        Insert: {
+          avg_monthly_expense?: number | null
+          created_at?: string | null
+          debt_income_pct?: number | null
+          emergency_fund?: number | null
+          id?: string
+          months_emergency_fund?: number | null
+          net_worth_growth_12m?: number | null
+          savings_rate_pct?: number | null
+          snapshot_date: string
+          total_assets?: number | null
+          total_debt?: number | null
+          total_expense?: number | null
+          total_income?: number | null
+          user_id: string
+        }
+        Update: {
+          avg_monthly_expense?: number | null
+          created_at?: string | null
+          debt_income_pct?: number | null
+          emergency_fund?: number | null
+          id?: string
+          months_emergency_fund?: number | null
+          net_worth_growth_12m?: number | null
+          savings_rate_pct?: number | null
+          snapshot_date?: string
+          total_assets?: number | null
+          total_debt?: number | null
+          total_expense?: number | null
+          total_income?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       emp_liabilities: {
         Row: {
           created_at: string | null
@@ -433,6 +484,57 @@ export type Database = {
           saving_location?: string | null
           target_amount?: number
           target_date?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      health_snapshots: {
+        Row: {
+          avg_monthly_expense: number | null
+          created_at: string | null
+          debt_income_pct: number | null
+          emergency_fund: number | null
+          id: string
+          months_emergency_fund: number | null
+          net_worth_growth_12m: number | null
+          savings_rate_pct: number | null
+          snapshot_date: string
+          total_assets: number | null
+          total_debt: number | null
+          total_expense: number | null
+          total_income: number | null
+          user_id: string
+        }
+        Insert: {
+          avg_monthly_expense?: number | null
+          created_at?: string | null
+          debt_income_pct?: number | null
+          emergency_fund?: number | null
+          id?: string
+          months_emergency_fund?: number | null
+          net_worth_growth_12m?: number | null
+          savings_rate_pct?: number | null
+          snapshot_date: string
+          total_assets?: number | null
+          total_debt?: number | null
+          total_expense?: number | null
+          total_income?: number | null
+          user_id: string
+        }
+        Update: {
+          avg_monthly_expense?: number | null
+          created_at?: string | null
+          debt_income_pct?: number | null
+          emergency_fund?: number | null
+          id?: string
+          months_emergency_fund?: number | null
+          net_worth_growth_12m?: number | null
+          savings_rate_pct?: number | null
+          snapshot_date?: string
+          total_assets?: number | null
+          total_debt?: number | null
+          total_expense?: number | null
+          total_income?: number | null
           user_id?: string
         }
         Relationships: []
