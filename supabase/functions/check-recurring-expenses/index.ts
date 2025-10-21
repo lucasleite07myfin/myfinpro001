@@ -6,6 +6,136 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Mensagens centralizadas (copiadas de src/data/notificationMessages.ts)
+const messages = {
+  due_soon: {
+    title: "🔔 Despesas Recorrentes Próximas",
+    message: `🔔 Você tem {count} despesa(s) vencendo em breve!
+
+Total a pagar: {total_amount}
+
+📋 PRÓXIMAS DESPESAS:
+{expenses_list}
+
+💡 Organize-se para evitar atrasos!`,
+
+    whatsapp: `🔔 *Lembrete {user_name}!*
+
+Você tem {count} despesa(s) vencendo em breve.
+
+💰 Total: *{total_amount}*
+
+📋 *Despesas:*
+{expenses_list}
+
+Não esqueça de pagar! 📅`
+  },
+
+  due_today: {
+    title: "⏰ Despesa Vence HOJE!",
+    message: `⏰ URGENTE: Despesa vence HOJE!
+
+{description}
+Valor: {amount}
+Vencimento: HOJE
+
+Pague agora para evitar juros e multas!`,
+
+    whatsapp: `⏰ *URGENTE {user_name}!*
+
+Despesa vence *HOJE*:
+
+📌 {description}
+💰 Valor: *{amount}*
+📅 Vencimento: *HOJE*
+
+Pague agora! 🚨`
+  },
+
+  overdue: {
+    title: "🚨 Despesas VENCIDAS!",
+    message: `🚨 ATENÇÃO: Você tem despesas vencidas!
+
+{count} despesa(s) em atraso
+Total: {total_amount}
+
+📋 DESPESAS VENCIDAS:
+{expenses_list}
+
+⚠️ Regularize urgentemente para evitar mais juros!`,
+
+    whatsapp: `🚨 *URGENTE {user_name}!*
+
+Você tem {count} despesa(s) *VENCIDA(S)*!
+
+💰 Total: *{total_amount}*
+
+📋 *Em atraso:*
+{expenses_list}
+
+Regularize urgente! ⚠️`
+  }
+};
+
+// Função para formatar moeda
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
+}
+
+// Função para formatar data
+function formatDate(date: string): string {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+// Função para formatar lista de despesas
+function formatExpensesList(expenses: any[], format: 'simple' | 'detailed' = 'simple'): string {
+  return expenses
+    .map(exp => {
+      const urgency = exp.days_until_due === 0 
+        ? 'HOJE' 
+        : exp.days_until_due === 1 
+          ? 'AMANHÃ'
+          : `${exp.days_until_due} dias`;
+      
+      return `• ${exp.description}: ${formatCurrency(exp.amount)} (${urgency})`;
+    })
+    .join('\n');
+}
+
+// Função para formatar mensagem
+function formatMessage(template: string, data: Record<string, any>): string {
+  let message = template;
+  
+  Object.keys(data).forEach(key => {
+    const placeholder = `{${key}}`;
+    message = message.replace(placeholder, String(data[key]));
+  });
+  
+  return message;
+}
+
+// Função para determinar nível de urgência
+function getUrgencyLevel(daysUntil: number): { emoji: string; text: string; level: string } {
+  if (daysUntil < 0) {
+    return { emoji: '🚨', text: 'VENCIDA', level: 'overdue' };
+  } else if (daysUntil === 0) {
+    return { emoji: '⏰', text: 'VENCE HOJE', level: 'due_today' };
+  } else if (daysUntil === 1) {
+    return { emoji: '⚠️', text: 'VENCE AMANHÃ', level: 'due_soon' };
+  } else if (daysUntil <= 3) {
+    return { emoji: '🔔', text: `VENCE EM ${daysUntil} DIAS`, level: 'due_soon' };
+  } else {
+    return { emoji: '📅', text: `VENCE EM ${daysUntil} DIAS`, level: 'due_soon' };
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -69,7 +199,7 @@ serve(async (req) => {
         continue;
       }
 
-      // Filtrar despesas que vencem nos próximos X dias
+      // Filtrar despesas que vencem nos próximos X dias ou estão vencidas
       const upcomingExpenses = expenses
         .map(expense => {
           const dueDay = expense.due_day;
@@ -81,15 +211,17 @@ serve(async (req) => {
           }
 
           const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          const urgency = getUrgencyLevel(daysUntilDue);
 
           return {
             ...expense,
             days_until_due: daysUntilDue,
-            due_date: dueDate.toISOString().split('T')[0]
+            due_date: dueDate.toISOString().split('T')[0],
+            urgency: urgency
           };
         })
         .filter(expense => 
-          expense.days_until_due >= 0 && 
+          expense.days_until_due >= -7 && // Incluir despesas vencidas há até 7 dias
           expense.days_until_due <= daysBeforeNotification
         )
         .sort((a, b) => a.days_until_due - b.days_until_due);
@@ -102,8 +234,39 @@ serve(async (req) => {
       // Buscar email do usuário
       const { data: userData } = await supabase.auth.admin.getUserById(profile.id);
 
+      // Agrupar despesas por nível de urgência
+      const overdueExpenses = upcomingExpenses.filter(e => e.days_until_due < 0);
+      const dueTodayExpenses = upcomingExpenses.filter(e => e.days_until_due === 0);
+      const dueSoonExpenses = upcomingExpenses.filter(e => e.days_until_due > 0);
+
+      // Determinar mensagem principal baseada na urgência mais alta
+      let messageTemplate = messages.due_soon;
+      let alertType = 'recurring_expenses_due_soon';
+
+      if (overdueExpenses.length > 0) {
+        messageTemplate = messages.overdue;
+        alertType = 'recurring_expenses_overdue';
+      } else if (dueTodayExpenses.length > 0) {
+        messageTemplate = messages.due_today;
+        alertType = 'recurring_expenses_due_today';
+      }
+
+      const totalAmount = upcomingExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+      const expensesList = formatExpensesList(upcomingExpenses);
+
+      // Dados para substituir nos placeholders
+      const messageData = {
+        user_name: profile.full_name || 'Usuário',
+        count: upcomingExpenses.length,
+        total_amount: formatCurrency(totalAmount),
+        expenses_list: expensesList,
+        description: dueTodayExpenses.length > 0 ? dueTodayExpenses[0].description : '',
+        amount: dueTodayExpenses.length > 0 ? formatCurrency(dueTodayExpenses[0].amount) : ''
+      };
+
       // Preparar payload para n8n
       const payload = {
+        alert_type: alertType,
         user_id: profile.id,
         user_name: profile.full_name,
         user_email: userData?.user?.email || '',
@@ -114,11 +277,21 @@ serve(async (req) => {
           due_date: exp.due_date,
           days_until_due: exp.days_until_due,
           category: exp.category,
-          payment_method: exp.payment_method
+          payment_method: exp.payment_method,
+          urgency_level: exp.urgency.level,
+          urgency_text: exp.urgency.text,
+          urgency_emoji: exp.urgency.emoji
         })),
-        total_amount: upcomingExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0),
+        total_amount: totalAmount,
         notification_date: today.toISOString().split('T')[0],
-        days_before_notification: daysBeforeNotification
+        days_before_notification: daysBeforeNotification,
+        overdue_count: overdueExpenses.length,
+        due_today_count: dueTodayExpenses.length,
+        due_soon_count: dueSoonExpenses.length,
+        // Mensagens formatadas
+        message: formatMessage(messageTemplate.message, messageData),
+        message_whatsapp: formatMessage(messageTemplate.whatsapp, messageData),
+        title: messageTemplate.title
       };
 
       console.log(`Sending webhook for user ${profile.id} with ${upcomingExpenses.length} expenses`);
