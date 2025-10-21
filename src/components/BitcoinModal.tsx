@@ -299,15 +299,6 @@ const BitcoinModal: React.FC<BitcoinModalProps> = ({ open, onOpenChange }) => {
                   </div>
                 </div>
               </div>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onOpenChange(false)}
-                className="h-8 w-8"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </DialogHeader>
 
