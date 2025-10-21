@@ -55,6 +55,7 @@ interface BusinessContextType {
   getMonthlyExpenseValue: (expenseId: string, month: string) => number | null;
   setMonthlyExpenseValue: (expenseId: string, month: string, value: number | null) => void;
   calculateHealthSnapshot: () => Promise<void>;
+  reloadData: () => Promise<void>;
 }
 
 interface BusinessProviderProps {
@@ -317,7 +318,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
       setTransactions(prev => [...prev, newTransaction]);
       toast.success('Transação adicionada com sucesso!');
-      updateMonthlyData();
+      await loadData();
     } catch (error) {
       console.error('Erro ao adicionar transação:', error);
       toast.error('Erro ao adicionar transação');
@@ -347,9 +348,8 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
       if (error) throw error;
 
-      setTransactions(prev => prev.map(item => item.id === transaction.id ? transaction : item));
+      await loadData();
       toast.success('Transação atualizada com sucesso!');
-      updateMonthlyData();
     } catch (error) {
       console.error('Erro ao atualizar transação:', error);
       toast.error('Erro ao atualizar transação');
@@ -365,9 +365,8 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
       if (error) throw error;
 
-      setTransactions(prev => prev.filter(item => item.id !== id));
+      await loadData();
       toast.success('Transação excluída com sucesso!');
-      updateMonthlyData();
     } catch (error) {
       console.error('Erro ao excluir transação:', error);
       toast.error('Erro ao excluir transação');
@@ -570,8 +569,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     else {
       toast.success(`Status da despesa fixa atualizado para ${month}`);
     }
-    
-    updateMonthlyData();
   };
 
   const isRecurringExpensePaid = (id: string, month: string) => {
@@ -966,34 +963,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     }
   };
 
-  // Função auxiliar para atualizar dados mensais
-  const updateMonthlyData = () => {
-    // Recalcular dados para todos os meses com base nas transações
-    const updatedMonthlyData = monthlyData.map(monthItem => {
-      const monthTransactions = transactions.filter(t => {
-        const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
-        return transactionMonth === monthItem.month;
-      });
-
-      const incomeTotal = monthTransactions
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      const expenseTotal = monthTransactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      return {
-        ...monthItem,
-        incomeTotal,
-        expenseTotal
-      };
-    });
-
-    // Atualizar os dados mensais no estado
-    setMonthlyData(updatedMonthlyData);
-  };
-
   // Calcula os totais do mês atual
   const getMonthTotals = () => {
     const currentMonthTransactions = transactions.filter(t => {
@@ -1070,6 +1039,11 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     }
   };
 
+  const reloadData = async () => {
+    await loadData();
+    toast.info('Dados atualizados!');
+  };
+
   // Context value
   const value = {
     transactions,
@@ -1119,7 +1093,8 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     setCompanyName,
     getMonthlyExpenseValue,
     setMonthlyExpenseValue,
-    calculateHealthSnapshot
+    calculateHealthSnapshot,
+    reloadData
   };
 
   return (
