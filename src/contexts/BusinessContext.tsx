@@ -164,7 +164,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       if (transactionsResult.data) {
         const formattedTransactions = transactionsResult.data.map((t: any) => ({
           id: t.id,
-          date: new Date(t.date),
+          date: new Date(t.date + 'T12:00:00'),
           description: t.description,
           category: t.category,
           amount: Number(t.amount),
