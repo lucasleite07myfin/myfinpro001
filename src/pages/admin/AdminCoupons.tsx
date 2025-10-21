@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Shield, Plus, Tag, Calendar, Users, Loader2, Check, X } from 'lucide-react';
+import { Shield, Plus, Tag, Calendar, Users, Loader2, Check, X, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -36,6 +36,7 @@ import { ptBR } from 'date-fns/locale';
 const AdminCoupons = () => {
   const { user } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
+  const navigate = useNavigate();
   const [coupons, setCoupons] = useState<DiscountCoupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -170,6 +171,15 @@ const AdminCoupons = () => {
     <div className="container mx-auto max-w-6xl p-4 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate('/')}
+            className="mr-2"
+            title="Voltar ao Dashboard"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
           <Shield className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-3xl font-bold">Gestão de Cupons</h1>
