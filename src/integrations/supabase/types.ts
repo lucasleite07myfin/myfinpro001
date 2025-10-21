@@ -598,18 +598,24 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string
+          n8n_webhook_url: string | null
+          notification_days_before: number | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           full_name?: string | null
           id: string
+          n8n_webhook_url?: string | null
+          notification_days_before?: number | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           full_name?: string | null
           id?: string
+          n8n_webhook_url?: string | null
+          notification_days_before?: number | null
           updated_at?: string | null
         }
         Relationships: []

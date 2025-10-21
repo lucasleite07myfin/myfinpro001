@@ -1,22 +1,26 @@
 
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/MainLayout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { User, Mail, KeyRound, Loader2 } from 'lucide-react';
+import { User, Mail, KeyRound, Loader2, Bell, TestTube } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
 import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [notificationDays, setNotificationDays] = useState('3');
 
   useEffect(() => {
     loadUserData();
@@ -27,8 +31,19 @@ const Profile = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email || '');
-        // Try to get display name from user metadata or use email prefix
         setUserName(user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || '');
+        
+        // Load webhook configuration from profiles
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('n8n_webhook_url, notification_days_before')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile) {
+          setWebhookUrl(profile.n8n_webhook_url || '');
+          setNotificationDays(String(profile.notification_days_before || 3));
+        }
       }
     } catch (error) {
       toast.error('Erro ao carregar informações do perfil');
@@ -42,20 +57,86 @@ const Profile = () => {
     setSaving(true);
     
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não encontrado');
+
+      // Update user metadata
+      const { error: authError } = await supabase.auth.updateUser({
         data: { 
           full_name: userName,
           name: userName
         }
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
+
+      // Update webhook configuration
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          n8n_webhook_url: webhookUrl || null,
+          notification_days_before: parseInt(notificationDays)
+        })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
 
       toast.success("Suas informações foram atualizadas com sucesso.");
     } catch (error) {
       toast.error('Erro ao atualizar informações');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTestWebhook = async () => {
+    if (!webhookUrl) {
+      toast.error('Configure a URL do webhook antes de testar');
+      return;
+    }
+
+    setTesting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const testPayload = {
+        user_id: user?.id,
+        user_name: userName,
+        user_email: userEmail,
+        expenses: [
+          {
+            description: "Teste de Notificação",
+            amount: 100.00,
+            due_day: 15,
+            due_date: new Date().toISOString().split('T')[0],
+            days_until_due: 3,
+            category: "Teste",
+            payment_method: "pix"
+          }
+        ],
+        total_amount: 100.00,
+        notification_date: new Date().toISOString().split('T')[0],
+        days_before_notification: parseInt(notificationDays),
+        is_test: true
+      };
+
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testPayload),
+      });
+
+      if (response.ok) {
+        toast.success('Webhook de teste enviado com sucesso! Verifique seu n8n.');
+      } else {
+        toast.error(`Erro ao enviar webhook: ${response.status}`);
+      }
+    } catch (error) {
+      toast.error('Erro ao testar webhook');
+    } finally {
+      setTesting(false);
     }
   };
   
@@ -151,6 +232,88 @@ const Profile = () => {
             </CardContent>
           </Card>
           
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Notificações
+              </CardTitle>
+              <CardDescription>
+                Configure notificações automáticas de despesas recorrentes via n8n.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="webhook-url">URL do Webhook n8n</Label>
+                  <TooltipHelper content="Cole aqui a URL do webhook gerada no seu workflow n8n">
+                    <Input 
+                      id="webhook-url" 
+                      placeholder="https://seu-n8n.com/webhook/..." 
+                      value={webhookUrl}
+                      onChange={(e) => setWebhookUrl(e.target.value)}
+                      disabled={saving}
+                    />
+                  </TooltipHelper>
+                  <p className="text-xs text-muted-foreground">
+                    Crie um workflow no n8n com Webhook trigger e cole a URL aqui
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notification-days">Dias de Antecedência</Label>
+                  <TooltipHelper content="Quantos dias antes do vencimento você quer ser notificado">
+                    <Select value={notificationDays} onValueChange={setNotificationDays} disabled={saving}>
+                      <SelectTrigger id="notification-days">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 dia antes</SelectItem>
+                        <SelectItem value="2">2 dias antes</SelectItem>
+                        <SelectItem value="3">3 dias antes</SelectItem>
+                        <SelectItem value="5">5 dias antes</SelectItem>
+                        <SelectItem value="7">7 dias antes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TooltipHelper>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleTestWebhook}
+                    disabled={testing || !webhookUrl}
+                    className="flex-1"
+                  >
+                    {testing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Testando...
+                      </>
+                    ) : (
+                      <>
+                        <TestTube className="mr-2 h-4 w-4" />
+                        Testar Webhook
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="rounded-lg bg-muted p-4 text-sm">
+                  <p className="font-medium mb-2">📋 Como configurar:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                    <li>Crie um workflow no n8n</li>
+                    <li>Adicione um nó "Webhook"</li>
+                    <li>Copie a URL do webhook</li>
+                    <li>Cole aqui e clique em "Salvar Alterações"</li>
+                    <li>Use "Testar Webhook" para verificar</li>
+                    <li>Receberá notificações diariamente às 9h</li>
+                  </ol>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Segurança</CardTitle>
