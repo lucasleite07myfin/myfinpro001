@@ -45,8 +45,19 @@ serve(async (req) => {
       throw error;
     }
 
+    logStep("Query result", { 
+      found: !!coupon, 
+      code: normalizedCode,
+      is_active: coupon?.is_active,
+      valid_until: coupon?.valid_until,
+      timestamp: new Date().toISOString()
+    });
+
     if (!coupon) {
-      logStep("Coupon not found or inactive");
+      logStep("Coupon not found or inactive", { 
+        searchedCode: normalizedCode,
+        timestamp: new Date().toISOString()
+      });
       return new Response(
         JSON.stringify({ 
           valid: false, 
