@@ -61,8 +61,17 @@ const Auth = () => {
 
       if (error) throw error;
 
-      if (data.user) {
-        toast.success('Verifique seu email para confirmar a conta.');
+      if (data.user && data.session) {
+        // Login automático após cadastro
+        if (rememberEmail) {
+          localStorage.setItem('remembered_email', email);
+        }
+        
+        toast.success('Conta criada! Redirecionando...');
+        window.location.href = '/';
+      } else if (data.user) {
+        // Fallback caso não haja sessão imediata
+        toast.success('Conta criada com sucesso! Agora você pode fazer login.');
         
         // Limpa os campos
         setEmail('');
@@ -129,8 +138,6 @@ const Auth = () => {
       
       if (error.message.includes('Invalid login credentials')) {
         message = 'Email ou senha incorretos.';
-      } else if (error.message.includes('Email not confirmed')) {
-        message = 'Confirme seu email antes de fazer login.';
       }
       
       toast.error(message);
