@@ -598,6 +598,7 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string
+          monthly_spending_limit: number | null
           n8n_webhook_url: string | null
           notification_days_before: number | null
           updated_at: string | null
@@ -606,6 +607,7 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id: string
+          monthly_spending_limit?: number | null
           n8n_webhook_url?: string | null
           notification_days_before?: number | null
           updated_at?: string | null
@@ -614,6 +616,7 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
+          monthly_spending_limit?: number | null
           n8n_webhook_url?: string | null
           notification_days_before?: number | null
           updated_at?: string | null

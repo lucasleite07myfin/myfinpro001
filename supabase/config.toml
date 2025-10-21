@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.check-recurring-expenses]
 verify_jwt = false
+
+[functions.check-spending-limit]
+verify_jwt = false
