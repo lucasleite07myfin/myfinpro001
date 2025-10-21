@@ -324,16 +324,54 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     }
   };
 
-  const updateTransaction = (transaction: Transaction) => {
-    setTransactions(prev => prev.map(item => item.id === transaction.id ? transaction : item));
-    toast.success('Transação atualizada com sucesso!');
-    updateMonthlyData();
+  const updateTransaction = async (transaction: Transaction) => {
+    try {
+      const { error } = await supabase
+        .from('emp_transactions')
+        .update({
+          date: transaction.date.toISOString().split('T')[0],
+          description: transaction.description,
+          category: transaction.category,
+          amount: transaction.amount,
+          type: transaction.type,
+          payment_method: transaction.paymentMethod,
+          source: transaction.source,
+          is_recurring_payment: transaction.isRecurringPayment || false,
+          is_goal_contribution: transaction.isGoalContribution || false,
+          is_investment_contribution: transaction.isInvestmentContribution || false,
+          goal_id: transaction.goalId,
+          investment_id: transaction.investmentId,
+          recurring_expense_id: transaction.recurringExpenseId
+        })
+        .eq('id', transaction.id);
+
+      if (error) throw error;
+
+      setTransactions(prev => prev.map(item => item.id === transaction.id ? transaction : item));
+      toast.success('Transação atualizada com sucesso!');
+      updateMonthlyData();
+    } catch (error) {
+      console.error('Erro ao atualizar transação:', error);
+      toast.error('Erro ao atualizar transação');
+    }
   };
 
-  const deleteTransaction = (id: string) => {
-    setTransactions(prev => prev.filter(item => item.id !== id));
-    toast.success('Transação excluída com sucesso!');
-    updateMonthlyData();
+  const deleteTransaction = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('emp_transactions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTransactions(prev => prev.filter(item => item.id !== id));
+      toast.success('Transação excluída com sucesso!');
+      updateMonthlyData();
+    } catch (error) {
+      console.error('Erro ao excluir transação:', error);
+      toast.error('Erro ao excluir transação');
+    }
   };
 
   // Recurring expense functions
