@@ -623,6 +623,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_attempts: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          identifier: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          identifier: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          identifier?: string
+        }
+        Relationships: []
+      }
       recurring_expenses: {
         Row: {
           amount: number
@@ -910,6 +931,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_rate_limit_attempts: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
