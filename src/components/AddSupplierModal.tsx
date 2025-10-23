@@ -18,6 +18,7 @@ import { formatDocument, formatPhone, formatCEP, validateDocument, isCNPJ } from
 import { AlertCircle, CheckCircle2, HelpCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from '@/components/ui/sonner';
+import { sanitizeText, sanitizeEmail } from '@/utils/xssSanitizer';
 
 interface AddSupplierModalProps {
   isOpen: boolean;
@@ -226,40 +227,43 @@ const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onClose, su
     e.preventDefault();
     
     if (validateForm()) {
+      // Sanitize all text inputs
+      const sanitizedData = {
+        name: sanitizeText(formData.name),
+        document: formData.document, // Already validated format
+        isCompany: formData.isCompany,
+        stateRegistration: sanitizeText(formData.stateRegistration),
+        address: {
+          street: sanitizeText(formData.address.street),
+          number: sanitizeText(formData.address.number),
+          complement: sanitizeText(formData.address.complement),
+          district: sanitizeText(formData.address.district),
+          city: sanitizeText(formData.address.city),
+          state: formData.address.state, // Select value, already safe
+          zipCode: formData.address.zipCode // Already formatted
+        },
+        phone: formData.phone, // Already formatted
+        email: sanitizeEmail(formData.email),
+        contactPerson: sanitizeText(formData.contactPerson),
+        productType: formData.productType, // Select value, already safe
+        otherProductType: sanitizeText(formData.otherProductType),
+        paymentTerms: sanitizeText(formData.paymentTerms),
+        bankInfo: {
+          bank: sanitizeText(formData.bankInfo.bank),
+          agency: sanitizeText(formData.bankInfo.agency),
+          account: sanitizeText(formData.bankInfo.account)
+        },
+        notes: sanitizeText(formData.notes)
+      };
+
       if (supplier) {
         editSupplier({
           ...supplier,
-          name: formData.name,
-          document: formData.document,
-          isCompany: formData.isCompany,
-          stateRegistration: formData.stateRegistration,
-          address: formData.address,
-          phone: formData.phone,
-          email: formData.email,
-          contactPerson: formData.contactPerson,
-          productType: formData.productType,
-          otherProductType: formData.otherProductType,
-          paymentTerms: formData.paymentTerms,
-          bankInfo: formData.bankInfo,
-          notes: formData.notes,
+          ...sanitizedData,
           updatedAt: new Date()
         });
       } else {
-        addSupplier({
-          name: formData.name,
-          document: formData.document,
-          isCompany: formData.isCompany,
-          stateRegistration: formData.stateRegistration,
-          address: formData.address,
-          phone: formData.phone,
-          email: formData.email,
-          contactPerson: formData.contactPerson,
-          productType: formData.productType,
-          otherProductType: formData.otherProductType,
-          paymentTerms: formData.paymentTerms,
-          bankInfo: formData.bankInfo,
-          notes: formData.notes
-        });
+        addSupplier(sanitizedData);
       }
       onClose();
     } else {

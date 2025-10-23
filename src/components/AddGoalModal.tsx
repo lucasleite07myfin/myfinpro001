@@ -21,6 +21,7 @@ import { formatDateForInput, formatCurrencyInput, parseCurrencyToNumber } from '
 import { Goal } from '@/types/finance';
 import { Target, Calendar, PiggyBank, DollarSign, TrendingUp, Edit, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { sanitizeText } from '@/utils/xssSanitizer';
 
 interface AddGoalModalProps {
   open: boolean;
@@ -123,15 +124,15 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
       return;
     }
 
-    // Sanitização do nome
-    const sanitizedName = name.trim().replace(/[<>]/g, '');
+    // Sanitize all text inputs
+    const sanitizedName = sanitizeText(name);
     if (sanitizedName.length === 0) {
       toast.error('O nome da meta não pode estar vazio');
       return;
     }
 
     const finalSavingLocation = savingLocation === 'Outros' && customSavingLocation.trim() 
-      ? customSavingLocation.trim() 
+      ? sanitizeText(customSavingLocation) 
       : savingLocation;
 
     const goalData = {

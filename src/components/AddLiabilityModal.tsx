@@ -23,6 +23,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { formatCurrencyInput, parseCurrencyToNumber } from '@/utils/formatters';
+import { sanitizeText } from '@/utils/xssSanitizer';
 
 interface AddLiabilityModalProps {
   open: boolean;
@@ -54,7 +55,7 @@ const AddLiabilityModal: React.FC<AddLiabilityModalProps> = ({ open, onOpenChang
     }
 
     addLiability({
-      name,
+      name: sanitizeText(name),
       type,
       value: parseCurrencyToNumber(value)
     });

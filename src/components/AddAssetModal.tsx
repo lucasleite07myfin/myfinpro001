@@ -26,6 +26,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { formatCurrencyInput, parseCurrencyToNumber } from '@/utils/formatters';
+import { sanitizeText } from '@/utils/xssSanitizer';
 
 interface AddAssetModalProps {
   open: boolean;
@@ -62,10 +63,10 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({ open, onOpenChange }) => 
       return;
     }
 
-    const finalType = isCustomType && customType ? customType : type;
+    const finalType = isCustomType && customType ? sanitizeText(customType) : type;
     
     addAsset({
-      name,
+      name: sanitizeText(name),
       type: finalType,
       value: parseCurrencyToNumber(value)
     });

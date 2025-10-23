@@ -51,6 +51,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from './TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
 import { cn } from '@/lib/utils';
+import { sanitizeText } from '@/utils/xssSanitizer';
 
 // Definir o schema de validação para o formulário
 const investmentFormSchema = z.object({
@@ -174,18 +175,20 @@ const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
   // Enviar o formulário
   const onSubmit = (data: InvestmentFormValues) => {
     try {
-      const finalType = data.type === 'custom' && data.customType ? data.customType : data.type;
+      const finalType = data.type === 'custom' && data.customType 
+        ? sanitizeText(data.customType) 
+        : data.type;
       
       const investmentData: Investment = {
         id: editingInvestment?.id || uuidv4(),
-        name: data.name,
+        name: sanitizeText(data.name),
         type: finalType,
         value: data.value,
         installments: data.installments,
         installmentValue: data.installmentValue,
         startDate: data.startDate,
         paidInstallments: editingInvestment?.paidInstallments || 0,
-        description: data.description,
+        description: data.description ? sanitizeText(data.description) : undefined,
       };
 
       if (editingInvestment) {
@@ -198,8 +201,8 @@ const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
       
       onOpenChange(false);
     } catch (error) {
-      console.error('Erro ao salvar investimento:', error);
-      toast.error('Erro ao salvar o investimento. Tente novamente.');
+      const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error(`Erro ao salvar o investimento: ${errorMsg}`);
     }
   };
 
