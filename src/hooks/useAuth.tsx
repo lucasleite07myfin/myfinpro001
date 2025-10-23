@@ -33,18 +33,12 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
-      // Limpa estado local primeiro
       setUser(null);
       setSession(null);
-      
-      // Faz logout global
       await supabase.auth.signOut({ scope: 'global' });
-      
-      // Força recarregamento da página para estado limpo
       window.location.href = '/auth';
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      // Mesmo com erro, força navegação para auth
+      // Error during logout - still redirect
       window.location.href = '/auth';
     }
   };

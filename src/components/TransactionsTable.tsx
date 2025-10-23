@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { Transaction, PAYMENT_METHODS } from '@/types/finance';
 import { formatCurrency } from '@/utils/formatters';
+import { sanitizeText } from '@/utils/xssSanitizer';
 import {
   Table,
   TableBody,
@@ -111,13 +111,13 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                   </TableCell>
                   <TableCell className="py-4 px-6">
                     <div className="flex flex-col gap-2">
-                      <span className="font-medium text-neutral-900 text-sm">{transaction.description}</span>
+                      <span className="font-medium text-neutral-900 text-sm">{sanitizeText(transaction.description)}</span>
                       {renderBadge ? renderBadge(transaction) : defaultRenderBadge(transaction)}
                     </div>
                   </TableCell>
                   <TableCell className="py-4 px-6">
                     <span className="text-sm text-neutral-600 bg-neutral-100 px-2 py-1 rounded-md">
-                      {formatCategoryName(transaction.category)}
+                      {sanitizeText(formatCategoryName(transaction.category))}
                     </span>
                   </TableCell>
                   <TableCell className={`text-right font-semibold py-4 px-6 ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>

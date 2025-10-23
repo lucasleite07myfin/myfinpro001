@@ -9,6 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { checkRateLimit } from '@/utils/rateLimiter';
+import { sanitizeEmail, sanitizeText } from '@/utils/xssSanitizer';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -39,22 +41,36 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !fullName) {
-      toast.error('Por favor, preencha todos os campos.');
+    
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeEmail(email);
+    const sanitizedFullName = sanitizeText(fullName);
+    
+    if (!sanitizedEmail || !password || !sanitizedFullName) {
+      toast.error('Por favor, preencha todos os campos corretamente.');
       return;
     }
 
     setLoading(true);
     try {
+      // Rate limiting check
+      const rateLimitResult = await checkRateLimit(sanitizedEmail, 'signup');
+      
+      if (!rateLimitResult.allowed) {
+        toast.error(rateLimitResult.message || 'Muitas tentativas. Aguarde antes de tentar novamente.');
+        setLoading(false);
+        return;
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: sanitizedEmail,
         password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            full_name: fullName
+            full_name: sanitizedFullName
           }
         }
       });
@@ -62,31 +78,26 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user && data.session) {
-        // Login automático após cadastro
         if (rememberEmail) {
-          localStorage.setItem('remembered_email', email);
+          localStorage.setItem('remembered_email', sanitizedEmail);
         }
         
         toast.success('Conta criada! Redirecionando...');
         window.location.href = '/';
       } else if (data.user) {
-        // Fallback caso não haja sessão imediata
         toast.success('Conta criada com sucesso! Agora você pode fazer login.');
-        
-        // Limpa os campos
         setEmail('');
         setPassword('');
         setFullName('');
       }
     } catch (error: any) {
-      console.error('Erro no cadastro:', error);
       let message = 'Erro ao criar conta. Tente novamente.';
       
-      if (error.message.includes('already registered')) {
+      if (error.message?.includes('already registered')) {
         message = 'Este email já está registrado. Tente fazer login.';
-      } else if (error.message.includes('weak password')) {
-        message = 'A senha deve ter pelo menos 6 caracteres.';
-      } else if (error.message.includes('invalid email')) {
+      } else if (error.message?.includes('weak password')) {
+        message = 'A senha deve ter pelo menos 8 caracteres fortes.';
+      } else if (error.message?.includes('invalid email')) {
         message = 'Email inválido. Verifique o formato.';
       }
       
@@ -98,13 +109,26 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error('Por favor, informe email e senha.');
+    
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeEmail(email);
+    
+    if (!sanitizedEmail || !password) {
+      toast.error('Por favor, informe email e senha válidos.');
       return;
     }
 
     setLoading(true);
     try {
+      // Rate limiting check
+      const rateLimitResult = await checkRateLimit(sanitizedEmail, 'login');
+      
+      if (!rateLimitResult.allowed) {
+        toast.error(rateLimitResult.message || 'Muitas tentativas de login. Aguarde antes de tentar novamente.');
+        setLoading(false);
+        return;
+      }
+
       // Limpa estado de autenticação anterior
       try {
         await supabase.auth.signOut({ scope: 'global' });
@@ -113,30 +137,26 @@ const Auth = () => {
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: sanitizedEmail,
         password,
       });
 
       if (error) throw error;
 
       if (data.user) {
-        // Salva ou remove email do localStorage
         if (rememberEmail) {
-          localStorage.setItem('remembered_email', email);
+          localStorage.setItem('remembered_email', sanitizedEmail);
         } else {
           localStorage.removeItem('remembered_email');
         }
 
         toast.success('Redirecionando...');
-        
-        // Força recarregamento da página para estado limpo
         window.location.href = '/';
       }
     } catch (error: any) {
-      console.error('Erro no login:', error);
       let message = 'Erro ao fazer login. Verifique suas credenciais.';
       
-      if (error.message.includes('Invalid login credentials')) {
+      if (error.message?.includes('Invalid login credentials')) {
         message = 'Email ou senha incorretos.';
       }
       
