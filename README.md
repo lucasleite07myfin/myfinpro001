@@ -36,6 +36,55 @@ npm i
 npm run dev
 ```
 
+## ⚙️ Configuração de Variáveis de Ambiente
+
+### 🔐 Segurança Primeiro
+
+**⚠️ NUNCA comitar o arquivo `.env` ou chaves reais no repositório!**
+
+Este projeto usa **Lovable Cloud** (baseado em Supabase) que gerencia automaticamente as variáveis de ambiente principais.
+
+### 📝 Configuração para Desenvolvimento Local
+
+1. **Clone o repositório** (se ainda não fez)
+   ```sh
+   git clone <YOUR_GIT_URL>
+   cd <YOUR_PROJECT_NAME>
+   ```
+
+2. **Copie o template de variáveis de ambiente**
+   ```sh
+   cp .env.example .env
+   ```
+
+3. **As variáveis do Supabase são preenchidas automaticamente pelo Lovable**
+   - `VITE_SUPABASE_PROJECT_ID`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`
+   - `VITE_SUPABASE_URL`
+
+4. **Configure secrets sensíveis no painel do Lovable Cloud**
+   - Acesse: [Lovable Project](https://lovable.dev/projects/9121669d-6a96-4fbf-a7dc-cf01d578dad7)
+   - Vá em: **Settings > Backend > Secrets**
+   - Adicione as chaves necessárias:
+     - `STRIPE_SECRET_KEY`
+     - `STRIPE_WEBHOOK_SECRET`
+
+### 🚨 Variáveis que NUNCA devem estar no código
+
+- ❌ Chaves privadas do Stripe
+- ❌ Tokens de API de terceiros
+- ❌ Senhas de banco de dados
+- ❌ JWT secrets
+- ❌ Service role keys do Supabase
+
+### ✅ Variáveis seguras para o frontend (públicas)
+
+- ✅ `VITE_SUPABASE_URL` (URL pública do Supabase)
+- ✅ `VITE_SUPABASE_PUBLISHABLE_KEY` (Anon key pública)
+- ✅ `VITE_SUPABASE_PROJECT_ID` (ID público do projeto)
+
+**Nota:** Mesmo sendo públicas, essas variáveis ficam protegidas por RLS (Row Level Security) no Supabase.
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).
