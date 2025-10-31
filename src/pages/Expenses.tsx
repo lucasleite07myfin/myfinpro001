@@ -7,6 +7,7 @@ import EmptyState from '@/components/EmptyState';
 import TransactionsTable from '@/components/TransactionsTable';
 import MonthSelector from '@/components/MonthSelector';
 import AddTransactionModal from '@/components/AddTransactionModal';
+import Top10ExpensesModal from '@/components/Top10ExpensesModal';
 import { formatCurrency } from '@/utils/formatters';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -99,6 +100,7 @@ const Expenses: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRecurringExpensesOpen, setIsRecurringExpensesOpen] = useState(false);
+  const [top10ModalOpen, setTop10ModalOpen] = useState(false);
   
   // Get all expense categories including custom ones
   const getAllExpenseCategories = () => {
@@ -425,6 +427,17 @@ const Expenses: React.FC = () => {
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
+              <TooltipHelper content="Ver ranking das 10 maiores despesas do mês">
+                <Button 
+                  onClick={() => setTop10ModalOpen(true)}
+                  variant="outline"
+                  className="flex items-center justify-center gap-2 border-neutral-300 hover:bg-neutral-100 w-full sm:w-auto whitespace-nowrap"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="hidden md:inline">Top 10 Despesas</span>
+                  <span className="md:hidden">Top 10</span>
+                </Button>
+              </TooltipHelper>
               <TooltipHelper content="Adicionar nova despesa">
                 <Button 
                   onClick={() => setIsAddModalOpen(true)}
@@ -938,6 +951,14 @@ const Expenses: React.FC = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Modal Top 10 Despesas */}
+        <Top10ExpensesModal
+          transactions={currentMonthExpenses}
+          currentMonth={currentMonth}
+          open={top10ModalOpen}
+          onOpenChange={setTop10ModalOpen}
+        />
 
       </TooltipProvider>
     </MainLayout>
