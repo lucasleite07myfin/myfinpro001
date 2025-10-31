@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { UserPlus, Trash2, Eye, Edit, Check, X, Mail, Clock } from 'lucide-react';
 import InviteSubAccountModal from '@/components/InviteSubAccountModal';
+import { useSubAccount } from '@/contexts/SubAccountContext';
 import {
   Table,
   TableBody,
@@ -55,6 +57,8 @@ interface PendingInvite {
 }
 
 const SubAccounts: React.FC = () => {
+  const navigate = useNavigate();
+  const { isSubAccount, permissions } = useSubAccount();
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +67,7 @@ const SubAccounts: React.FC = () => {
   const [cancelInviteDialogOpen, setCancelInviteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [selectedInvite, setSelectedInvite] = useState<string | null>(null);
+  const [selfRemoveDialogOpen, setSelfRemoveDialogOpen] = useState(false);
 
   const loadSubAccounts = async () => {
     try {
@@ -162,6 +167,33 @@ const SubAccounts: React.FC = () => {
     }
   };
 
+  const handleSelfRemove = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { error } = await supabase
+        .from('business_sub_accounts')
+        .update({ is_active: false })
+        .eq('sub_user_id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Acesso removido com sucesso', {
+        description: 'Você foi desvinculado do sistema empresarial.',
+      });
+
+      navigate('/');
+    } catch (error) {
+      console.error('Erro ao remover acesso:', error);
+      toast.error('Erro ao remover acesso', {
+        description: 'Tente novamente mais tarde.',
+      });
+    } finally {
+      setSelfRemoveDialogOpen(false);
+    }
+  };
+
   const getPermissionBadges = (account: SubAccount) => {
     const permissions = [];
     if (account.can_create_transactions) permissions.push('Criar');
@@ -172,6 +204,84 @@ const SubAccounts: React.FC = () => {
     return permissions;
   };
 
+  const getMyPermissionBadges = () => {
+    const perms = [];
+    if (permissions.can_view_transactions) perms.push('Ver Transações');
+    if (permissions.can_create_transactions) perms.push('Criar Transações');
+    if (permissions.can_edit_transactions) perms.push('Editar Transações');
+    if (permissions.can_delete_transactions) perms.push('Excluir Transações');
+    if (permissions.can_view_investments) perms.push('Ver Investimentos');
+    if (permissions.can_manage_investments) perms.push('Gerenciar Investimentos');
+    if (permissions.can_view_suppliers) perms.push('Ver Fornecedores');
+    if (permissions.can_manage_suppliers) perms.push('Gerenciar Fornecedores');
+    if (permissions.can_view_dre) perms.push('Ver DRE');
+    if (permissions.can_view_cashflow) perms.push('Ver Fluxo de Caixa');
+    return perms;
+  };
+
+  // Interface para funcionários (sub-accounts)
+  if (isSubAccount) {
+    return (
+      <MainLayout>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Meu Acesso ao Sistema</CardTitle>
+              <CardDescription>
+                Você está vinculado como funcionário neste sistema empresarial
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-2">Minhas Permissões:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {getMyPermissionBadges().map((perm, idx) => (
+                    <Badge key={idx} variant="secondary">
+                      {perm}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <Button 
+                  variant="destructive" 
+                  onClick={() => setSelfRemoveDialogOpen(true)}
+                >
+                  🚪 Remover Meu Acesso
+                </Button>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Ao remover seu acesso, você será desvinculado deste sistema empresarial.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <AlertDialog open={selfRemoveDialogOpen} onOpenChange={setSelfRemoveDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remover meu acesso?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza? Você perderá acesso ao sistema empresarial e será redirecionado para seu dashboard pessoal.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleSelfRemove}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Confirmar Remoção
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Interface para titulares (owners)
   return (
     <MainLayout>
       <div className="space-y-6">
