@@ -1,5 +1,15 @@
 project_id = "uxomcgymjlcfgboilndn"
 
+[auth]
+# Enable leaked password protection
+enable_leaked_password_protection = true
+
+# Minimum password requirements
+password_min_length = 8
+
+# Required character types for passwords
+password_required_characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 [functions.create-checkout-session]
 verify_jwt = true
 
