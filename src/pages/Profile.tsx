@@ -16,6 +16,7 @@ import { useBiometric } from '@/hooks/useBiometric';
 import { Switch } from '@/components/ui/switch';
 import { Building2 } from 'lucide-react';
 import { useAppMode } from '@/contexts/AppModeContext';
+import { useBusiness } from '@/contexts/BusinessContext';
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
@@ -29,6 +30,7 @@ const Profile = () => {
   const [companyName, setCompanyName] = useState('');
   
   const { mode } = useAppMode();
+  const { setCompanyName: updateBusinessContext } = useBusiness();
   
   const { 
     isAvailable: biometricAvailable, 
@@ -181,6 +183,33 @@ const Profile = () => {
       }
     } else {
       removeBiometric();
+    }
+  };
+
+  const handleSaveCompanyName = async () => {
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não encontrado');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ company_name: companyName || null })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Atualizar o contexto imediatamente
+      if (mode === 'business') {
+        updateBusinessContext(companyName);
+      }
+
+      toast.success("Nome da empresa atualizado com sucesso!");
+    } catch (error) {
+      console.error('Erro ao atualizar nome da empresa:', error);
+      toast.error('Erro ao atualizar nome da empresa');
+    } finally {
+      setSaving(false);
     }
   };
   
@@ -424,23 +453,38 @@ const Profile = () => {
                   Configure as informações da sua empresa no modo business.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="company-name">Nome da Empresa</Label>
-                  <TooltipHelper content="Nome que aparecerá no dashboard empresarial">
-                    <Input 
-                      id="company-name" 
-                      placeholder="Ex: Zenith Saúde" 
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      disabled={saving}
-                    />
-                  </TooltipHelper>
-                  <p className="text-xs text-muted-foreground">
-                    Este nome será exibido na saudação do dashboard empresarial
-                  </p>
-                </div>
-              </CardContent>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company-name">Nome da Empresa</Label>
+                    <TooltipHelper content="Nome que aparecerá no dashboard empresarial">
+                      <Input 
+                        id="company-name" 
+                        placeholder="Ex: Zenith Saúde" 
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        disabled={saving}
+                      />
+                    </TooltipHelper>
+                    <p className="text-xs text-muted-foreground">
+                      Este nome será exibido na saudação do dashboard empresarial
+                    </p>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleSaveCompanyName} 
+                    disabled={saving}
+                    className="w-full"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      'Salvar Nome da Empresa'
+                    )}
+                  </Button>
+                </CardContent>
             </Card>
           )}
         </div>
