@@ -197,7 +197,7 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center mt-2">
-                  {isEditing ? (
+                   {isEditing ? (
                     <div className="flex items-center gap-2">
                       <Input type="text" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} className="h-8 w-24" placeholder="Valor" autoFocus />
                       <Button size="sm" onClick={() => handleSaveEdit(expense)}>Salvar</Button>
@@ -211,11 +211,19 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleStartEdit(expense, selectedMonth)}><Pencil className="h-3 w-3" /></Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6" 
+                              onClick={() => handleStartEdit(expense, selectedMonth)}
+                              disabled={!canEditExpenses}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
                           </TooltipTrigger>
                           <TooltipContent><p>Editar valor</p></TooltipContent>
                         </Tooltip>
-                        {onDelete && (
+                        {onDelete && canDeleteExpenses && (
                           <AlertDialog>
                             <Tooltip>
                               <TooltipTrigger asChild>
