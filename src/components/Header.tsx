@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, ChartBar, User, LogOut, Crown, Settings } from 'lucide-react';
+import { Menu, X, ChartBar, User, LogOut, Crown, Settings, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import ModeToggle from './ModeToggle';
@@ -130,6 +130,12 @@ const Header: React.FC = () => {
                       <Crown className="mr-2 h-4 w-4 text-yellow-500" />
                       <span>Premium</span>
                     </DropdownMenuItem>
+                    {mode === 'business' && (
+                      <DropdownMenuItem onClick={() => navigate('/business/sub-accounts')} className="cursor-pointer hover:bg-muted/50">
+                        <Users className="mr-2 h-4 w-4" />
+                        <span>Gerenciar Funcionários</span>
+                      </DropdownMenuItem>
+                    )}
                     {isAdmin && !roleLoading && (
                       <>
                         <DropdownMenuSeparator className="bg-border" />
