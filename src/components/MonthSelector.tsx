@@ -44,10 +44,18 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ value, onChange }) => {
   // Verificar se já estamos no mês atual (para desabilitar o botão "próximo")
   const isCurrentMonth = value === `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
 
+  const formatMonthName = (monthYear: string): string => {
+    const [year, month] = monthYear.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const monthName = date.toLocaleDateString('pt-BR', { month: 'long' });
+    // Capitalizar primeira letra
+    return monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  };
+
   return (
     <div className="flex flex-col items-center gap-1">
       <label className="text-xs text-muted-foreground">
-        Mês: {formatMonth(value)}
+        Mês: {formatMonthName(value)}
       </label>
       <div className="flex items-center space-x-2">
         <Button 
