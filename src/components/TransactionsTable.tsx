@@ -80,7 +80,8 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   });
 
   return (
-    <div className="rounded-xl border border-neutral-200 overflow-hidden shadow-sm bg-white">
+    <div className="overflow-x-auto -mx-4 px-4">
+      <div className="rounded-xl border border-neutral-200 overflow-hidden shadow-sm bg-white min-w-[600px]">
       {/* Fixed Header */}
       <div className="border-b border-neutral-200">
         <Table>
@@ -101,7 +102,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
       <div 
         ref={parentRef}
         className="overflow-y-auto" 
-        style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '300px' }}
+        style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '200px' }}
       >
         {transactions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-neutral-500">
@@ -136,7 +137,15 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                 >
                   <Table>
                     <TableBody>
-                      <TableRow className={`hover:bg-neutral-50/50 transition-colors border-b border-neutral-100 ${index % 2 === 0 ? 'bg-white' : 'bg-neutral-25'}`}>
+                      <TableRow 
+                        className={`hover:bg-neutral-50/50 transition-colors border-b border-neutral-100 ${index % 2 === 0 ? 'bg-white' : 'bg-neutral-25'}`}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if ((e.key === 'Enter' || e.key === ' ') && onEdit && !transaction.isRecurringPayment) {
+                            handleEditClick(transaction);
+                          }
+                        }}
+                      >
                         <TableCell className="font-medium text-neutral-900 py-4 px-6">
                           <div className="text-sm font-medium">
                             {format(transaction.date, 'dd/MM/yyyy')}
@@ -171,6 +180,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+                                aria-label="Editar transação"
                               >
                                 <Edit className="h-3 w-3" />
                               </Button>
@@ -181,6 +191,9 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                aria-label={transaction.isRecurringPayment ? 
+                                  "Excluir esta transação (para cancelar o pagamento, use o card de despesas fixas)" : 
+                                  "Excluir esta transação"}
                                 title={transaction.isRecurringPayment ? 
                                   "Excluir esta transação (para cancelar o pagamento, use o card de despesas fixas)" : 
                                   "Excluir esta transação"}
@@ -199,6 +212,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

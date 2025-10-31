@@ -162,6 +162,7 @@ const Header: React.FC = () => {
                   size="icon" 
                   onClick={() => setMenuOpen(!menuOpen)}
                   className={menuOpen ? "text-[#EE680D]" : ""}
+                  aria-label="Menu de navegação"
                 >
                   {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                 </Button>
@@ -176,14 +177,12 @@ const Header: React.FC = () => {
         <>
           {/* Backdrop */}
           <div 
-            className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[99998]"
+            className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[45]"
             onClick={() => setMenuOpen(false)}
-            style={{ zIndex: 99998 }}
           />
           {/* Menu Content */}
           <div 
-            className="md:hidden fixed top-20 left-0 right-0 bg-background border-b border-border shadow-xl z-[99999]"
-            style={{ zIndex: 99999 }}
+            className="md:hidden fixed top-20 left-0 right-0 bg-background border-b border-border shadow-xl z-50"
           >
             <div className="p-4">
               <Tabs value={currentPath} onValueChange={handleTabChange} className="w-full">

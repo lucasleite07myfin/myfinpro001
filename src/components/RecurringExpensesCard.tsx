@@ -176,7 +176,7 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
             const overdue = !paid && isOverdue(expense.dueDay, selectedMonth);
             const isEditing = editingExpense?.id === expense.id && editingExpense?.month === selectedMonth;
             return (
-              <div key={`${expense.id}-${selectedMonth}`} className={cn("p-3 rounded-md border", { "bg-green-50 dark:bg-green-950": paid, "bg-red-50 dark:bg-red-950": overdue && !paid })}>
+              <div key={`${expense.id}-${selectedMonth}`} className={cn("p-3 rounded-md border", { "bg-green-50": paid, "bg-red-50": overdue && !paid })}>
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-medium text-sm">{expense.description}</h3>

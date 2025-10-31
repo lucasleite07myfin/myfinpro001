@@ -137,8 +137,8 @@ const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactio
                       if (!active || !payload || !payload.length) return null;
                       
                       return (
-                        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 min-w-[160px]">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 min-w-[160px]">
+                          <p className="text-sm font-medium text-gray-900 mb-2">
                             {label}
                           </p>
                           <div className="space-y-1">
@@ -149,11 +149,11 @@ const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactio
                                     className="w-3 h-3 rounded-full" 
                                     style={{ backgroundColor: entry.color }}
                                   />
-                                  <span className="text-sm text-gray-600 dark:text-gray-300">
+                                  <span className="text-sm text-gray-600">
                                     {entry.dataKey}
                                   </span>
                                 </div>
-                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                <span className="text-sm font-semibold text-gray-900">
                                   {formatCurrency(Number(entry.value))}
                                 </span>
                               </div>

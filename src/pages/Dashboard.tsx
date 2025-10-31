@@ -12,6 +12,9 @@ import AddTransactionModal from '@/components/AddTransactionModal';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -61,61 +64,64 @@ const Dashboard: React.FC = () => {
     <TooltipProvider>
       <div>
         <div className="mb-2 md:mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white">Olá, {getFirstName()}</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-neutral-800">Olá, {getFirstName()}</h1>
           <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
         </div>
 
         <div className="mb-4 md:mb-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
-            <TooltipHelper content={tooltipContent.dashboard.receitasCard}>
-              <div className="w-full">
-                <StatsCard 
-                  title="Receitas" 
-                  value={income} 
-                  isCurrency 
-                  isPositive
-                  icon={<ArrowUp className="h-4 w-4 md:h-5 md:w-5 text-income-force" />} 
-                />
-              </div>
-            </TooltipHelper>
-            
-            <TooltipHelper content={tooltipContent.dashboard.despesasCard}>
-              <div className="w-full">
-                <StatsCard 
-                  title="Despesas" 
-                  value={expense} 
-                  isCurrency 
-                  isPositive={false}
-                  icon={<ArrowDown className="h-4 w-4 md:h-5 md:w-5 text-expense-force" />} 
-                />
-              </div>
-            </TooltipHelper>
-            
-            <TooltipHelper content={tooltipContent.dashboard.lucroCard}>
-              <div className="w-full">
-                <StatsCard 
-                  title="Fluxo de Caixa" 
-                  value={balance} 
-                  isCurrency 
-                  isPositive={balance >= 0}
-                  icon={<CreditCard className="h-4 w-4 md:h-5 md:w-5" />} 
-                />
-              </div>
-            </TooltipHelper>
-            
-            <TooltipHelper content={tooltipContent.dashboard.margemCard}>
-              <div className="w-full">
-                <StatsCard 
-                  title="Taxa de Poupança" 
-                  value={savingRate} 
-                  isPercentage 
-                  isPositive={savingRate >= 0}
-                  icon={<PiggyBank className="h-4 w-4 md:h-5 md:w-5" />} 
-                />
-              </div>
-            </TooltipHelper>
-          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 animate-fade-in">
+          <TooltipHelper content={tooltipContent.dashboard.receitasCard}>
+            <div className="w-full">
+              <StatsCard 
+                title="Receitas" 
+                value={income} 
+                isCurrency 
+                isPositive
+                icon={<ArrowUp className="h-4 w-4 md:h-5 md:w-5 text-income-force" />} 
+              />
+            </div>
+          </TooltipHelper>
+          
+          <TooltipHelper content={tooltipContent.dashboard.despesasCard}>
+            <div className="w-full">
+              <StatsCard 
+                title="Despesas" 
+                value={expense} 
+                isCurrency 
+                isPositive={false}
+                icon={<ArrowDown className="h-4 w-4 md:h-5 md:w-5 text-expense-force" />} 
+              />
+            </div>
+          </TooltipHelper>
+          
+          <TooltipHelper content={tooltipContent.dashboard.lucroCard}>
+            <div className="w-full">
+              <StatsCard 
+                title="Fluxo de Caixa" 
+                value={balance} 
+                isCurrency 
+                isPositive={balance >= 0}
+                icon={<CreditCard className="h-4 w-4 md:h-5 md:w-5" />}
+                className="ring-2 ring-primary/20 shadow-md"
+              />
+            </div>
+          </TooltipHelper>
+          
+          <TooltipHelper content={tooltipContent.dashboard.margemCard}>
+            <div className="w-full">
+              <StatsCard 
+                title="Taxa de Poupança" 
+                value={savingRate} 
+                isPercentage 
+                isPositive={savingRate >= 0}
+                icon={<PiggyBank className="h-4 w-4 md:h-5 md:w-5" />} 
+              />
+            </div>
+          </TooltipHelper>
         </div>
+        </div>
+
+        <Separator className="my-6" />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-4 md:mb-6">
           {/* Coluna esquerda: Despesas Recorrentes */}
@@ -145,7 +151,7 @@ const Dashboard: React.FC = () => {
             
             {/* Transações Recentes */}
             <div>
-              <h2 className="text-xl font-semibold mb-4 text-neutral-800 dark:text-white">Transações Recentes</h2>
+              <h2 className="text-xl font-semibold mb-4 text-neutral-800">Transações Recentes</h2>
               <TooltipHelper content={tooltipContent.dashboard.transactionsTable}>
                 {recentTransactions.length === 0 ? (
                   <EmptyState

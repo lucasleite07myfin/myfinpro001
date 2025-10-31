@@ -24,13 +24,13 @@ const FinancialHealthCards: React.FC<FinancialHealthCardsProps> = ({
 
   const getHealthColor = (value: number, thresholds: { good: number; warning: number }, invert = false) => {
     if (invert) {
-      if (value <= thresholds.good) return 'text-green-600 dark:text-green-400';
-      if (value <= thresholds.warning) return 'text-yellow-600 dark:text-yellow-400';
-      return 'text-red-600 dark:text-red-400';
+      if (value <= thresholds.good) return 'text-green-600';
+      if (value <= thresholds.warning) return 'text-yellow-600';
+      return 'text-red-600';
     } else {
-      if (value >= thresholds.good) return 'text-green-600 dark:text-green-400';
-      if (value >= thresholds.warning) return 'text-yellow-600 dark:text-yellow-400';
-      return 'text-red-600 dark:text-red-400';
+      if (value >= thresholds.good) return 'text-green-600';
+      if (value >= thresholds.warning) return 'text-yellow-600';
+      return 'text-red-600';
     }
   };
 
@@ -60,7 +60,7 @@ const FinancialHealthCards: React.FC<FinancialHealthCardsProps> = ({
       title: 'Crescimento Patrimonial',
       value: `${(currentHealth.netWorthGrowth12m || 0) >= 0 ? '+' : ''}${(currentHealth.netWorthGrowth12m || 0).toFixed(1)}%`,
       icon: (currentHealth.netWorthGrowth12m || 0) >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />,
-      color: (currentHealth.netWorthGrowth12m || 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+      color: (currentHealth.netWorthGrowth12m || 0) >= 0 ? 'text-green-600' : 'text-red-600',
       tooltip: 'Crescimento do patrimônio nos últimos 12 meses comparado ao período anterior'
     }
   ];

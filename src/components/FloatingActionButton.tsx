@@ -42,6 +42,11 @@ const FloatingActionButton = forwardRef<HTMLButtonElement, FloatingActionButtonP
           .floating-action-button:hover {
             background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
             transform: scale(1.1);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+          }
+          
+          .floating-action-button:active {
+            transform: scale(0.95);
           }
           
           .floating-action-button:focus {
@@ -77,6 +82,7 @@ const FloatingActionButton = forwardRef<HTMLButtonElement, FloatingActionButtonP
           ref={ref}
           onClick={onClick}
           className="floating-action-button"
+          aria-label="Adicionar transação"
         >
           {children}
         </button>

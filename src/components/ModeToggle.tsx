@@ -29,7 +29,8 @@ const ModeToggle: React.FC = () => {
         onClick={handleToggle}
         variant="outline"
         size="icon"
-        className="h-9 w-9 rounded-full bg-background shadow-md hover:bg-muted border border-border dark:bg-sidebar-accent dark:text-white"
+        className="h-9 w-9 rounded-full bg-background shadow-md hover:bg-muted border border-border"
+        aria-label={mode === 'personal' ? 'Alternar para modo empresa' : 'Alternar para modo pessoal'}
       >
         {mode === 'personal' ? (
           <User className="h-4 w-4 text-foreground" />

@@ -96,20 +96,11 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    /* Updated income/expense colors for better consistency */
     --income: 142 70% 45%;
     --expense: 0 84% 60%;
-
-    /* Primary action color */
     --primary-action: 142 70% 45%;
-
-    /* Navy blue for tabs */
     --navy-blue: 221 83% 53%;
-
-    /* Orange color for active states */
     --orange: 22 95% 49%;
-
-    /* Header background - lighter for personal mode */
     --header-background: 0 0% 100%;
 
     --radius: 0.5rem;
@@ -129,8 +120,6 @@
     --background: 0 0% 94%;
     --sidebar-background: 0 0% 92%;
     --sidebar-accent: 240 4.8% 90%;
-    
-    /* Header background - darker for business mode */
     --header-background: 0 0% 85%;
   }
 }
@@ -175,11 +164,11 @@
 
 /* Force income/expense colors */
 .text-income-force {
-  color: #22c55e !important; /* Green for income */
+  color: #22c55e;
 }
 
 .text-expense-force {
-  color: #ef4444 !important; /* Red for expense */
+  color: #ef4444;
 }
 
 @theme inline {

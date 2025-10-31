@@ -49,15 +49,19 @@ const StatsCard: React.FC<StatsCardProps> = ({
     if (titleLower.includes('lucro') || titleLower.includes('fluxo') || titleLower.includes('balanço')) {
       return isPositive ? 'text-income-force' : 'text-expense-force';
     }
-    return isPositive ? 'text-neutral-800 dark:text-white' : 'text-expense-force';
+    return isPositive ? 'text-neutral-800' : 'text-expense-force';
   };
 
   return (
-    <Card className={`${className} hover:shadow-md transition-shadow dark:border-border/50 dark:hover:shadow-none`}>
+    <Card 
+      className={`${className} hover:shadow-md transition-shadow`}
+      role="article" 
+      aria-label={`${title}: ${formattedValue}`}
+    >
       <CardContent className="p-3 md:p-4">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-300">{title}</h3>
-          {icon && <div className="text-neutral-400 dark:text-neutral-300">{icon}</div>}
+          <h3 className="text-xs sm:text-sm text-neutral-600">{title}</h3>
+          {icon && <div className="h-5 w-5 md:h-6 md:w-6 text-neutral-500">{icon}</div>}
         </div>
         <p className={`text-lg sm:text-xl font-bold ${getValueColorClass()}`}>
           {formattedValue}
@@ -76,7 +80,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
               </span>
             )}
             {description && (
-              <span className="ml-1 text-neutral-500 dark:text-neutral-300">{description}</span>
+              <span className="ml-1 text-neutral-600">{description}</span>
             )}
           </div>
         )}
