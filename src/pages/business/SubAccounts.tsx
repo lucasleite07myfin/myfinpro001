@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { UserPlus, Trash2, Eye, Edit, Check, X } from 'lucide-react';
+import { UserPlus, Trash2, Eye, Edit, Check, X, Mail, Clock } from 'lucide-react';
 import InviteSubAccountModal from '@/components/InviteSubAccountModal';
 import {
   Table,
@@ -43,12 +43,26 @@ interface SubAccount {
   can_view_cashflow: boolean;
 }
 
+interface PendingInvite {
+  id: string;
+  email: string;
+  created_at: string;
+  expires_at: string;
+  additional_info?: {
+    department?: string;
+    position?: string;
+  };
+}
+
 const SubAccounts: React.FC = () => {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [cancelInviteDialogOpen, setCancelInviteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  const [selectedInvite, setSelectedInvite] = useState<string | null>(null);
 
   const loadSubAccounts = async () => {
     try {
@@ -68,8 +82,47 @@ const SubAccounts: React.FC = () => {
     }
   };
 
+  const loadPendingInvites = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('business_invites')
+        .select('*')
+        .eq('used', false)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setPendingInvites(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar convites:', error);
+      toast.error('Erro ao carregar convites pendentes');
+    }
+  };
+
+  const handleCancelInvite = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('business_invites')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Convite cancelado com sucesso');
+      loadPendingInvites();
+    } catch (error) {
+      console.error('Erro ao cancelar convite:', error);
+      toast.error('Erro ao cancelar convite');
+    } finally {
+      setCancelInviteDialogOpen(false);
+      setSelectedInvite(null);
+    }
+  };
+
   useEffect(() => {
     loadSubAccounts();
+    loadPendingInvites();
   }, []);
 
   const handleDeactivate = async (id: string) => {
@@ -212,12 +265,94 @@ const SubAccounts: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        {pendingInvites.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Convites Pendentes</CardTitle>
+              <CardDescription>
+                {pendingInvites.length} {pendingInvites.length === 1 ? 'convite' : 'convites'} aguardando aceitação
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Cargo/Departamento</TableHead>
+                    <TableHead>Enviado em</TableHead>
+                    <TableHead>Expira em</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingInvites.map((invite) => (
+                    <TableRow key={invite.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          {invite.email}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {invite.additional_info?.position || invite.additional_info?.department ? (
+                          <div className="text-sm">
+                            {invite.additional_info?.position && <div>{invite.additional_info.position}</div>}
+                            {invite.additional_info?.department && (
+                              <div className="text-muted-foreground">{invite.additional_info.department}</div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(invite.created_at).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          {new Date(invite.expires_at).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedInvite(invite.id);
+                            setCancelInviteDialogOpen(true);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <InviteSubAccountModal
         open={inviteModalOpen}
         onOpenChange={setInviteModalOpen}
-        onSuccess={loadSubAccounts}
+        onSuccess={() => {
+          loadSubAccounts();
+          loadPendingInvites();
+        }}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -234,6 +369,25 @@ const SubAccounts: React.FC = () => {
               onClick={() => selectedAccount && handleDeactivate(selectedAccount)}
             >
               Desativar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={cancelInviteDialogOpen} onOpenChange={setCancelInviteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar convite?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O link de convite será invalidado e o funcionário não poderá mais aceitar este convite.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => selectedInvite && handleCancelInvite(selectedInvite)}
+            >
+              Cancelar Convite
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
