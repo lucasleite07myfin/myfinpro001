@@ -8,9 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import { checkRateLimit } from '@/utils/rateLimiter';
 import { sanitizeEmail, sanitizeText } from '@/utils/xssSanitizer';
+import { useBiometric } from '@/hooks/useBiometric';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -21,7 +22,9 @@ const Auth = () => {
   const [rememberEmail, setRememberEmail] = useState(false);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [isInviteSignup, setIsInviteSignup] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
   const navigate = useNavigate();
+  const { isAvailable: biometricAvailable, authenticateWithBiometric } = useBiometric();
 
   useEffect(() => {
     // Verifica se há token de convite
@@ -133,6 +136,30 @@ const Auth = () => {
     }
   };
 
+  const handleBiometricLogin = async () => {
+    setBiometricLoading(true);
+    try {
+      const userId = await authenticateWithBiometric();
+      
+      if (userId) {
+        // Buscar email do usuário para fazer login
+        const storedEmail = localStorage.getItem('biometric_email');
+        
+        if (storedEmail) {
+          toast.success('Autenticação biométrica bem-sucedida! Redirecionando...');
+          // Redireciona direto pois a sessão já foi validada pela biometria
+          window.location.href = '/';
+        } else {
+          toast.error('Configure novamente a autenticação biométrica');
+        }
+      }
+    } catch (error) {
+      toast.error('Erro na autenticação biométrica');
+    } finally {
+      setBiometricLoading(false);
+    }
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -175,6 +202,9 @@ const Auth = () => {
         } else {
           localStorage.removeItem('remembered_email');
         }
+
+        // Salva email para uso com biometria
+        localStorage.setItem('biometric_email', sanitizedEmail);
 
         toast.success('Redirecionando...');
         window.location.href = '/';
@@ -303,6 +333,28 @@ const Auth = () => {
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Entrar
                   </Button>
+
+                  {biometricAvailable && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleBiometricLogin}
+                      disabled={biometricLoading}
+                    >
+                      {biometricLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Autenticando...
+                        </>
+                      ) : (
+                        <>
+                          <Fingerprint className="mr-2 h-4 w-4" />
+                          Entrar com Face ID / Touch ID
+                        </>
+                      )}
+                    </Button>
+                  )}
 
                   <div className="mt-3 text-center">
                     <Link 
