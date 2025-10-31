@@ -148,7 +148,7 @@ serve(async (req) => {
         });
 
         const { error: emailError } = await resend.emails.send({
-          from: 'MyFin <onboarding@resend.dev>',
+          from: 'MyFin - Convites <admin@myfinpro.app>',
           to: [email],
           subject: `Convite para ${companyName} - Sistema MyFin`,
           html,

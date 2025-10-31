@@ -75,18 +75,17 @@ const InviteSubAccountModal: React.FC<InviteSubAccountModalProps> = ({
       if (error) throw error;
 
       if (data?.email_sent) {
-        toast.success('✅ Convite enviado com sucesso!', {
-          description: 'O funcionário receberá um email com o link de convite.',
+        toast.success(`✅ Convite enviado para ${email}!`, {
+          description: 'O funcionário receberá um email com instruções para aceitar o convite.',
         });
       } else {
-        toast.success('⚠️ Convite criado!', {
-          description: 'Link copiado. Envie manualmente ao funcionário.',
+        toast.warning('⚠️ Convite criado, mas email não foi enviado', {
+          description: 'Verifique a configuração do Resend. Link copiado para a área de transferência.',
         });
-      }
-
-      // Copiar link para clipboard
-      if (data?.invite_url) {
-        await navigator.clipboard.writeText(data.invite_url);
+        // Copiar link para clipboard apenas se o email não foi enviado
+        if (data?.invite_url) {
+          await navigator.clipboard.writeText(data.invite_url);
+        }
       }
 
       setEmail('');
