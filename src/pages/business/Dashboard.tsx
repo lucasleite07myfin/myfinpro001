@@ -62,7 +62,7 @@ const BusinessDashboard: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="mb-2 md:mb-3 flex justify-between items-start">
-        <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white">Olá, {getGreeting()}</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-neutral-800">Olá, {getGreeting()}</h1>
       </div>
 
       <div className="mb-4 md:mb-6">
