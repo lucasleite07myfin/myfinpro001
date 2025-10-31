@@ -76,6 +76,7 @@ export type Database = {
       }
       business_invites: {
         Row: {
+          additional_info: Json | null
           created_at: string | null
           email: string
           expires_at: string
@@ -86,6 +87,7 @@ export type Database = {
           used: boolean | null
         }
         Insert: {
+          additional_info?: Json | null
           created_at?: string | null
           email: string
           expires_at: string
@@ -96,6 +98,7 @@ export type Database = {
           used?: boolean | null
         }
         Update: {
+          additional_info?: Json | null
           created_at?: string | null
           email?: string
           expires_at?: string
@@ -110,6 +113,7 @@ export type Database = {
       business_sub_accounts: {
         Row: {
           access_type: Database["public"]["Enums"]["business_access_type"]
+          admission_date: string | null
           can_create_transactions: boolean | null
           can_delete_transactions: boolean | null
           can_edit_transactions: boolean | null
@@ -121,14 +125,20 @@ export type Database = {
           can_view_suppliers: boolean | null
           can_view_transactions: boolean | null
           created_at: string | null
+          department: string | null
+          employee_code: string | null
           id: string
           is_active: boolean | null
+          notes: string | null
           owner_id: string
+          phone: string | null
+          position: string | null
           sub_user_id: string
           updated_at: string | null
         }
         Insert: {
           access_type?: Database["public"]["Enums"]["business_access_type"]
+          admission_date?: string | null
           can_create_transactions?: boolean | null
           can_delete_transactions?: boolean | null
           can_edit_transactions?: boolean | null
@@ -140,14 +150,20 @@ export type Database = {
           can_view_suppliers?: boolean | null
           can_view_transactions?: boolean | null
           created_at?: string | null
+          department?: string | null
+          employee_code?: string | null
           id?: string
           is_active?: boolean | null
+          notes?: string | null
           owner_id: string
+          phone?: string | null
+          position?: string | null
           sub_user_id: string
           updated_at?: string | null
         }
         Update: {
           access_type?: Database["public"]["Enums"]["business_access_type"]
+          admission_date?: string | null
           can_create_transactions?: boolean | null
           can_delete_transactions?: boolean | null
           can_edit_transactions?: boolean | null
@@ -159,9 +175,14 @@ export type Database = {
           can_view_suppliers?: boolean | null
           can_view_transactions?: boolean | null
           created_at?: string | null
+          department?: string | null
+          employee_code?: string | null
           id?: string
           is_active?: boolean | null
+          notes?: string | null
           owner_id?: string
+          phone?: string | null
+          position?: string | null
           sub_user_id?: string
           updated_at?: string | null
         }
