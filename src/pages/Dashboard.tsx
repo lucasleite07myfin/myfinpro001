@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PiggyBank, CreditCard, ArrowDown, ArrowUp } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,16 +42,20 @@ const Dashboard: React.FC = () => {
     return user?.email?.split('@')[0] || 'Usuário';
   };
 
-  // Filtrar transações para o mês atual
-  const currentMonthTransactions = transactions.filter(t => {
-    const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
-    return transactionMonth === currentMonth;
-  });
+  // Filtrar transações para o mês atual (memoizado)
+  const currentMonthTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
+      return transactionMonth === currentMonth;
+    });
+  }, [transactions, currentMonth]);
 
-  // Obter as 5 transações mais recentes
-  const recentTransactions = [...currentMonthTransactions]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
+  // Obter as 5 transações mais recentes (memoizado)
+  const recentTransactions = useMemo(() => {
+    return [...currentMonthTransactions]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [currentMonthTransactions]);
 
   return (
     <TooltipProvider>

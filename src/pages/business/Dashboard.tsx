@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -43,10 +43,12 @@ const BusinessDashboard: React.FC = () => {
     return user?.email?.split('@')[0] || 'Usuário';
   };
 
-  // Get recent transactions
-  const recentTransactions = [...transactions]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
+  // Get recent transactions (memoizado)
+  const recentTransactions = useMemo(() => {
+    return [...transactions]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [transactions]);
 
   return (
     <div className="space-y-4">

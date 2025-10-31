@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   LineChart, 
@@ -33,7 +33,7 @@ const COLORS = [
   '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
 ];
 
-const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
+const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactions }) => {
   const [chartType, setChartType] = useState<'line' | 'pie'>('line');
 
   // Formatar dados para o gráfico de linha
@@ -43,28 +43,32 @@ const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
     Despesas: item.expenseTotal,
   }));
 
-  // Calcular as despesas por categoria para o gráfico de pizza
-  const expensesByCategory: Record<string, number> = {};
-  
-  // Filtrar apenas as despesas
-  const expenseTransactions = transactions.filter(t => t.type === 'expense');
-  
-  // Somar os valores por categoria
-  expenseTransactions.forEach(transaction => {
-    if (!expensesByCategory[transaction.category]) {
-      expensesByCategory[transaction.category] = 0;
-    }
-    expensesByCategory[transaction.category] += transaction.amount;
-  });
-  
-  // Converter para o formato de dados do gráfico de pizza
-  const pieChartData = Object.entries(expensesByCategory).map(([category, amount]) => ({
-    name: category,
-    value: amount
-  }));
-  
-  // Ordenar do maior para o menor
-  pieChartData.sort((a, b) => b.value - a.value);
+  // Calcular as despesas por categoria para o gráfico de pizza (memoizado)
+  const pieChartData = useMemo(() => {
+    const expensesByCategory: Record<string, number> = {};
+    
+    // Filtrar apenas as despesas
+    const expenseTransactions = transactions.filter(t => t.type === 'expense');
+    
+    // Somar os valores por categoria
+    expenseTransactions.forEach(transaction => {
+      if (!expensesByCategory[transaction.category]) {
+        expensesByCategory[transaction.category] = 0;
+      }
+      expensesByCategory[transaction.category] += transaction.amount;
+    });
+    
+    // Converter para o formato de dados do gráfico de pizza
+    const chartData = Object.entries(expensesByCategory).map(([category, amount]) => ({
+      name: category,
+      value: amount
+    }));
+    
+    // Ordenar do maior para o menor
+    chartData.sort((a, b) => b.value - a.value);
+    
+    return chartData;
+  }, [transactions]);
 
   // Configuração do ChartContainer
   const chartConfig = {
@@ -226,6 +230,8 @@ const FinanceChart: React.FC<FinanceChartProps> = ({ data, transactions }) => {
       </Card>
     </TooltipProvider>
   );
-};
+});
+
+FinanceChart.displayName = 'FinanceChart';
 
 export default FinanceChart;

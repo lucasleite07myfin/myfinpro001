@@ -21,7 +21,7 @@ export const useCryptoPriceUpdater = (
   options: CryptoPriceUpdaterOptions = {}
 ) => {
   const {
-    updateInterval = 30, // 30 segundos por padrão
+    updateInterval = 120, // 120 segundos (2 minutos) por padrão - otimizado para reduzir API calls
     maxRetries = 3,
     enabled = true
   } = options;
