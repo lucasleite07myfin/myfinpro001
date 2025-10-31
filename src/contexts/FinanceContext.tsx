@@ -85,32 +85,38 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   const [currentMonth, setCurrentMonth] = useState(getCurrentMonth());
   const [customCategories, setCustomCategories] = useState<CustomCategories>({ income: [], expense: [] });
   const [loading, setLoading] = useState(true);
+  const [secondaryDataLoaded, setSecondaryDataLoaded] = useState(false);
 
   // Carregar dados do Supabase
   useEffect(() => {
     loadData();
   }, []);
 
+  // Carregar dados secundários após 1 segundo
+  useEffect(() => {
+    if (loading === false && !secondaryDataLoaded) {
+      const timer = setTimeout(() => {
+        loadSecondaryData();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, secondaryDataLoaded]);
+
+  // Carrega dados ESSENCIAIS (apenas o que é necessário para a tela inicial)
   const loadData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Carregar todos os dados em paralelo
+      // Carregar apenas dados essenciais em paralelo
       const [
         transactionsResult,
         recurringResult,
-        goalsResult,
-        assetsResult,
-        liabilitiesResult,
         categoriesResult,
         monthlyResult
       ] = await Promise.all([
         supabase.from('transactions').select('*').eq('user_id', user.id),
         supabase.from('recurring_expenses').select('*').eq('user_id', user.id),
-        supabase.from('goals').select('*').eq('user_id', user.id),
-        supabase.from('assets').select('*').eq('user_id', user.id),
-        supabase.from('liabilities').select('*').eq('user_id', user.id),
         supabase.from('custom_categories').select('*').eq('user_id', user.id),
         supabase.from('monthly_finance_data').select('*').eq('user_id', user.id)
       ]);
@@ -151,6 +157,48 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         }));
         setRecurringExpenses(formattedExpenses);
       }
+
+      if (categoriesResult.data) {
+        const customCats: CustomCategories = { income: [], expense: [] };
+        categoriesResult.data.forEach(cat => {
+          if (cat.type === 'income' || cat.type === 'expense') {
+            customCats[cat.type].push(cat.name);
+          }
+        });
+        setCustomCategories(customCats);
+      }
+
+      if (monthlyResult.data) {
+        const formattedMonthly = monthlyResult.data.map(m => ({
+          month: m.month,
+          incomeTotal: Number(m.income_total),
+          expenseTotal: Number(m.expense_total)
+        }));
+        setMonthlyData(formattedMonthly);
+      }
+
+    } catch (error) {
+      toast.error('Erro ao carregar dados essenciais');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Carrega dados SECUNDÁRIOS (lazy load - apenas quando necessário)
+  const loadSecondaryData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [
+        goalsResult,
+        assetsResult,
+        liabilitiesResult
+      ] = await Promise.all([
+        supabase.from('goals').select('*').eq('user_id', user.id),
+        supabase.from('assets').select('*').eq('user_id', user.id),
+        supabase.from('liabilities').select('*').eq('user_id', user.id)
+      ]);
 
       if (goalsResult.data) {
         const formattedGoals = goalsResult.data.map(g => ({
@@ -195,29 +243,10 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         setLiabilities(formattedLiabilities);
       }
 
-      if (categoriesResult.data) {
-        const customCats: CustomCategories = { income: [], expense: [] };
-        categoriesResult.data.forEach(cat => {
-          if (cat.type === 'income' || cat.type === 'expense') {
-            customCats[cat.type].push(cat.name);
-          }
-        });
-        setCustomCategories(customCats);
-      }
-
-      if (monthlyResult.data) {
-        const formattedMonthly = monthlyResult.data.map(m => ({
-          month: m.month,
-          incomeTotal: Number(m.income_total),
-          expenseTotal: Number(m.expense_total)
-        }));
-        setMonthlyData(formattedMonthly);
-      }
-
+      setSecondaryDataLoaded(true);
     } catch (error) {
-      toast.error('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
+      console.error('Erro ao carregar dados secundários:', error);
+      // Não mostra toast aqui para não atrapalhar a UX
     }
   };
 

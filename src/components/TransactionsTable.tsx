@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { format } from 'date-fns';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Transaction, PAYMENT_METHODS } from '@/types/finance';
 import { formatCurrency } from '@/utils/formatters';
 import { sanitizeText } from '@/utils/xssSanitizer';
@@ -68,6 +69,16 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
     return categoryName;
   };
 
+  // Virtualization setup
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: transactions.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 60,
+    overscan: 5,
+  });
+
   return (
     <div className="rounded-xl border border-neutral-200 overflow-hidden shadow-sm bg-white">
       {/* Fixed Header */}
@@ -86,82 +97,107 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
         </Table>
       </div>
       
-      {/* Scrollable Body */}
-      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '300px' }}>
-        <Table>
-          <TableBody>
-            {transactions.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-12 text-neutral-500">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center">
-                      <Clock className="h-6 w-6 text-neutral-400" />
-                    </div>
-                    <p className="text-sm font-medium">{getEmptyMessage()}</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              transactions.map((transaction, index) => (
-                <TableRow key={transaction.id} className={`hover:bg-neutral-50/50 transition-colors border-b border-neutral-100 ${index % 2 === 0 ? 'bg-white' : 'bg-neutral-25'}`}>
-                  <TableCell className="font-medium text-neutral-900 py-4 px-6">
-                    <div className="text-sm font-medium">
-                      {format(transaction.date, 'dd/MM/yyyy')}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-4 px-6">
-                    <div className="flex flex-col gap-2">
-                      <span className="font-medium text-neutral-900 text-sm">{sanitizeText(transaction.description)}</span>
-                      {renderBadge ? renderBadge(transaction) : defaultRenderBadge(transaction)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-4 px-6">
-                    <span className="text-sm text-neutral-600 bg-neutral-100 px-2 py-1 rounded-md">
-                      {sanitizeText(formatCategoryName(transaction.category))}
-                    </span>
-                  </TableCell>
-                  <TableCell className={`text-right font-semibold py-4 px-6 ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                    <span className="text-sm font-mono">
-                      {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="py-4 px-6">
-                    <span className="text-xs text-neutral-500 bg-neutral-50 px-2 py-1 rounded-md">
-                      {transaction.paymentMethod ? PAYMENT_METHODS[transaction.paymentMethod] : 'N/A'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="py-4 px-6">
-                    <div className="flex justify-center space-x-1">
-                      {onEdit && !transaction.isRecurringPayment && (
-                        <Button
-                          onClick={() => handleEditClick(transaction)}
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                      )}
-                      {onDelete && (
-                        <Button
-                          onClick={() => onDelete(transaction.id)}
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-                          title={transaction.isRecurringPayment ? 
-                            "Excluir esta transação (para cancelar o pagamento, use o card de despesas fixas)" : 
-                            "Excluir esta transação"}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+      {/* Virtualized Scrollable Body */}
+      <div 
+        ref={parentRef}
+        className="overflow-y-auto" 
+        style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '300px' }}
+      >
+        {transactions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-neutral-500">
+            <div className="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center">
+              <Clock className="h-6 w-6 text-neutral-400" />
+            </div>
+            <p className="text-sm font-medium mt-2">{getEmptyMessage()}</p>
+          </div>
+        ) : (
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const transaction = transactions[virtualRow.index];
+              const index = virtualRow.index;
+              
+              return (
+                <div
+                  key={transaction.id}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <Table>
+                    <TableBody>
+                      <TableRow className={`hover:bg-neutral-50/50 transition-colors border-b border-neutral-100 ${index % 2 === 0 ? 'bg-white' : 'bg-neutral-25'}`}>
+                        <TableCell className="font-medium text-neutral-900 py-4 px-6">
+                          <div className="text-sm font-medium">
+                            {format(transaction.date, 'dd/MM/yyyy')}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 px-6">
+                          <div className="flex flex-col gap-2">
+                            <span className="font-medium text-neutral-900 text-sm">{sanitizeText(transaction.description)}</span>
+                            {renderBadge ? renderBadge(transaction) : defaultRenderBadge(transaction)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 px-6">
+                          <span className="text-sm text-neutral-600 bg-neutral-100 px-2 py-1 rounded-md">
+                            {sanitizeText(formatCategoryName(transaction.category))}
+                          </span>
+                        </TableCell>
+                        <TableCell className={`text-right font-semibold py-4 px-6 ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className="text-sm font-mono">
+                            {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-4 px-6">
+                          <span className="text-xs text-neutral-500 bg-neutral-50 px-2 py-1 rounded-md">
+                            {transaction.paymentMethod ? PAYMENT_METHODS[transaction.paymentMethod] : 'N/A'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-4 px-6">
+                          <div className="flex justify-center space-x-1">
+                            {onEdit && !transaction.isRecurringPayment && (
+                              <Button
+                                onClick={() => handleEditClick(transaction)}
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            )}
+                            {onDelete && (
+                              <Button
+                                onClick={() => onDelete(transaction.id)}
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                title={transaction.isRecurringPayment ? 
+                                  "Excluir esta transação (para cancelar o pagamento, use o card de despesas fixas)" : 
+                                  "Excluir esta transação"}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
