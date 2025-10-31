@@ -14,6 +14,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useBiometric } from '@/hooks/useBiometric';
 import { Switch } from '@/components/ui/switch';
+import { Building2 } from 'lucide-react';
+import { useAppMode } from '@/contexts/AppModeContext';
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
@@ -24,6 +26,9 @@ const Profile = () => {
   const [webhookUrl, setWebhookUrl] = useState('');
   const [notificationDays, setNotificationDays] = useState('3');
   const [userId, setUserId] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  
+  const { mode } = useAppMode();
   
   const { 
     isAvailable: biometricAvailable, 
@@ -45,16 +50,17 @@ const Profile = () => {
         setUserEmail(user.email || '');
         setUserName(user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || '');
         
-        // Load webhook configuration from profiles
+        // Load webhook configuration and company name from profiles
         const { data: profile } = await supabase
           .from('profiles')
-          .select('n8n_webhook_url, notification_days_before')
+          .select('n8n_webhook_url, notification_days_before, company_name')
           .eq('id', user.id)
           .single();
         
         if (profile) {
           setWebhookUrl(profile.n8n_webhook_url || '');
           setNotificationDays(String(profile.notification_days_before || 3));
+          setCompanyName(profile.company_name || '');
         }
       }
     } catch (error) {
@@ -82,12 +88,13 @@ const Profile = () => {
 
       if (authError) throw authError;
 
-      // Update webhook configuration
+      // Update webhook configuration and company name
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           n8n_webhook_url: webhookUrl || null,
-          notification_days_before: parseInt(notificationDays)
+          notification_days_before: parseInt(notificationDays),
+          company_name: companyName || null
         })
         .eq('id', user.id);
 
@@ -405,6 +412,37 @@ const Profile = () => {
               )}
             </CardContent>
           </Card>
+
+          {mode === 'business' && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Configurações Empresariais
+                </CardTitle>
+                <CardDescription>
+                  Configure as informações da sua empresa no modo business.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="company-name">Nome da Empresa</Label>
+                  <TooltipHelper content="Nome que aparecerá no dashboard empresarial">
+                    <Input 
+                      id="company-name" 
+                      placeholder="Ex: Zenith Saúde" 
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      disabled={saving}
+                    />
+                  </TooltipHelper>
+                  <p className="text-xs text-muted-foreground">
+                    Este nome será exibido na saudação do dashboard empresarial
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </TooltipProvider>
     </MainLayout>

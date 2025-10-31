@@ -143,6 +143,17 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Buscar nome da empresa do perfil
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.company_name) {
+        setCompanyName(profile.company_name);
+      }
+
       // Carregar todos os dados em paralelo
       const [
         transactionsResult,

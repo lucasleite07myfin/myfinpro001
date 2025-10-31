@@ -712,6 +712,7 @@ export type Database = {
           biometric_credential_id: string | null
           biometric_enabled: boolean | null
           biometric_public_key: string | null
+          company_name: string | null
           created_at: string | null
           full_name: string | null
           id: string
@@ -724,6 +725,7 @@ export type Database = {
           biometric_credential_id?: string | null
           biometric_enabled?: boolean | null
           biometric_public_key?: string | null
+          company_name?: string | null
           created_at?: string | null
           full_name?: string | null
           id: string
@@ -736,6 +738,7 @@ export type Database = {
           biometric_credential_id?: string | null
           biometric_enabled?: boolean | null
           biometric_public_key?: string | null
+          company_name?: string | null
           created_at?: string | null
           full_name?: string | null
           id?: string

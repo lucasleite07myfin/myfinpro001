@@ -27,19 +27,28 @@ const BusinessDashboard: React.FC = () => {
     editRecurringExpense,
     deleteRecurringExpense,
     getMonthlyExpenseValue,
-    setMonthlyExpenseValue
+    setMonthlyExpenseValue,
+    companyName
   } = useBusiness();
   const { income, expense, balance } = getMonthTotals();
 
   // Calculate profit margin
   const profitMargin = income > 0 ? ((income - expense) / income) * 100 : 0;
 
-  // Obter primeiro nome do usuário
-  const getFirstName = () => {
+  // Obter nome da empresa ou primeiro nome do usuário como fallback
+  const getGreeting = () => {
+    // Prioridade 1: Nome da empresa do contexto
+    if (companyName && companyName !== 'Minha Empresa') {
+      return companyName;
+    }
+    
+    // Prioridade 2: Primeiro nome do usuário
     const fullName = user?.user_metadata?.full_name;
     if (fullName) {
       return fullName.split(' ')[0];
     }
+    
+    // Fallback: Email
     return user?.email?.split('@')[0] || 'Usuário';
   };
 
@@ -53,7 +62,7 @@ const BusinessDashboard: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="mb-2 md:mb-3 flex justify-between items-start">
-        <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white">Olá, {getFirstName()}</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white">Olá, {getGreeting()}</h1>
       </div>
 
       <div className="mb-4 md:mb-6">
