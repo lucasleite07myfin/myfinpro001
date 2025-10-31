@@ -709,9 +709,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          biometric_credential_id: string | null
-          biometric_enabled: boolean | null
-          biometric_public_key: string | null
           company_name: string | null
           created_at: string | null
           full_name: string | null
@@ -722,9 +719,6 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          biometric_credential_id?: string | null
-          biometric_enabled?: boolean | null
-          biometric_public_key?: string | null
           company_name?: string | null
           created_at?: string | null
           full_name?: string | null
@@ -735,9 +729,6 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          biometric_credential_id?: string | null
-          biometric_enabled?: boolean | null
-          biometric_public_key?: string | null
           company_name?: string | null
           created_at?: string | null
           full_name?: string | null

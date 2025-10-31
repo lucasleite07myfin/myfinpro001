@@ -6,14 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { User, Mail, KeyRound, Loader2, Bell, TestTube, Fingerprint, Smartphone } from 'lucide-react';
+import { User, Mail, KeyRound, Loader2, Bell, TestTube } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useBiometric } from '@/hooks/useBiometric';
-import { Switch } from '@/components/ui/switch';
 import { Building2 } from 'lucide-react';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusiness } from '@/contexts/BusinessContext';
@@ -31,14 +29,6 @@ const Profile = () => {
   
   const { mode } = useAppMode();
   const { setCompanyName: updateBusinessContext } = useBusiness();
-  
-  const { 
-    isAvailable: biometricAvailable, 
-    isRegistered: biometricRegistered,
-    registerBiometric,
-    removeBiometric,
-    checkAvailability 
-  } = useBiometric();
 
   useEffect(() => {
     loadUserData();
@@ -172,17 +162,6 @@ const Profile = () => {
       toast.success("Verifique seu email para redefinir sua senha.");
     } catch (error) {
       toast.error('Erro ao enviar email de redefinição');
-    }
-  };
-
-  const handleToggleBiometric = async (enabled: boolean) => {
-    if (enabled) {
-      const success = await registerBiometric(userId, userEmail);
-      if (success) {
-        await checkAvailability();
-      }
-    } else {
-      removeBiometric();
     }
   };
 
@@ -395,50 +374,6 @@ const Profile = () => {
                   <Button variant="outline" onClick={handlePasswordReset}>Redefinir</Button>
                 </TooltipHelper>
               </div>
-
-              {biometricAvailable && (
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-2 rounded-full bg-primary/10">
-                      <Fingerprint className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Autenticação Biométrica</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {biometricRegistered 
-                          ? 'Face ID / Touch ID ativado' 
-                          : 'Login rápido com Face ID / Touch ID'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={biometricRegistered}
-                      onCheckedChange={handleToggleBiometric}
-                    />
-                    <TooltipHelper content="Ativar/desativar login com biometria">
-                      <div className="cursor-help">
-                        <Fingerprint className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </TooltipHelper>
-                  </div>
-                </div>
-              )}
-
-              {biometricAvailable && (
-                <div className="rounded-lg bg-muted p-4 text-sm">
-                  <div className="flex items-start gap-2">
-                    <Smartphone className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium mb-1">📱 Login Biométrico</p>
-                      <p className="text-muted-foreground">
-                        Ative para fazer login usando Face ID (iPhone/iPad) ou Touch ID/Digital (Android). 
-                        Mais rápido e seguro que digitar senha.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 

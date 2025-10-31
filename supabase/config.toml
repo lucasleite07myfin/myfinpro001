@@ -1,11 +1,5 @@
 project_id = "uxomcgymjlcfgboilndn"
 
-[functions.register-biometric]
-verify_jwt = true
-
-[functions.biometric-auth]
-verify_jwt = false
-
 [functions.create-checkout-session]
 verify_jwt = true
 
