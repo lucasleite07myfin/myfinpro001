@@ -111,7 +111,7 @@ const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactio
           </ToggleGroup>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="h-80 w-full overflow-hidden">
+          <div className="h-80 md:h-96 w-full overflow-hidden">
             {chartType === 'line' ? (
               <ChartContainer config={chartConfig} className="h-full w-full">
                 <LineChart

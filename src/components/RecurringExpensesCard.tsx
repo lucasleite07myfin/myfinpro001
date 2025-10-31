@@ -156,7 +156,7 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
             Despesas Recorrentes
           </CardTitle>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-32 md:w-48">
+            <SelectTrigger className="w-32 sm:w-40 md:w-48">
               <SelectValue placeholder="Mês" />
             </SelectTrigger>
             <SelectContent>

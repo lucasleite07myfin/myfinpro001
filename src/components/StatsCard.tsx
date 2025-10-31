@@ -58,7 +58,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
       role="article" 
       aria-label={`${title}: ${formattedValue}`}
     >
-      <CardContent className="p-3 md:p-4">
+      <CardContent className="p-3 sm:p-3.5 md:p-4">
         <div className="flex items-center justify-between mb-1">
           <h3 className="text-xs sm:text-sm text-neutral-600">{title}</h3>
           {icon && <div className="h-5 w-5 md:h-6 md:w-6 text-neutral-500">{icon}</div>}

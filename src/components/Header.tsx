@@ -90,7 +90,7 @@ const Header: React.FC = () => {
             </TooltipHelper>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center justify-center">
+            <div className="hidden lg:flex items-center justify-center">
               <Tabs value={currentPath} onValueChange={handleTabChange}>
                 <TabsList className="bg-[#e0e0e0]">
                   {navLinks}

@@ -425,34 +425,34 @@ const Expenses: React.FC = () => {
                 Gerencie e acompanhe suas despesas mensais
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
               <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
               <TooltipHelper content="Ver ranking das 10 maiores despesas do mês">
                 <Button 
                   onClick={() => setTop10ModalOpen(true)}
                   variant="outline"
-                  className="flex items-center justify-center gap-2 border-neutral-300 hover:bg-neutral-100 w-full sm:w-auto whitespace-nowrap"
+                  className="flex items-center justify-center gap-2 border-neutral-300 hover:bg-neutral-100 w-full md:w-auto whitespace-nowrap"
                 >
                   <BarChart3 className="h-4 w-4" />
-                  <span className="hidden md:inline">Top 10 Despesas</span>
-                  <span className="md:hidden">Top 10</span>
+                  <span className="hidden lg:inline">Top 10 Despesas</span>
+                  <span className="lg:hidden">Top 10</span>
                 </Button>
               </TooltipHelper>
               <TooltipHelper content="Adicionar nova despesa">
                 <Button 
                   onClick={() => setIsAddModalOpen(true)}
-                  className="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 w-full sm:w-auto whitespace-nowrap"
+                  className="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 w-full md:w-auto whitespace-nowrap"
                 >
                   <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Nova Despesa</span>
-                  <span className="sm:hidden">Nova</span>
+                  <span className="hidden md:inline">Nova Despesa</span>
+                  <span className="md:hidden">Nova</span>
                 </Button>
               </TooltipHelper>
             </div>
           </div>
 
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">

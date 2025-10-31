@@ -80,8 +80,8 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   });
 
   return (
-    <div className="overflow-x-auto -mx-4 px-4">
-      <div className="rounded-xl border border-neutral-200 overflow-hidden shadow-sm bg-white min-w-[600px]">
+    <div className="overflow-x-auto -mx-4 px-4 md:overflow-visible">
+      <div className="rounded-xl border border-neutral-200 overflow-hidden shadow-sm bg-white min-w-[320px] md:min-w-0">
       {/* Fixed Header */}
       <div className="border-b border-neutral-200">
         <Table>
