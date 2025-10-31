@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.check-spending-limit]
 verify_jwt = false
+
+[functions.invite-sub-account]
+verify_jwt = true
+
+[functions.process-invite]
+verify_jwt = false

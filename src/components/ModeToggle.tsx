@@ -6,15 +6,22 @@ import { useAppMode } from '@/contexts/AppModeContext';
 import { useNavigate } from 'react-router-dom';
 import TooltipHelper from './TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
+import { useSubAccount } from '@/contexts/SubAccountContext';
 
 const ModeToggle: React.FC = () => {
   const { mode, toggleMode } = useAppMode();
+  const { isSubAccount } = useSubAccount();
   const navigate = useNavigate();
   
   const handleToggle = () => {
     toggleMode();
     navigate('/');
   };
+
+  // Não mostrar botão para sub-accounts
+  if (isSubAccount) {
+    return null;
+  }
 
   return (
     <TooltipHelper content={tooltipContent.header.appMode}>

@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { FinanceProvider } from "./contexts/FinanceContext";
 import { BusinessProvider } from "./contexts/BusinessContext";
-import { AppModeProvider } from "./contexts/AppModeContext";
+import { AppModeProviderWithSubAccount } from "./contexts/AppModeContext";
 import { useAuth } from "@/hooks/useAuth";
 
 import Index from "./pages/Index";
@@ -28,6 +28,7 @@ import CashFlow from "./pages/business/CashFlow";
 import Investments from "./pages/business/Investments";
 import DRE from "./pages/business/DRE";
 import Suppliers from "./pages/business/Suppliers";
+import SubAccounts from "./pages/business/SubAccounts";
 
 // Admin pages
 import AdminCoupons from "./pages/admin/AdminCoupons";
@@ -88,6 +89,7 @@ const ModeRoutes = () => {
             <Route path="/investimentos" element={<ProtectedRoute><Investments /></ProtectedRoute>} />
             <Route path="/dre" element={<ProtectedRoute><DRE /></ProtectedRoute>} />
             <Route path="/fornecedores" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
+            <Route path="/business/sub-accounts" element={<ProtectedRoute><SubAccounts /></ProtectedRoute>} />
           </Routes>
         </BusinessProvider>
       </FinanceProvider>
@@ -99,7 +101,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster position="bottom-center" closeButton />
-      <AppModeProvider>
+      <AppModeProviderWithSubAccount>
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
@@ -108,7 +110,7 @@ const App = () => (
             <Route path="/*" element={<ModeRoutes />} />
           </Routes>
         </BrowserRouter>
-      </AppModeProvider>
+      </AppModeProviderWithSubAccount>
     </TooltipProvider>
   </QueryClientProvider>
 );

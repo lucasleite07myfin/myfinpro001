@@ -74,6 +74,99 @@ export type Database = {
         }
         Relationships: []
       }
+      business_invites: {
+        Row: {
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          owner_id: string
+          permissions: Json
+          token: string
+          used: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          owner_id: string
+          permissions: Json
+          token: string
+          used?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          owner_id?: string
+          permissions?: Json
+          token?: string
+          used?: boolean | null
+        }
+        Relationships: []
+      }
+      business_sub_accounts: {
+        Row: {
+          access_type: Database["public"]["Enums"]["business_access_type"]
+          can_create_transactions: boolean | null
+          can_delete_transactions: boolean | null
+          can_edit_transactions: boolean | null
+          can_manage_investments: boolean | null
+          can_manage_suppliers: boolean | null
+          can_view_cashflow: boolean | null
+          can_view_dre: boolean | null
+          can_view_investments: boolean | null
+          can_view_suppliers: boolean | null
+          can_view_transactions: boolean | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          owner_id: string
+          sub_user_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_type?: Database["public"]["Enums"]["business_access_type"]
+          can_create_transactions?: boolean | null
+          can_delete_transactions?: boolean | null
+          can_edit_transactions?: boolean | null
+          can_manage_investments?: boolean | null
+          can_manage_suppliers?: boolean | null
+          can_view_cashflow?: boolean | null
+          can_view_dre?: boolean | null
+          can_view_investments?: boolean | null
+          can_view_suppliers?: boolean | null
+          can_view_transactions?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          owner_id: string
+          sub_user_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_type?: Database["public"]["Enums"]["business_access_type"]
+          can_create_transactions?: boolean | null
+          can_delete_transactions?: boolean | null
+          can_edit_transactions?: boolean | null
+          can_manage_investments?: boolean | null
+          can_manage_suppliers?: boolean | null
+          can_view_cashflow?: boolean | null
+          can_view_dre?: boolean | null
+          can_view_investments?: boolean | null
+          can_view_suppliers?: boolean | null
+          can_view_transactions?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          owner_id?: string
+          sub_user_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       custom_categories: {
         Row: {
           created_at: string | null
@@ -932,6 +1025,11 @@ export type Database = {
     }
     Functions: {
       cleanup_rate_limit_attempts: { Args: never; Returns: undefined }
+      get_business_owner_id: { Args: { _sub_user_id: string }; Returns: string }
+      has_business_permission: {
+        Args: { _permission: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -939,9 +1037,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_business_sub_account: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"
+      business_access_type: "owner" | "employee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1070,6 +1170,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      business_access_type: ["owner", "employee"],
     },
   },
 } as const

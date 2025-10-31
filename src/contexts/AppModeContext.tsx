@@ -1,5 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useSubAccount } from './SubAccountContext';
+import { toast } from 'sonner';
 
 export type AppMode = 'personal' | 'business';
 
@@ -48,4 +50,42 @@ export const AppModeProvider: React.FC<AppModeProviderProps> = ({ children }) =>
       {children}
     </AppModeContext.Provider>
   );
+};
+
+// Wrapper que força modo business para sub-accounts
+export const AppModeProviderWithSubAccount: React.FC<AppModeProviderProps> = ({ children }) => {
+  return (
+    <AppModeProvider>
+      <SubAccountModeEnforcer>{children}</SubAccountModeEnforcer>
+    </AppModeProvider>
+  );
+};
+
+const SubAccountModeEnforcer: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { isSubAccount, loading } = useSubAccount();
+  const { mode, setMode } = useAppMode();
+
+  useEffect(() => {
+    if (!loading && isSubAccount && mode !== 'business') {
+      setMode('business');
+      localStorage.setItem('myfinpro_mode', 'business');
+      toast.info('Funcionários só podem acessar o modo empresarial');
+    }
+  }, [isSubAccount, loading, mode, setMode]);
+
+  // Bloquear tentativas de mudança de modo
+  useEffect(() => {
+    if (!loading && isSubAccount) {
+      const originalSetMode = setMode;
+      const blockedSetMode = (newMode: AppMode) => {
+        if (newMode === 'personal') {
+          toast.error('Funcionários não podem acessar o modo pessoal');
+          return;
+        }
+        originalSetMode(newMode);
+      };
+    }
+  }, [isSubAccount, loading]);
+
+  return <>{children}</>;
 };

@@ -19,9 +19,21 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberEmail, setRememberEmail] = useState(false);
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [isInviteSignup, setIsInviteSignup] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Verifica se há token de convite
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('invite_token');
+    
+    if (token) {
+      setInviteToken(token);
+      setIsInviteSignup(true);
+      return; // Não redireciona se for convite
+    }
+
     // Verifica se já está logado
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -78,11 +90,25 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user && data.session) {
-        if (rememberEmail) {
-          localStorage.setItem('remembered_email', sanitizedEmail);
+        // Se for convite, processar vinculação
+        if (isInviteSignup && inviteToken) {
+          const { error: inviteError } = await supabase.functions.invoke('process-invite', {
+            body: { token: inviteToken, user_id: data.user.id }
+          });
+
+          if (inviteError) {
+            console.error('Erro ao processar convite:', inviteError);
+            toast.error('Conta criada, mas houve erro ao vincular ao proprietário.');
+          } else {
+            toast.success('Conta criada e vinculada com sucesso!');
+          }
+        } else {
+          if (rememberEmail) {
+            localStorage.setItem('remembered_email', sanitizedEmail);
+          }
+          toast.success('Conta criada! Redirecionando...');
         }
         
-        toast.success('Conta criada! Redirecionando...');
         window.location.href = '/';
       } else if (data.user) {
         toast.success('Conta criada com sucesso! Agora você pode fazer login.');
@@ -176,24 +202,31 @@ const Auth = () => {
 
         <Card className="bg-card border-border shadow-lg">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center text-card-foreground">Acesse sua conta</CardTitle>
+            <CardTitle className="text-2xl text-center text-card-foreground">
+              {isInviteSignup ? 'Criar Conta de Funcionário' : 'Acesse sua conta'}
+            </CardTitle>
             <CardDescription className="text-center text-muted-foreground">
-              Faça login ou crie uma nova conta
+              {isInviteSignup 
+                ? 'Complete seu cadastro para acessar o sistema empresarial' 
+                : 'Faça login ou crie uma nova conta'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-muted">
-                <TabsTrigger value="login" className="data-[state=active]:bg-orange data-[state=active]:text-white">
-                  Entrar
-                </TabsTrigger>
-                <TabsTrigger value="signup" className="data-[state=active]:bg-orange data-[state=active]:text-white">
-                  Cadastrar
-                </TabsTrigger>
-              </TabsList>
+            <Tabs defaultValue={isInviteSignup ? "signup" : "login"} className="w-full">
+              {!isInviteSignup && (
+                <TabsList className="grid w-full grid-cols-2 bg-muted">
+                  <TabsTrigger value="login" className="data-[state=active]:bg-orange data-[state=active]:text-white">
+                    Entrar
+                  </TabsTrigger>
+                  <TabsTrigger value="signup" className="data-[state=active]:bg-orange data-[state=active]:text-white">
+                    Cadastrar
+                  </TabsTrigger>
+                </TabsList>
+              )}
 
-              <TabsContent value="login" className="mt-6">
-                <form onSubmit={handleSignIn} className="space-y-4">
+              {!isInviteSignup && (
+                <TabsContent value="login" className="mt-6">
+                  <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email-login" className="text-sm font-medium text-foreground">
                       Email
@@ -281,6 +314,7 @@ const Auth = () => {
                   </div>
                 </form>
               </TabsContent>
+              )}
 
               <TabsContent value="signup" className="mt-6">
                 <form onSubmit={handleSignUp} className="space-y-4">
