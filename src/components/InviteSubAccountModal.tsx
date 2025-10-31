@@ -28,6 +28,12 @@ const InviteSubAccountModal: React.FC<InviteSubAccountModalProps> = ({
 }) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [department, setDepartment] = useState('');
+  const [position, setPosition] = useState('');
+  const [employeeCode, setEmployeeCode] = useState('');
+  const [phone, setPhone] = useState('');
+  const [admissionDate, setAdmissionDate] = useState('');
+  const [notes, setNotes] = useState('');
   const [permissions, setPermissions] = useState({
     can_view_transactions: true,
     can_create_transactions: true,
@@ -52,24 +58,56 @@ const InviteSubAccountModal: React.FC<InviteSubAccountModalProps> = ({
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('invite-sub-account', {
-        body: { email, permissions },
+        body: { 
+          email, 
+          permissions,
+          additional_info: {
+            department: department || undefined,
+            position: position || undefined,
+            employee_code: employeeCode || undefined,
+            phone: phone || undefined,
+            admission_date: admissionDate || undefined,
+            notes: notes || undefined,
+          },
+        },
       });
 
       if (error) throw error;
 
-      toast.success('Convite enviado com sucesso!', {
-        description: 'O funcionário receberá um link para criar sua conta.',
-      });
+      if (data?.email_sent) {
+        toast.success('✅ Convite enviado com sucesso!', {
+          description: 'O funcionário receberá um email com o link de convite.',
+        });
+      } else {
+        toast.success('⚠️ Convite criado!', {
+          description: 'Link copiado. Envie manualmente ao funcionário.',
+        });
+      }
 
       // Copiar link para clipboard
       if (data?.invite_url) {
         await navigator.clipboard.writeText(data.invite_url);
-        toast.info('Link de convite copiado!', {
-          description: 'Você pode compartilhar este link diretamente.',
-        });
       }
 
       setEmail('');
+      setDepartment('');
+      setPosition('');
+      setEmployeeCode('');
+      setPhone('');
+      setAdmissionDate('');
+      setNotes('');
+      setPermissions({
+        can_view_transactions: true,
+        can_create_transactions: true,
+        can_edit_transactions: false,
+        can_delete_transactions: false,
+        can_view_investments: true,
+        can_manage_investments: false,
+        can_view_suppliers: true,
+        can_manage_suppliers: false,
+        can_view_dre: true,
+        can_view_cashflow: true,
+      });
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
@@ -94,16 +132,79 @@ const InviteSubAccountModal: React.FC<InviteSubAccountModalProps> = ({
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email do Funcionário</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="funcionario@empresa.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <Label htmlFor="email">Email do Funcionário *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="funcionario@empresa.com"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="position">Cargo</Label>
+                <Input
+                  id="position"
+                  value={position}
+                  onChange={(e) => setPosition(e.target.value)}
+                  placeholder="Ex: Analista Financeiro"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="department">Setor</Label>
+                <Input
+                  id="department"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  placeholder="Ex: Financeiro"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="employeeCode">Código</Label>
+                <Input
+                  id="employeeCode"
+                  value={employeeCode}
+                  onChange={(e) => setEmployeeCode(e.target.value)}
+                  placeholder="Ex: FIN-001"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="phone">Telefone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+
+              <div className="col-span-2">
+                <Label htmlFor="admissionDate">Data de Admissão</Label>
+                <Input
+                  id="admissionDate"
+                  type="date"
+                  value={admissionDate}
+                  onChange={(e) => setAdmissionDate(e.target.value)}
+                />
+              </div>
+
+              <div className="col-span-2">
+                <Label htmlFor="notes">Observações</Label>
+                <Input
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Informações adicionais"
+                />
+              </div>
             </div>
 
             <div className="space-y-4">

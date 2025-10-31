@@ -79,13 +79,14 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in register-biometric function:', error);
+    const errorMessage = (error as Error).message || 'Internal server error';
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error' 
+        error: errorMessage
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: error.message === 'Unauthorized' ? 401 : 500,
+        status: errorMessage === 'Unauthorized' ? 401 : 500,
       }
     );
   }

@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Resend } from "https://esm.sh/resend@2.0.0";
+import { generateEmployeeInviteEmail } from "./_templates/employee-invite.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,6 +21,14 @@ interface InviteRequest {
     can_manage_suppliers?: boolean;
     can_view_dre?: boolean;
     can_view_cashflow?: boolean;
+  };
+  additional_info?: {
+    department?: string;
+    position?: string;
+    employee_code?: string;
+    phone?: string;
+    admission_date?: string;
+    notes?: string;
   };
 }
 
@@ -51,7 +61,7 @@ serve(async (req) => {
       );
     }
 
-    const { email, permissions }: InviteRequest = await req.json();
+    const { email, permissions, additional_info }: InviteRequest = await req.json();
 
     // Validar email
     if (!email || !email.includes('@')) {
@@ -92,6 +102,7 @@ serve(async (req) => {
         email: email.toLowerCase(),
         token,
         permissions,
+        additional_info,
         expires_at: expiresAt.toISOString(),
       });
 
@@ -103,20 +114,68 @@ serve(async (req) => {
       );
     }
 
+    // Buscar nome da empresa do owner
+    const { data: ownerProfile } = await supabaseClient
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    const companyName = ownerProfile?.full_name || 'Empresa';
+
     // Gerar link de convite
-    const inviteUrl = `${Deno.env.get('SITE_URL') || 'http://localhost:5173'}/auth?invite_token=${token}`;
+    const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:5173';
+    const inviteUrl = `${siteUrl}/auth?invite_token=${token}`;
 
     console.log(`Convite criado para ${email} pelo usuário ${user.id}`);
     console.log(`Link de convite: ${inviteUrl}`);
 
-    // TODO: Enviar email com o link (integrar com serviço de email)
+    // Enviar email via Resend
+    let emailSent = false;
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    
+    if (resendApiKey) {
+      try {
+        const resend = new Resend(resendApiKey);
+        
+        const html = generateEmployeeInviteEmail({
+          employeeEmail: email,
+          companyName,
+          inviteUrl,
+          expiresAt: expiresAt.toISOString(),
+          department: additional_info?.department,
+          position: additional_info?.position,
+        });
+
+        const { error: emailError } = await resend.emails.send({
+          from: 'MyFin <onboarding@resend.dev>',
+          to: [email],
+          subject: `Convite para ${companyName} - Sistema MyFin`,
+          html,
+        });
+
+        if (emailError) {
+          console.error('Erro ao enviar email:', emailError);
+        } else {
+          emailSent = true;
+          console.log(`Email enviado com sucesso para ${email}`);
+        }
+      } catch (emailError) {
+        console.error('Erro ao processar email:', emailError);
+      }
+    } else {
+      console.warn('RESEND_API_KEY não configurada. Email não enviado.');
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         invite_url: inviteUrl,
         expires_at: expiresAt.toISOString(),
-        message: 'Convite criado com sucesso',
+        email_sent: emailSent,
+        message: emailSent 
+          ? 'Convite criado e email enviado com sucesso' 
+          : 'Convite criado. Por favor, envie o link manualmente.',
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

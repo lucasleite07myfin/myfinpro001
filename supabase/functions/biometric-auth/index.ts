@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
     console.error('Error in biometric-auth function:', error);
     return new Response(
       JSON.stringify({
-        error: error.message || 'Authentication failed'
+        error: (error as Error).message || 'Authentication failed'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

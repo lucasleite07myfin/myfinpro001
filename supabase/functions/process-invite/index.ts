@@ -62,6 +62,9 @@ serve(async (req) => {
       );
     }
 
+    // Extrair informações adicionais do convite
+    const additionalInfo = invite.additional_info || {};
+
     // Criar sub-account
     const { error: subAccountError } = await supabaseAdmin
       .from('business_sub_accounts')
@@ -70,6 +73,12 @@ serve(async (req) => {
         sub_user_id: user_id,
         access_type: 'employee',
         is_active: true,
+        department: additionalInfo.department,
+        position: additionalInfo.position,
+        employee_code: additionalInfo.employee_code,
+        phone: additionalInfo.phone,
+        admission_date: additionalInfo.admission_date,
+        notes: additionalInfo.notes,
         ...invite.permissions,
       });
 
