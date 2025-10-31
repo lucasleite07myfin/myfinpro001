@@ -238,8 +238,91 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue={isInviteSignup ? "signup" : "login"} className="w-full">
-              {!isInviteSignup && (
+            {isInviteSignup ? (
+              // Formulário de cadastro direto para convites
+              <form onSubmit={handleSignUp} className="space-y-4 mt-6">
+                <div className="space-y-2">
+                  <Label htmlFor="fullname" className="text-sm font-medium text-foreground">
+                    Nome completo
+                  </Label>
+                  <Input
+                    id="fullname"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    disabled={loading}
+                    className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email-signup" className="text-sm font-medium text-foreground">
+                    Email
+                  </Label>
+                  <Input
+                    id="email-signup"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password-signup" className="text-sm font-medium text-foreground">
+                    Senha
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="password-signup"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={loading}
+                      className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 pr-10"
+                      required
+                      minLength={8}
+                      pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
+                      title="A senha deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={loading}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    A senha deve ter pelo menos 8 caracteres com letras maiúsculas, minúsculas, números e caracteres especiais
+                  </p>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
+                  disabled={loading}
+                >
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Criar conta
+                </Button>
+              </form>
+            ) : (
+              // Estrutura com Tabs para login/cadastro normal
+              <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-muted">
                   <TabsTrigger value="login" className="data-[state=active]:bg-orange data-[state=active]:text-white">
                     Entrar
@@ -248,9 +331,7 @@ const Auth = () => {
                     Cadastrar
                   </TabsTrigger>
                 </TabsList>
-              )}
 
-              {!isInviteSignup && (
                 <TabsContent value="login" className="mt-6">
                   <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
@@ -362,7 +443,6 @@ const Auth = () => {
                   </div>
                 </form>
               </TabsContent>
-              )}
 
               <TabsContent value="signup" className="mt-6">
                 <form onSubmit={handleSignUp} className="space-y-4">
@@ -447,6 +527,7 @@ const Auth = () => {
                 </form>
               </TabsContent>
             </Tabs>
+            )}
 
             <div className="mt-6 text-center">
               <Link 

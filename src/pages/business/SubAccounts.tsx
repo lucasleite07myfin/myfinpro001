@@ -93,7 +93,7 @@ const SubAccounts: React.FC = () => {
 
       if (error) throw error;
 
-      setPendingInvites(data || []);
+      setPendingInvites((data || []) as PendingInvite[]);
     } catch (error) {
       console.error('Erro ao carregar convites:', error);
       toast.error('Erro ao carregar convites pendentes');
