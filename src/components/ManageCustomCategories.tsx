@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Trash2, FolderEdit } from 'lucide-react';
+import { Pencil, Trash2, FolderEdit, Lightbulb, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -133,8 +133,9 @@ export const ManageCustomCategories: React.FC<ManageCustomCategoriesProps> = ({
                 autoFocus
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              💡 A categoria será salva como "Outros: {newName}"
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Lightbulb className="h-3 w-3" />
+              A categoria será salva como "Outros: {newName}"
             </p>
           </div>
           <DialogFooter>
@@ -157,7 +158,10 @@ export const ManageCustomCategories: React.FC<ManageCustomCategoriesProps> = ({
               Tem certeza que deseja excluir a categoria{' '}
               <strong className="text-foreground">"{categoryToDelete}"</strong>?
               <br /><br />
-              ⚠️ Esta ação não pode ser desfeita. A categoria só pode ser excluída se não estiver em uso.
+              <span className="flex items-center gap-2 text-amber-600">
+                <AlertTriangle className="h-4 w-4" />
+                Esta ação não pode ser desfeita. A categoria só pode ser excluída se não estiver em uso.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -4,7 +4,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Crown, Sparkles } from 'lucide-react';
+import { Crown, Sparkles, Check } from 'lucide-react';
 
 interface SubscriptionGuardProps {
   children: ReactNode;
@@ -42,12 +42,27 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
               <Sparkles className="h-4 w-4 text-yellow-500" />
               Desbloqueie todos os recursos:
             </p>
-            <ul className="space-y-1 text-sm text-muted-foreground ml-6">
-              <li>✅ Acesso total a todas as funcionalidades</li>
-              <li>✅ Sincronização em tempo real</li>
-              <li>✅ Suporte prioritário</li>
-              <li>✅ Atualizações automáticas</li>
-              <li>✅ 3 dias de teste grátis</li>
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" />
+                Acesso total a todas as funcionalidades
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" />
+                Sincronização em tempo real
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" />
+                Suporte prioritário
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" />
+                Atualizações automáticas
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" />
+                3 dias de teste grátis
+              </li>
             </ul>
           </div>
         </CardContent>

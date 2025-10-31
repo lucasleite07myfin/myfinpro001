@@ -75,11 +75,11 @@ const InviteSubAccountModal: React.FC<InviteSubAccountModalProps> = ({
       if (error) throw error;
 
       if (data?.email_sent) {
-        toast.success(`✅ Convite enviado para ${email}!`, {
+        toast.success(`Convite enviado para ${email}!`, {
           description: 'O funcionário receberá um email com instruções para aceitar o convite.',
         });
       } else {
-        toast.warning('⚠️ Convite criado, mas email não foi enviado', {
+        toast.warning('Convite criado, mas email não foi enviado', {
           description: 'Verifique a configuração do Resend. Link copiado para a área de transferência.',
         });
         // Copiar link para clipboard apenas se o email não foi enviado

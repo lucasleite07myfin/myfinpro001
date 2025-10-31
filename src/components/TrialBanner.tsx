@@ -15,7 +15,7 @@ export const TrialBanner = () => {
       <Sparkles className="h-4 w-4 text-yellow-600" />
       <AlertDescription className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <span className="text-yellow-800">
-          🎉 Período de teste: {trialDaysLeft} {trialDaysLeft === 1 ? 'dia restante' : 'dias restantes'}
+          Período de teste: {trialDaysLeft} {trialDaysLeft === 1 ? 'dia restante' : 'dias restantes'}
         </span>
         <Button
           variant="outline"

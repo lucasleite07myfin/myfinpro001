@@ -42,7 +42,8 @@ import {
   CreditCard,
   Trash2,
   ChevronUp,
-  Repeat
+  Repeat,
+  AlertTriangle
 } from 'lucide-react';
 import { EXPENSE_CATEGORIES, FinanceContextType, BusinessContextType, Transaction } from '@/types/finance';
 import {
@@ -652,9 +653,10 @@ const Expenses: React.FC = () => {
                                               <strong className="text-foreground"> "{expense.description}"</strong>?
                                             </p>
                                             <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
-                                              <p className="text-sm text-destructive font-medium">
-                                                ⚠️ ATENÇÃO: Esta ação não pode ser desfeita!
-                                              </p>
+                                               <p className="text-sm text-destructive font-medium flex items-center gap-2">
+                                                <AlertTriangle className="h-4 w-4" />
+                                                ATENÇÃO: Esta ação não pode ser desfeita!
+                                               </p>
                                               <ul className="text-xs text-muted-foreground mt-2 space-y-1 list-disc list-inside">
                                                 <li>A despesa não aparecerá mais nos próximos meses</li>
                                                 <li>Transações já criadas não serão excluídas</li>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { UserPlus, Trash2, Eye, Edit, Check, X, Mail, Clock } from 'lucide-react';
+import { UserPlus, Trash2, Eye, Edit, Check, X, Mail, Clock, DoorOpen } from 'lucide-react';
 import InviteSubAccountModal from '@/components/InviteSubAccountModal';
 import { useSubAccount } from '@/contexts/SubAccountContext';
 import {
@@ -248,7 +248,8 @@ const SubAccounts: React.FC = () => {
                   variant="destructive" 
                   onClick={() => setSelfRemoveDialogOpen(true)}
                 >
-                  🚪 Remover Meu Acesso
+                  <DoorOpen className="mr-2 h-4 w-4" />
+                  Remover Meu Acesso
                 </Button>
                 <p className="text-sm text-muted-foreground mt-2">
                   Ao remover seu acesso, você será desvinculado deste sistema empresarial.
