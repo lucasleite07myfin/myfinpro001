@@ -22,6 +22,7 @@ const Auth = () => {
   const [rememberEmail, setRememberEmail] = useState(false);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [isInviteSignup, setIsInviteSignup] = useState(false);
+  const [existingUserWithInvite, setExistingUserWithInvite] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
   const navigate = useNavigate();
   const { isAvailable: biometricAvailable, authenticateWithBiometric } = useBiometric();
@@ -95,13 +96,15 @@ const Auth = () => {
       if (data.user && data.session) {
         // Se for convite, processar vinculação
         if (isInviteSignup && inviteToken) {
-          const { error: inviteError } = await supabase.functions.invoke('process-invite', {
+          const { data: inviteResponse, error: inviteError } = await supabase.functions.invoke('process-invite', {
             body: { token: inviteToken, user_id: data.user.id }
           });
 
           if (inviteError) {
             console.error('Erro ao processar convite:', inviteError);
             toast.error('Conta criada, mas houve erro ao vincular ao proprietário.');
+          } else if (inviteResponse?.already_linked) {
+            toast.success('Você já está vinculado a este proprietário!');
           } else {
             toast.success('Conta criada e vinculada com sucesso!');
           }
@@ -120,6 +123,14 @@ const Auth = () => {
         setFullName('');
       }
     } catch (error: any) {
+      // Se for cadastro via convite E o erro é "user already registered"
+      if (isInviteSignup && error.message?.includes('already registered')) {
+        setExistingUserWithInvite(true);
+        toast.info('Você já tem conta! Faça login para aceitar o convite.');
+        setLoading(false);
+        return;
+      }
+      
       let message = 'Erro ao criar conta. Tente novamente.';
       
       if (error.message?.includes('already registered')) {
@@ -218,6 +229,75 @@ const Auth = () => {
     }
   };
 
+  const handleLoginAndProcessInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const sanitizedEmail = sanitizeEmail(email);
+    
+    if (!sanitizedEmail || !password) {
+      toast.error('Por favor, informe email e senha válidos.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Rate limiting check
+      const rateLimitResult = await checkRateLimit(sanitizedEmail, 'login');
+      
+      if (!rateLimitResult.allowed) {
+        toast.error(rateLimitResult.message || 'Muitas tentativas de login.');
+        setLoading(false);
+        return;
+      }
+
+      // Limpa sessão anterior
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Ignora erros
+      }
+
+      // Faz login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: sanitizedEmail,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user && inviteToken) {
+        // Processar convite após login bem-sucedido
+        const { data: processData, error: inviteError } = await supabase.functions.invoke('process-invite', {
+          body: { token: inviteToken, user_id: data.user.id }
+        });
+
+        if (inviteError) {
+          console.error('Erro ao processar convite:', inviteError);
+          toast.error('Login realizado, mas houve erro ao vincular ao convite.');
+        } else if (processData?.already_linked) {
+          toast.success('Você já está vinculado a este proprietário!');
+        } else {
+          toast.success('Login realizado e vinculado ao convite com sucesso!');
+        }
+        
+        // Redirecionar após processar
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1500);
+      }
+    } catch (error: any) {
+      let message = 'Erro ao fazer login. Verifique suas credenciais.';
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        message = 'Email ou senha incorretos.';
+      }
+      
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
@@ -239,87 +319,168 @@ const Auth = () => {
           </CardHeader>
           <CardContent>
             {isInviteSignup ? (
-              // Formulário de cadastro direto para convites
-              <form onSubmit={handleSignUp} className="space-y-4 mt-6">
-                <div className="space-y-2">
-                  <Label htmlFor="fullname" className="text-sm font-medium text-foreground">
-                    Nome completo
-                  </Label>
-                  <Input
-                    id="fullname"
-                    type="text"
-                    placeholder="Seu nome completo"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    disabled={loading}
-                    className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email-signup" className="text-sm font-medium text-foreground">
-                    Email
-                  </Label>
-                  <Input
-                    id="email-signup"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                    className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password-signup" className="text-sm font-medium text-foreground">
-                    Senha
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password-signup"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      disabled={loading}
-                      className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 pr-10"
-                      required
-                      minLength={8}
-                      pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
-                      title="A senha deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={loading}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </Button>
+              existingUserWithInvite ? (
+                // Formulário de LOGIN quando usuário já existe
+                <form onSubmit={handleLoginAndProcessInvite} className="space-y-4 mt-6">
+                  <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      ✅ Você já tem uma conta! Faça login para aceitar o convite.
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    A senha deve ter pelo menos 8 caracteres com letras maiúsculas, minúsculas, números e caracteres especiais
-                  </p>
-                </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email-invite-login" className="text-sm font-medium text-foreground">
+                      Email
+                    </Label>
+                    <Input
+                      id="email-invite-login"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={loading}
+                      className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      required
+                    />
+                  </div>
 
-                <Button
-                  type="submit"
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
-                  disabled={loading}
-                >
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Criar conta
-                </Button>
-              </form>
+                  <div className="space-y-2">
+                    <Label htmlFor="password-invite-login" className="text-sm font-medium text-foreground">
+                      Senha
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="password-invite-login"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                        className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 pr-10"
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={loading}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
+                    disabled={loading}
+                  >
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Entrar e Aceitar Convite
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => {
+                      setExistingUserWithInvite(false);
+                      setEmail('');
+                      setPassword('');
+                    }}
+                  >
+                    Voltar para criar nova conta
+                  </Button>
+                </form>
+              ) : (
+                // Formulário de CADASTRO quando usuário não existe
+                <form onSubmit={handleSignUp} className="space-y-4 mt-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullname" className="text-sm font-medium text-foreground">
+                      Nome completo
+                    </Label>
+                    <Input
+                      id="fullname"
+                      type="text"
+                      placeholder="Seu nome completo"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      disabled={loading}
+                      className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email-signup" className="text-sm font-medium text-foreground">
+                      Email
+                    </Label>
+                    <Input
+                      id="email-signup"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={loading}
+                      className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password-signup" className="text-sm font-medium text-foreground">
+                      Senha
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="password-signup"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                        className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 pr-10"
+                        required
+                        minLength={8}
+                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
+                        title="A senha deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={loading}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      A senha deve ter pelo menos 8 caracteres com letras maiúsculas, minúsculas, números e caracteres especiais
+                    </p>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
+                    disabled={loading}
+                  >
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Criar conta
+                  </Button>
+                </form>
+              )
             ) : (
               // Estrutura com Tabs para login/cadastro normal
               <Tabs defaultValue="login" className="w-full">

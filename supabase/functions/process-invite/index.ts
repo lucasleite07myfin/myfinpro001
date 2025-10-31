@@ -53,12 +53,24 @@ serve(async (req) => {
       .select('*')
       .eq('owner_id', invite.owner_id)
       .eq('sub_user_id', user_id)
-      .single();
+      .maybeSingle();
 
     if (existingSubAccount) {
+      console.log(`Sub-account já existe: ${user_id} já vinculado ao owner ${invite.owner_id}`);
+      
+      // Marcar convite como usado mesmo assim
+      await supabaseAdmin
+        .from('business_invites')
+        .update({ used: true })
+        .eq('id', invite.id);
+      
       return new Response(
-        JSON.stringify({ error: 'Usuário já está vinculado a este proprietário' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: true,
+          message: 'Você já está vinculado a este proprietário',
+          already_linked: true
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -83,9 +95,14 @@ serve(async (req) => {
       });
 
     if (subAccountError) {
-      console.error('Erro ao criar sub-account:', subAccountError);
+      console.error('❌ Erro ao criar sub-account:', {
+        error: subAccountError,
+        user_id,
+        owner_id: invite.owner_id,
+        permissions: invite.permissions
+      });
       return new Response(
-        JSON.stringify({ error: 'Erro ao vincular funcionário' }),
+        JSON.stringify({ error: 'Erro ao vincular funcionário', details: subAccountError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -96,7 +113,7 @@ serve(async (req) => {
       .update({ used: true })
       .eq('id', invite.id);
 
-    console.log(`Sub-account criado: ${user_id} vinculado ao owner ${invite.owner_id}`);
+    console.log(`✅ Sub-account criado com sucesso: user_id=${user_id} vinculado ao owner_id=${invite.owner_id}`);
 
     return new Response(
       JSON.stringify({
