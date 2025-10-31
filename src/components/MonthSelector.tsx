@@ -45,36 +45,41 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ value, onChange }) => {
   const isCurrentMonth = value === `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
 
   return (
-    <div className="flex items-center space-x-2">
-      <Button 
-        variant="outline" 
-        size="icon"
-        onClick={goToPreviousMonth}
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-      
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-36">
-          <SelectValue placeholder="Selecione o mês" />
-        </SelectTrigger>
-        <SelectContent>
-          {months.map((month) => (
-            <SelectItem key={month} value={month}>
-              {formatMonth(month)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      
-      <Button 
-        variant="outline" 
-        size="icon"
-        onClick={goToNextMonth}
-        disabled={isCurrentMonth}
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
+    <div className="flex flex-col items-center gap-1">
+      <label className="text-xs text-muted-foreground">
+        Mês: {formatMonth(value)}
+      </label>
+      <div className="flex items-center space-x-2">
+        <Button 
+          variant="outline" 
+          size="icon"
+          onClick={goToPreviousMonth}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger className="w-36">
+            <SelectValue placeholder="Selecione o mês" />
+          </SelectTrigger>
+          <SelectContent>
+            {months.map((month) => (
+              <SelectItem key={month} value={month}>
+                {formatMonth(month)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <Button 
+          variant="outline" 
+          size="icon"
+          onClick={goToNextMonth}
+          disabled={isCurrentMonth}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };
