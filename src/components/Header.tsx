@@ -89,8 +89,8 @@ const Header: React.FC = () => {
               </div>
             </TooltipHelper>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center justify-center">
+        {/* Desktop Navigation */}
+        <div className="hidden xl:flex items-center justify-center">
               <Tabs value={currentPath} onValueChange={handleTabChange}>
                 <TabsList className="bg-[#e0e0e0]">
                   {navLinks}
@@ -156,7 +156,7 @@ const Header: React.FC = () => {
               
               <ModeToggle />
               
-              <div className="md:hidden">
+              <div className="xl:hidden">
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -177,12 +177,12 @@ const Header: React.FC = () => {
         <>
           {/* Backdrop */}
           <div 
-            className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[45]"
+            className="xl:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[45]"
             onClick={() => setMenuOpen(false)}
           />
           {/* Menu Content */}
           <div 
-            className="md:hidden fixed top-20 left-0 right-0 bg-background border-b border-border shadow-xl z-50"
+            className="xl:hidden fixed top-20 left-0 right-0 bg-background border-b border-border shadow-xl z-50"
           >
             <div className="p-4">
               <Tabs value={currentPath} onValueChange={handleTabChange} className="w-full">
