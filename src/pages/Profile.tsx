@@ -375,12 +375,17 @@ const Profile = () => {
                       </p>
                     </div>
                   </div>
-                  <TooltipHelper content="Ativar/desativar login com biometria">
+                  <div className="flex items-center gap-2">
                     <Switch
                       checked={biometricRegistered}
                       onCheckedChange={handleToggleBiometric}
                     />
-                  </TooltipHelper>
+                    <TooltipHelper content="Ativar/desativar login com biometria">
+                      <div className="cursor-help">
+                        <Fingerprint className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </TooltipHelper>
+                  </div>
                 </div>
               )}
 

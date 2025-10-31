@@ -51,18 +51,27 @@ Deno.serve(async (req) => {
     console.log('Registering biometric for user:', user_id);
 
     // Update profile with biometric credentials
-    const { error: updateError } = await supabaseClient
+    const { data: updateData, error: updateError } = await supabaseClient
       .from('profiles')
       .update({
         biometric_credential_id: credential_id,
         biometric_public_key: public_key,
         biometric_enabled: true,
       })
-      .eq('id', user_id);
+      .eq('id', user_id)
+      .select();
 
     if (updateError) {
       console.error('Error updating profile:', updateError);
+      console.error('Update error details:', JSON.stringify(updateError, null, 2));
+      console.error('User ID:', user_id);
+      console.error('Credential ID length:', credential_id?.length);
       throw updateError;
+    }
+
+    console.log('Update successful, rows affected:', updateData?.length || 0);
+    if (!updateData || updateData.length === 0) {
+      console.warn('No rows were updated! User may not exist in profiles table.');
     }
 
     console.log('Biometric registered successfully');
