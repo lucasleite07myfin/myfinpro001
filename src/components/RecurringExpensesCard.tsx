@@ -11,6 +11,8 @@ import { CheckCircle2, AlertCircle, Calendar, Pencil, Trash2 } from 'lucide-reac
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useBusinessPermissions } from '@/hooks/useBusinessPermissions';
+import { useAppMode } from '@/contexts/AppModeContext';
 
 interface RecurringExpensesCardProps {
   expenses: RecurringExpense[];
@@ -33,6 +35,13 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
   getMonthlyExpenseValue,
   setMonthlyExpenseValue
 }) => {
+  const { mode } = useAppMode();
+  const { canEdit, canDelete } = useBusinessPermissions();
+  
+  // Verificar permissões apenas em modo business
+  const canEditExpenses = mode === 'personal' || canEdit('transactions');
+  const canDeleteExpenses = mode === 'personal' || canDelete('transactions');
+
   const [editingExpense, setEditingExpense] = useState<{ id: string; month: string } | null>(null);
   const [editAmount, setEditAmount] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);

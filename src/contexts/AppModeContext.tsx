@@ -65,6 +65,7 @@ const SubAccountModeEnforcer: React.FC<{ children: ReactNode }> = ({ children })
   const { isSubAccount, loading } = useSubAccount();
   const { mode, setMode } = useAppMode();
 
+  // Força modo business para sub-accounts
   useEffect(() => {
     if (!loading && isSubAccount && mode !== 'business') {
       setMode('business');
@@ -72,20 +73,6 @@ const SubAccountModeEnforcer: React.FC<{ children: ReactNode }> = ({ children })
       toast.info('Funcionários só podem acessar o modo empresarial');
     }
   }, [isSubAccount, loading, mode, setMode]);
-
-  // Bloquear tentativas de mudança de modo
-  useEffect(() => {
-    if (!loading && isSubAccount) {
-      const originalSetMode = setMode;
-      const blockedSetMode = (newMode: AppMode) => {
-        if (newMode === 'personal') {
-          toast.error('Funcionários não podem acessar o modo pessoal');
-          return;
-        }
-        originalSetMode(newMode);
-      };
-    }
-  }, [isSubAccount, loading]);
 
   return <>{children}</>;
 };

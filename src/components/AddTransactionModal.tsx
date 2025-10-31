@@ -11,6 +11,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
+import { useBusinessPermissions } from '@/hooks/useBusinessPermissions';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, PAYMENT_METHODS, PaymentMethod, TransactionType, Goal, FinanceContextType, BusinessContextType, Transaction } from '@/types/finance';
 import { formatCurrency, formatNumberToCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
@@ -42,7 +43,13 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   defaultTransactionType
 }) => {
   const { mode: appMode } = useAppMode();
+  const { canCreate, canEdit } = useBusinessPermissions();
   const financeContext = appMode === 'personal' ? useFinance() : useBusiness();
+  
+  // Verificar permissões
+  const hasCreatePermission = appMode === 'personal' || canCreate('transactions');
+  const hasEditPermission = appMode === 'personal' || canEdit('transactions');
+  
   const {
     addTransaction,
     addRecurringExpense,
@@ -147,6 +154,16 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   };
 
   const handleSubmitTransaction = () => {
+    // Verificar permissão
+    if (mode === 'edit' && !hasEditPermission) {
+      toast.error('Você não tem permissão para editar transações');
+      return;
+    }
+    if (mode === 'add' && !hasCreatePermission) {
+      toast.error('Você não tem permissão para criar transações');
+      return;
+    }
+
     if (!description || !category || !amount || !date) {
       toast.error('Preencha todos os campos obrigatórios');
       return;

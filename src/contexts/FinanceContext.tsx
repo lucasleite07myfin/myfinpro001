@@ -92,14 +92,13 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     loadData();
   }, []);
 
-  // Carregar dados secundários após 1 segundo
+  // Limpar timer no cleanup
   useEffect(() => {
-    if (loading === false && !secondaryDataLoaded) {
-      const timer = setTimeout(() => {
-        loadSecondaryData();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
+    return () => {
+      if (loading === false && !secondaryDataLoaded) {
+        // Timer já foi limpo automaticamente pelo return do setTimeout
+      }
+    };
   }, [loading, secondaryDataLoaded]);
 
   // Carrega dados ESSENCIAIS (apenas o que é necessário para a tela inicial)

@@ -4,6 +4,8 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Transaction, PAYMENT_METHODS } from '@/types/finance';
 import { formatCurrency } from '@/utils/formatters';
 import { sanitizeText } from '@/utils/xssSanitizer';
+import { useBusinessPermissions } from '@/hooks/useBusinessPermissions';
+import { useAppMode } from '@/contexts/AppModeContext';
 import {
   Table,
   TableBody,
@@ -31,8 +33,15 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   type = 'all',
   renderBadge 
 }) => {
+  const { mode } = useAppMode();
+  const { canEdit, canDelete } = useBusinessPermissions();
+  
+  // Verificar permissões apenas em modo business
+  const canEditTransactions = mode === 'personal' || canEdit('transactions');
+  const canDeleteTransactions = mode === 'personal' || canDelete('transactions');
+
   const handleEditClick = (transaction: Transaction) => {
-    if (onEdit) {
+    if (onEdit && canEditTransactions) {
       onEdit(transaction);
     }
   };
@@ -174,7 +183,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                         </TableCell>
                         <TableCell className="py-4 px-6">
                           <div className="flex justify-center space-x-1">
-                            {onEdit && !transaction.isRecurringPayment && (
+                            {onEdit && !transaction.isRecurringPayment && canEditTransactions && (
                               <Button
                                 onClick={() => handleEditClick(transaction)}
                                 variant="ghost"
@@ -185,7 +194,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                                 <Edit className="h-3 w-3" />
                               </Button>
                             )}
-                            {onDelete && (
+                            {onDelete && canDeleteTransactions && (
                               <Button
                                 onClick={() => onDelete(transaction.id)}
                                 variant="ghost"
@@ -197,6 +206,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                                 title={transaction.isRecurringPayment ? 
                                   "Excluir esta transação (para cancelar o pagamento, use o card de despesas fixas)" : 
                                   "Excluir esta transação"}
+                                disabled={!canDeleteTransactions}
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>

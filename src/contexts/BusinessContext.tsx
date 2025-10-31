@@ -328,8 +328,21 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       };
 
       setTransactions(prev => [...prev, newTransaction]);
+      
+      // Atualizar monthlyData localmente ao invés de reload completo
+      const monthStr = `${newTransaction.date.getFullYear()}-${String(newTransaction.date.getMonth() + 1).padStart(2, '0')}`;
+      setMonthlyData(prev => prev.map(m => {
+        if (m.month === monthStr) {
+          return {
+            ...m,
+            incomeTotal: newTransaction.type === 'income' ? m.incomeTotal + newTransaction.amount : m.incomeTotal,
+            expenseTotal: newTransaction.type === 'expense' ? m.expenseTotal + newTransaction.amount : m.expenseTotal
+          };
+        }
+        return m;
+      }));
+      
       toast.success('Transação adicionada com sucesso!');
-      await loadData();
     } catch (error) {
       console.error('Erro ao adicionar transação:', error);
       toast.error('Erro ao adicionar transação');
@@ -359,7 +372,14 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
       if (error) throw error;
 
-      await loadData();
+      setTransactions(prev => prev.map(t => t.id === transaction.id ? transaction : t));
+      
+      // Recalcular monthlyData localmente
+      const newMonthlyData = generateMonthlyDataFromTransactions(
+        transactions.map(t => t.id === transaction.id ? transaction : t)
+      );
+      setMonthlyData(newMonthlyData);
+      
       toast.success('Transação atualizada com sucesso!');
     } catch (error) {
       console.error('Erro ao atualizar transação:', error);
@@ -376,7 +396,14 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
       if (error) throw error;
 
-      await loadData();
+      setTransactions(prev => prev.filter(t => t.id !== id));
+      
+      // Recalcular monthlyData localmente
+      const newMonthlyData = generateMonthlyDataFromTransactions(
+        transactions.filter(t => t.id !== id)
+      );
+      setMonthlyData(newMonthlyData);
+      
       toast.success('Transação excluída com sucesso!');
     } catch (error) {
       console.error('Erro ao excluir transação:', error);
