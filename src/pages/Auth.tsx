@@ -139,22 +139,18 @@ const Auth = () => {
   const handleBiometricLogin = async () => {
     setBiometricLoading(true);
     try {
-      const userId = await authenticateWithBiometric();
+      const result = await authenticateWithBiometric();
       
-      if (userId) {
-        // Buscar email do usuário para fazer login
-        const storedEmail = localStorage.getItem('biometric_email');
-        
-        if (storedEmail) {
-          toast.success('Autenticação biométrica bem-sucedida! Redirecionando...');
-          // Redireciona direto pois a sessão já foi validada pela biometria
+      if (result?.success) {
+        toast.success('Login biométrico bem-sucedido!');
+        // Aguardar um pouco para garantir que a sessão foi estabelecida
+        setTimeout(() => {
           window.location.href = '/';
-        } else {
-          toast.error('Configure novamente a autenticação biométrica');
-        }
+        }, 500);
       }
     } catch (error) {
-      toast.error('Erro na autenticação biométrica');
+      console.error('Erro no login biométrico:', error);
+      toast.error('Erro ao fazer login com biometria');
     } finally {
       setBiometricLoading(false);
     }

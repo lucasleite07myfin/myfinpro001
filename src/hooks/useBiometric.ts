@@ -74,9 +74,37 @@ export const useBiometric = () => {
       }) as PublicKeyCredential;
 
       if (credential) {
-        // Armazena ID da credencial
-        localStorage.setItem('biometric_credential_id', credential.id);
+        // Converter credential ID para base64
+        const credentialIdBase64 = btoa(
+          String.fromCharCode(...new Uint8Array(credential.rawId))
+        );
+
+        // Converter public key para base64
+        const response = credential.response as AuthenticatorAttestationResponse;
+        const publicKeyBase64 = btoa(
+          String.fromCharCode(...new Uint8Array(response.getPublicKey()!))
+        );
+
+        console.log('Registering biometric credential with backend...');
+
+        // Enviar para backend via Edge Function
+        const { error: registerError } = await supabase.functions.invoke('register-biometric', {
+          body: {
+            user_id: userId,
+            credential_id: credentialIdBase64,
+            public_key: publicKeyBase64,
+          },
+        });
+
+        if (registerError) {
+          console.error('Error registering biometric:', registerError);
+          throw new Error('Falha ao registrar credencial no servidor');
+        }
+
+        // Armazena localmente apenas após sucesso no backend
+        localStorage.setItem('biometric_credential_id', credentialIdBase64);
         localStorage.setItem('biometric_user_id', userId);
+        localStorage.setItem('biometric_email', email);
         setIsRegistered(true);
         
         toast.success('Autenticação biométrica ativada com sucesso!');
@@ -99,12 +127,14 @@ export const useBiometric = () => {
   const authenticateWithBiometric = async () => {
     try {
       const credentialId = localStorage.getItem('biometric_credential_id');
-      const userId = localStorage.getItem('biometric_user_id');
+      const email = localStorage.getItem('biometric_email');
 
-      if (!credentialId || !userId) {
+      if (!credentialId || !email) {
         toast.error('Biometria não configurada. Configure nas suas configurações.');
         return null;
       }
+
+      console.log('Starting biometric authentication...');
 
       // Prepara desafio para autenticação
       const challenge = new Uint8Array(32);
@@ -125,19 +155,53 @@ export const useBiometric = () => {
         publicKey: publicKeyCredentialRequestOptions,
       }) as PublicKeyCredential;
 
-      if (assertion) {
-        // Retorna o ID do usuário para fazer login
-        return userId;
+      if (!assertion) {
+        return null;
       }
 
-      return null;
+      console.log('Biometric validation successful, calling backend...');
+
+      // Chamar Edge Function para validar e obter sessão
+      const { data, error } = await supabase.functions.invoke('biometric-auth', {
+        body: {
+          credential_id: credentialId,
+          email: email,
+        },
+      });
+
+      if (error) {
+        console.error('Backend authentication error:', error);
+        throw new Error(error.message || 'Falha na autenticação no servidor');
+      }
+
+      if (!data?.access_token) {
+        throw new Error('Token de sessão não recebido');
+      }
+
+      console.log('Session token received, authenticating...');
+
+      // Usar o magic link token para autenticar
+      const { error: signInError } = await supabase.auth.verifyOtp({
+        email: email,
+        token: data.access_token,
+        type: 'magiclink',
+      });
+
+      if (signInError) {
+        console.error('Sign in error:', signInError);
+        throw new Error('Falha ao criar sessão');
+      }
+
+      console.log('Authentication successful!');
+      return { success: true };
+
     } catch (error: any) {
       console.error('Erro ao autenticar com biometria:', error);
       
       if (error.name === 'NotAllowedError') {
         toast.error('Autenticação biométrica cancelada');
       } else {
-        toast.error('Erro na autenticação biométrica');
+        toast.error(error.message || 'Erro na autenticação biométrica');
       }
       return null;
     }
@@ -146,6 +210,7 @@ export const useBiometric = () => {
   const removeBiometric = () => {
     localStorage.removeItem('biometric_credential_id');
     localStorage.removeItem('biometric_user_id');
+    localStorage.removeItem('biometric_email');
     setIsRegistered(false);
     toast.success('Autenticação biométrica desativada');
   };
