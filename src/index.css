@@ -222,6 +222,33 @@
   z-index: 0;
 }
 
+/* Linhas decorativas imitando gráfico ascendente */
+.auth-page-bg::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 80px,
+      rgba(203, 213, 225, 0.3) 80px,
+      rgba(203, 213, 225, 0.3) 82px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 40px,
+      rgba(203, 213, 225, 0.15) 40px,
+      rgba(203, 213, 225, 0.15) 41px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* Garantir que o conteúdo fique acima do background */
 .auth-page-bg > * {
   position: relative;
