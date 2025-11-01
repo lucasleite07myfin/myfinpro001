@@ -273,14 +273,14 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center auth-page-bg p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground">MyFin</h1>
           <p className="text-muted-foreground mt-2">Sistema de Gestão Financeira</p>
         </div>
 
-        <Card className="bg-card border-border shadow-lg">
+        <Card className="auth-card-glass border-border shadow-lg">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl text-center text-card-foreground">
               {isInviteSignup ? 'Criar Conta de Funcionário' : 'Acesse sua conta'}
