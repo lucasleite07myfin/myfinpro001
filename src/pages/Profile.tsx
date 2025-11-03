@@ -254,7 +254,7 @@ const Profile = () => {
                     <TooltipHelper content="Nome que aparecerá no dashboard empresarial">
                       <Input 
                         id="company-name" 
-                        placeholder="Ex: Zenith Saúde" 
+                        placeholder="Digite aqui o nome da sua empresa" 
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
                         disabled={saving}
