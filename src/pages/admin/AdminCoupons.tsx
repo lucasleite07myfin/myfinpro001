@@ -28,7 +28,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Shield, Plus, Tag, Calendar, Users, Loader2, Check, X, ArrowLeft } from 'lucide-react';
+import { Plus, Tag, Calendar, Users, Loader2, Check, X } from 'lucide-react';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -168,24 +169,13 @@ const AdminCoupons = () => {
   console.log('✅ Rendering admin coupons page for user:', user.id);
 
   return (
-    <div className="container mx-auto max-w-6xl p-4 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate('/')}
-            className="mr-2"
-            title="Voltar ao Dashboard"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Shield className="h-8 w-8 text-primary" />
+    <AdminLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Gestão de Cupons</h1>
             <p className="text-muted-foreground">Crie e gerencie cupons de desconto</p>
           </div>
-        </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -274,9 +264,9 @@ const AdminCoupons = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+        </div>
 
-      <Separator />
+        <Separator />
 
       {/* Estatísticas */}
       <div className="grid md:grid-cols-4 gap-4">
@@ -418,8 +408,9 @@ const AdminCoupons = () => {
             </div>
           )}
         </CardContent>
-      </Card>
-    </div>
+        </Card>
+      </div>
+    </AdminLayout>
   );
 };
 

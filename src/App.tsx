@@ -31,6 +31,9 @@ import Suppliers from "./pages/business/Suppliers";
 import SubAccounts from "./pages/business/SubAccounts";
 
 // Admin pages
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminUsers from "./pages/admin/Users";
+import AdminSubscriptions from "./pages/admin/Subscriptions";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 
 // Create a query client with mobile-friendly config
@@ -82,6 +85,9 @@ const ModeRoutes = () => {
             <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
             
             {/* Admin routes */}
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
+            <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
             <Route path="/admin/coupons" element={<ProtectedRoute><AdminCoupons /></ProtectedRoute>} />
             
             {/* Business routes */}
