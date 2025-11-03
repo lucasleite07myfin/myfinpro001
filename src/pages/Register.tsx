@@ -13,6 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CustomTabTriggers } from '@/components/ui/custom-tabs';
 import { toast } from 'sonner';
 import { validateCPF, validateCNPJ } from '@/utils/documentValidator';
+import { supabase } from '@/integrations/supabase/client';
+import { sanitizeEmail, sanitizeText } from '@/utils/xssSanitizer';
+import { checkRateLimit } from '@/utils/rateLimiter';
 
 // Schema for registration validation
 const registerSchema = z.object({
@@ -78,7 +81,7 @@ const Register = () => {
     toast.success('Uma senha forte foi gerada e preenchida para você.');
   };
 
-  const onSubmit = (values: RegisterFormValues) => {
+  const onSubmit = async (values: RegisterFormValues) => {
     // Validate document based on user type
     let isValid = true;
     
@@ -90,18 +93,76 @@ const Register = () => {
       isValid = false;
     }
 
-    if (isValid) {
-      setIsSubmitting(true);
-      
-      // Simulate API call
-      setTimeout(() => {
-        
-        toast.success('Sua conta foi criada com sucesso!');
-        
+    if (!isValid) return;
+
+    // Sanitize inputs for security
+    const sanitizedEmail = sanitizeEmail(values.email);
+    const sanitizedName = sanitizeText(values.name);
+
+    if (!sanitizedEmail || !sanitizedName) {
+      toast.error('Por favor, verifique os dados informados.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Check rate limiting
+      const rateLimitResult = await checkRateLimit(sanitizedEmail, 'signup');
+      if (!rateLimitResult.allowed) {
+        toast.error(rateLimitResult.message || 'Muitas tentativas. Aguarde alguns instantes.');
         setIsSubmitting(false);
-        // Navigate to login page after successful registration
-        navigate('/login');
-      }, 1500);
+        return;
+      }
+
+      // Create account in Supabase
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { data, error } = await supabase.auth.signUp({
+        email: sanitizedEmail,
+        password: values.password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: sanitizedName,
+            document: values.document,
+            user_type: userType
+          }
+        }
+      });
+
+      // Handle errors
+      if (error) {
+        if (error.message?.includes('already registered')) {
+          toast.error('Este email já está registrado. Tente fazer login.');
+        } else if (error.message?.includes('weak password')) {
+          toast.error('A senha deve ter pelo menos 8 caracteres fortes.');
+        } else if (error.message?.includes('invalid email')) {
+          toast.error('Email inválido. Verifique o formato.');
+        } else {
+          toast.error('Erro ao criar conta. Tente novamente.');
+        }
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Success handling
+      if (data.user && data.session) {
+        // User created and auto-confirmed (development)
+        toast.success('Conta criada! Redirecionando...');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
+      } else if (data.user) {
+        // User created but needs to confirm email
+        toast.success('Conta criada! Verifique seu email para confirmar.');
+        form.reset();
+        setIsSubmitting(false);
+      }
+    } catch (error: any) {
+      console.error('Erro no cadastro:', error);
+      toast.error('Erro inesperado ao criar conta.');
+      setIsSubmitting(false);
     }
   };
 
