@@ -84,7 +84,6 @@ const Header: React.FC = () => {
                     {mode === 'personal' ? 'MyFin Pro' : 'MyFin Pro Empresas'}
                   </h1>
                   {mode === 'business' && business?.companyName && <p className="text-muted-foreground text-xs md:text-sm">{business.companyName}</p>}
-                  {mode === 'personal' && <p className="text-muted-foreground text-sm">Seu controle financeiro completo</p>}
                 </div>
               </div>
             </TooltipHelper>
