@@ -42,3 +42,12 @@ verify_jwt = true
 
 [functions.process-invite]
 verify_jwt = false
+
+[functions.admin-dashboard-stats]
+verify_jwt = true
+
+[functions.admin-list-users]
+verify_jwt = true
+
+[functions.admin-list-subscriptions]
+verify_jwt = true

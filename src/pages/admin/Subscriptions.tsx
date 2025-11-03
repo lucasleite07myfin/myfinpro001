@@ -33,35 +33,27 @@ const AdminSubscriptions = () => {
 
   const fetchSubscriptions = async () => {
     try {
-      // Buscar assinaturas
-      const { data: subs, error: subsError } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (subsError) throw subsError;
-
-      // Buscar emails dos usuários
-      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+      console.log('Fetching subscriptions via Edge Function...');
       
-      if (authError) throw authError;
+      const { data, error } = await supabase.functions.invoke('admin-list-subscriptions');
+      
+      if (error) {
+        console.error('Error fetching subscriptions:', error);
+        throw error;
+      }
 
-      const authUsers = authData?.users || [];
+      console.log('Subscriptions received:', data);
 
-      // Combinar dados
-      const subsWithEmail: SubscriptionWithEmail[] = (subs || []).map(sub => {
-        const authUser = authUsers.find(u => u.id === sub.user_id);
-        return {
-          ...sub,
-          status: sub.status as SubscriptionStatus,
-          plan_type: sub.plan_type as PlanType | null,
-          user_email: authUser?.email || 'Email não encontrado'
-        } as SubscriptionWithEmail;
-      });
+      const subsWithEmail: SubscriptionWithEmail[] = data.subscriptions.map((sub: any) => ({
+        ...sub,
+        status: sub.status as SubscriptionStatus,
+        plan_type: sub.plan_type as PlanType | null,
+      }));
 
       setSubscriptions(subsWithEmail);
+      console.log('Subscriptions loaded:', subsWithEmail.length);
     } catch (error) {
-      console.error('Error fetching subscriptions:', error);
+      console.error('Error loading subscriptions:', error);
       toast.error('Erro ao carregar assinaturas');
     } finally {
       setLoading(false);

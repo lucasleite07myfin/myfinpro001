@@ -48,45 +48,30 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      // Buscar usuários do auth
-      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+      console.log('Fetching users via Edge Function...');
       
-      if (authError) throw authError;
+      const { data, error } = await supabase.functions.invoke('admin-list-users');
+      
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw error;
+      }
 
-      const authUsers = authData?.users || [];
+      console.log('Users received:', data);
 
-      // Buscar assinaturas
-      const { data: subscriptions, error: subsError } = await supabase
-        .from('subscriptions')
-        .select('user_id, status');
-
-      if (subsError) throw subsError;
-
-      // Buscar roles
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-
-      if (rolesError) throw rolesError;
-
-      // Combinar dados
-      const usersData: UserData[] = (authUsers || []).map(u => {
-        const subscription = subscriptions?.find(s => s.user_id === u.id);
-        const role = roles?.find(r => r.user_id === u.id);
-
-        return {
-          id: u.id,
-          email: u.email || '',
-          created_at: u.created_at,
-          subscription_status: subscription?.status || 'inactive',
-          is_admin: role?.role === 'admin'
-        };
-      });
+      const usersData: UserData[] = data.users.map((user: any) => ({
+        id: user.id,
+        email: user.email || '',
+        created_at: user.created_at,
+        subscription_status: user.subscription_status,
+        is_admin: user.is_admin
+      }));
 
       setUsers(usersData);
       setFilteredUsers(usersData);
+      console.log('Users loaded:', usersData.length);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error loading users:', error);
       toast.error('Erro ao carregar usuários');
     } finally {
       setLoading(false);

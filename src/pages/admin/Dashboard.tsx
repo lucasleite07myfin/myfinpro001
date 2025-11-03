@@ -17,13 +17,13 @@ import {
   Activity
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
+import { toast } from 'sonner';
 
 interface DashboardStats {
   totalUsers: number;
   activeSubscriptions: number;
-  trialingUsers: number;
-  inactiveUsers: number;
-  totalCoupons: number;
+  trialingSubscriptions: number;
+  canceledSubscriptions: number;
   activeCoupons: number;
   monthlyRevenue: number;
   totalTransactions: number;
@@ -37,60 +37,31 @@ const AdminDashboard = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      // Buscar estatísticas de usuários via auth
-      const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
+      console.log('🔍 Fetching dashboard stats via Edge Function...');
       
-      if (usersError) throw usersError;
+      const { data, error } = await supabase.functions.invoke('admin-dashboard-stats');
+      
+      if (error) {
+        console.error('❌ Error fetching dashboard stats:', error);
+        throw error;
+      }
 
-      const totalUsers = users?.length || 0;
-
-      // Buscar assinaturas
-      const { data: subscriptions, error: subsError } = await supabase
-        .from('subscriptions')
-        .select('status, plan_type, current_period_start, current_period_end');
-
-      if (subsError) throw subsError;
-
-      const activeSubscriptions = subscriptions?.filter(s => s.status === 'active').length || 0;
-      const trialingUsers = subscriptions?.filter(s => s.status === 'trialing').length || 0;
-      const inactiveUsers = subscriptions?.filter(s => s.status === 'inactive').length || 0;
-
-      // Calcular receita mensal estimada (apenas assinaturas ativas)
-      const monthlyRevenue = activeSubscriptions * 47; // Preço base da assinatura
-
-      // Buscar cupons
-      const { data: coupons, error: couponsError } = await supabase
-        .from('discount_coupons')
-        .select('is_active');
-
-      if (couponsError) throw couponsError;
-
-      const totalCoupons = coupons?.length || 0;
-      const activeCoupons = coupons?.filter(c => c.is_active).length || 0;
-
-      // Buscar transações (emp_transactions + transactions)
-      const { count: empCount } = await supabase
-        .from('emp_transactions')
-        .select('*', { count: 'exact', head: true });
-
-      const { count: regCount } = await supabase
-        .from('transactions')
-        .select('*', { count: 'exact', head: true });
-
-      const totalTransactions = (empCount || 0) + (regCount || 0);
+      console.log('✅ Dashboard stats received:', data);
 
       setStats({
-        totalUsers,
-        activeSubscriptions,
-        trialingUsers,
-        inactiveUsers,
-        totalCoupons,
-        activeCoupons,
-        monthlyRevenue,
-        totalTransactions
+        totalUsers: data.users.total,
+        activeSubscriptions: data.subscriptions.active,
+        trialingSubscriptions: data.subscriptions.trialing,
+        canceledSubscriptions: data.subscriptions.canceled,
+        activeCoupons: data.coupons.active,
+        monthlyRevenue: data.financial.monthly_revenue,
+        totalTransactions: data.financial.total_transactions,
       });
+
+      console.log('✅ Dashboard stats loaded successfully');
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      console.error('❌ Error loading dashboard stats:', error);
+      toast.error('Erro ao carregar estatísticas');
     } finally {
       setLoading(false);
     }
@@ -176,7 +147,7 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-600">
-                    {stats.trialingUsers}
+                    {stats.trialingSubscriptions}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Período de teste
@@ -187,16 +158,16 @@ const AdminDashboard = () => {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Inativos
+                    Canceladas
                   </CardTitle>
                   <UserX className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-muted-foreground">
-                    {stats.inactiveUsers}
+                    {stats.canceledSubscriptions}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Sem assinatura
+                    Assinaturas canceladas
                   </p>
                 </CardContent>
               </Card>
@@ -224,14 +195,14 @@ const AdminDashboard = () => {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Total de Cupons
+                    Cupons Ativos
                   </CardTitle>
                   <Tag className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalCoupons}</div>
+                  <div className="text-2xl font-bold">{stats.activeCoupons}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {stats.activeCoupons} ativos
+                    Cupons disponíveis
                   </p>
                 </CardContent>
               </Card>
