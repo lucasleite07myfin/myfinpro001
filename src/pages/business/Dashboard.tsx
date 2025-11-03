@@ -145,7 +145,7 @@ const BusinessDashboard: React.FC = () => {
           
           {/* Transações Recentes */}
           <div>
-            <h2 className="text-xl font-semibold mb-4 text-neutral-800 dark:text-white">Transações Recentes</h2>
+            <h2 className="text-xl font-semibold mb-4 text-neutral-800">Transações Recentes</h2>
             <TooltipHelper content={tooltipContent.dashboard.transactionsTable}>
               <TransactionsTable transactions={recentTransactions} />
             </TooltipHelper>
