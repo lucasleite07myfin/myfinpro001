@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, ChartBar, User, LogOut, Crown, Settings, Users } from 'lucide-react';
+import { Menu, X, ChartBar, User, LogOut, Crown, Settings, Users, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import ModeToggle from './ModeToggle';
@@ -97,6 +97,19 @@ const Header: React.FC = () => {
                 </TabsList>
               </Tabs>
             </div>
+
+            {/* Admin Panel Button */}
+            {isAdmin && !roleLoading && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/admin')}
+                className="hidden lg:flex items-center gap-2 border-primary/50 hover:bg-primary/10"
+              >
+                <Shield className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Painel Admin</span>
+              </Button>
+            )}
 
             {/* Right side controls */}
             <div className="flex items-center gap-3">
