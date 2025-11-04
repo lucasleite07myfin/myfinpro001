@@ -81,6 +81,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   // Goal/Investment specific state
   const [selectedGoal, setSelectedGoal] = useState('');
   const [selectedInvestment, setSelectedInvestment] = useState('');
+  
+  // Category saving state
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -153,7 +156,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     }
   };
 
-  const handleSubmitTransaction = () => {
+  const handleSubmitTransaction = async () => {
     // Verificar permissão
     if (mode === 'edit' && !hasEditPermission) {
       toast.error('Você não tem permissão para editar transações');
@@ -189,6 +192,18 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       return;
     }
 
+    // Aguardar salvamento da categoria personalizada ANTES de criar a transação
+    if (category === 'Outros' && customCategory.trim() && addCustomCategory) {
+      setIsSavingCategory(true);
+      const success = await addCustomCategory(transactionType, customCategory.trim());
+      setIsSavingCategory(false);
+      
+      if (!success) {
+        toast.error('Erro ao salvar categoria. Tente novamente.');
+        return;
+      }
+    }
+
     const transactionData = {
       date,
       description: sanitizedDescription,
@@ -199,14 +214,17 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     };
 
     if (mode === 'edit' && initialData) {
+        // Também salvar categoria no modo edit se for nova
+        if (category === 'Outros' && customCategory.trim() && addCustomCategory) {
+          setIsSavingCategory(true);
+          await addCustomCategory(transactionType, customCategory.trim());
+          setIsSavingCategory(false);
+        }
         // Cast para o tipo correto que sabemos que tem editTransaction
         const context = financeContext as FinanceContextType;
         context.editTransaction({ ...transactionData, id: initialData.id });
         toast.success('Transação atualizada com sucesso!');
     } else {
-        if (category === 'Outros' && customCategory.trim() && addCustomCategory) {
-            addCustomCategory(transactionType, customCategory.trim());
-        }
         addTransaction(transactionData);
         toast.success('Transação adicionada com sucesso!');
     }
@@ -214,7 +232,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     onOpenChange(false);
   };
 
-  const handleSubmitRecurring = () => {
+  const handleSubmitRecurring = async () => {
     if (!description || !category || !dueDay || parseInt(dueDay) < 1 || parseInt(dueDay) > 31) {
         toast.error('Preencha os campos obrigatórios corretamente.');
         return;
@@ -234,10 +252,19 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       return;
     }
 
-    const finalCategory = category === 'Outros' && customCategory.trim() ? `Outros: ${customCategory.trim()}` : category;
+    // Aguardar salvamento da categoria personalizada
     if (category === 'Outros' && customCategory.trim() && addCustomCategory) {
-        addCustomCategory('expense', customCategory.trim());
+      setIsSavingCategory(true);
+      const success = await addCustomCategory('expense', customCategory.trim());
+      setIsSavingCategory(false);
+      
+      if (!success) {
+        toast.error('Erro ao salvar categoria. Tente novamente.');
+        return;
+      }
     }
+
+    const finalCategory = category === 'Outros' && customCategory.trim() ? `Outros: ${customCategory.trim()}` : category;
     addRecurringExpense({
         description: sanitizedDescription,
         category: finalCategory,
@@ -533,8 +560,12 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" style={{ backgroundColor: '#EE680D' }}>
-                  Salvar
+                <Button 
+                  type="submit" 
+                  disabled={isSavingCategory}
+                  style={{ backgroundColor: '#EE680D' }}
+                >
+                  {isSavingCategory ? 'Salvando categoria...' : 'Salvar'}
                 </Button>
               </DialogFooter>
             </form>
@@ -589,8 +620,12 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={activeTab === 'invest'} style={{ backgroundColor: '#EE680D' }}>
-                    Salvar
+                  <Button 
+                    type="submit" 
+                    disabled={activeTab === 'invest' || isSavingCategory} 
+                    style={{ backgroundColor: '#EE680D' }}
+                  >
+                    {isSavingCategory ? 'Salvando categoria...' : 'Salvar'}
                   </Button>
                 </DialogFooter>
               </form>

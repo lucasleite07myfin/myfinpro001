@@ -55,7 +55,7 @@ interface FinanceContextType {
   deleteLiability: (id: string) => void;
   getMonthTotals: () => { income: number; expense: number; balance: number; savingRate: number };
   customCategories: CustomCategories;
-  addCustomCategory: (type: 'income' | 'expense', category: string) => void;
+  addCustomCategory: (type: 'income' | 'expense', category: string) => Promise<boolean>;
   editCustomCategory: (id: string, type: 'income' | 'expense', oldName: string, newName: string) => Promise<void>;
   deleteCustomCategory: (type: 'income' | 'expense', categoryName: string) => Promise<boolean>;
   calculateHealthSnapshot: () => Promise<void>;
@@ -342,17 +342,16 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     }
   };
 
-  // Funções para manipular categorias customizadas
-  const addCustomCategory = async (type: 'income' | 'expense', category: string) => {
+  const addCustomCategory = async (type: 'income' | 'expense', category: string): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const categoryToAdd = category.startsWith('Outros: ') ? category : `Outros: ${category}`;
       
-      // Verifica se a categoria já existe
+      // Verifica se a categoria já existe - retorna true pois não é erro
       if (customCategories[type].includes(categoryToAdd)) {
-        return;
+        return true;
       }
 
       const { error } = await supabase
@@ -371,8 +370,10 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       }));
 
       toast.success('Categoria personalizada adicionada!');
+      return true;
     } catch (error) {
       toast.error('Erro ao adicionar categoria');
+      return false;
     }
   };
 
