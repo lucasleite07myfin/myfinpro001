@@ -85,7 +85,7 @@ const Incomes: React.FC = () => {
   // Get all income categories including custom ones
   const getAllIncomeCategories = () => {
     const userCustomCategories = customCategories?.income || [];
-    return [...userCustomCategories, ...INCOME_CATEGORIES.filter(cat => cat !== 'Outros')];
+    return [...userCustomCategories, ...INCOME_CATEGORIES.filter(cat => cat !== 'Crie sua categoria')];
   };
   
   // Filter only income transactions
@@ -100,9 +100,9 @@ const Incomes: React.FC = () => {
   // Apply filter by category, if selected
   if (filterCategory && filterCategory !== 'all') {
     currentMonthIncomes = currentMonthIncomes.filter(t => {
-      // Handle both regular categories and 'Outros: X' categories
-      if (t.category.startsWith('Outros: ')) {
-        if (filterCategory.startsWith('Outros: ')) {
+      // Handle both regular categories and custom categories with prefixes
+      if (t.category.startsWith('Crie sua categoria: ') || t.category.startsWith('Outros: ')) {
+        if (filterCategory.startsWith('Crie sua categoria: ') || filterCategory.startsWith('Outros: ')) {
           return t.category === filterCategory;
         }
         return false;
@@ -454,7 +454,7 @@ const Incomes: React.FC = () => {
                   <span className="text-sm text-muted-foreground">Filtros ativos:</span>
                   {filterCategory !== 'all' && (
                     <Badge variant="secondary" className="gap-1">
-                      Categoria: {filterCategory.startsWith('Outros: ') ? filterCategory.substring(7) : filterCategory}
+                      Categoria: {formatCategoryForDisplay(filterCategory)}
                       <button 
                         onClick={() => setFilterCategory('all')}
                         className="ml-1 hover:bg-muted rounded-full"

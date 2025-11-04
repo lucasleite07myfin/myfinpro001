@@ -101,9 +101,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       setAmount(initialData.amount.toString());
       setFormattedAmount(formatNumberToCurrency(initialData.amount));
       setPaymentMethod(initialData.paymentMethod);
-      if (initialData.category.startsWith('Outros: ')) {
-        setCategory('Outros');
-        setCustomCategory(initialData.category.substring(7));
+      if (initialData.category.startsWith('Crie sua categoria: ')) {
+        setCategory('Crie sua categoria');
+        setCustomCategory(initialData.category.substring(20));
       }
     }
   }, [mode, initialData, open]);
@@ -134,8 +134,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const getCurrentCategories = () => {
     const defaultCategories = transactionType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
     const userCustomCategories = customCategories?.[transactionType] || [];
-    const filteredDefaultCategories = defaultCategories.filter(cat => cat !== 'Outros');
-    return [...userCustomCategories, ...filteredDefaultCategories, 'Outros'];
+    const filteredDefaultCategories = defaultCategories.filter(cat => cat !== 'Crie sua categoria');
+    return [...userCustomCategories, ...filteredDefaultCategories, 'Crie sua categoria'];
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -193,7 +193,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     }
 
     // Aguardar salvamento da categoria personalizada ANTES de criar a transação
-    if (category === 'Outros' && customCategory.trim() && addCustomCategory) {
+    if (category === 'Crie sua categoria' && customCategory.trim() && addCustomCategory) {
       setIsSavingCategory(true);
       const success = await addCustomCategory(transactionType, customCategory.trim());
       setIsSavingCategory(false);
@@ -207,7 +207,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     const transactionData = {
       date,
       description: sanitizedDescription,
-      category: category === 'Outros' && customCategory.trim() ? `Outros: ${customCategory.trim()}` : category,
+      category: category === 'Crie sua categoria' && customCategory.trim() ? `Crie sua categoria: ${customCategory.trim()}` : category,
       amount: numericAmount,
       type: transactionType,
       paymentMethod
@@ -215,7 +215,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
     if (mode === 'edit' && initialData) {
         // Também salvar categoria no modo edit se for nova
-        if (category === 'Outros' && customCategory.trim() && addCustomCategory) {
+        if (category === 'Crie sua categoria' && customCategory.trim() && addCustomCategory) {
           setIsSavingCategory(true);
           await addCustomCategory(transactionType, customCategory.trim());
           setIsSavingCategory(false);
@@ -253,7 +253,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     }
 
     // Aguardar salvamento da categoria personalizada
-    if (category === 'Outros' && customCategory.trim() && addCustomCategory) {
+    if (category === 'Crie sua categoria' && customCategory.trim() && addCustomCategory) {
       setIsSavingCategory(true);
       const success = await addCustomCategory('expense', customCategory.trim());
       setIsSavingCategory(false);
@@ -264,7 +264,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       }
     }
 
-    const finalCategory = category === 'Outros' && customCategory.trim() ? `Outros: ${customCategory.trim()}` : category;
+    const finalCategory = category === 'Crie sua categoria' && customCategory.trim() ? `Crie sua categoria: ${customCategory.trim()}` : category;
     addRecurringExpense({
         description: sanitizedDescription,
         category: finalCategory,
@@ -310,7 +310,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   };
 
   const categories = getCurrentCategories();
-  const showCustomCategory = category === 'Outros';
+  const showCustomCategory = category === 'Crie sua categoria';
 
   const renderTransactionForm = () => (
     <>
@@ -446,7 +446,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </Select>
           </div>
         </TooltipHelper>
-        {category === 'Outros' && (
+        {category === 'Crie sua categoria' && (
           <div className="space-y-2">
             <Label htmlFor="customCategory">Especificar categoria</Label>
             <Input 

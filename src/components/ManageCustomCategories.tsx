@@ -44,8 +44,8 @@ export const ManageCustomCategories: React.FC<ManageCustomCategoriesProps> = ({
   if (categories.length === 0) return null;
 
   const handleEditClick = (categoryName: string) => {
-    // Remover prefixo "Outros: " para edição
-    const nameWithoutPrefix = categoryName.replace('Outros: ', '');
+    // Remover prefixo "Crie sua categoria: " para edição
+    const nameWithoutPrefix = categoryName.replace('Crie sua categoria: ', '');
     setNewName(nameWithoutPrefix);
     setEditingCategory({ id: '', name: categoryName });
   };
@@ -135,7 +135,7 @@ export const ManageCustomCategories: React.FC<ManageCustomCategoriesProps> = ({
             </div>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Lightbulb className="h-3 w-3" />
-              A categoria será salva como "Outros: {newName}"
+              A categoria será salva como "Crie sua categoria: {newName}"
             </p>
           </div>
           <DialogFooter>

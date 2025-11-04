@@ -175,7 +175,7 @@ export const INCOME_CATEGORIES = [
   'Investimentos',
   'Presente',
   'Reembolso',
-  'Outros'
+  'Crie sua categoria'
 ];
 
 export const EXPENSE_CATEGORIES = [
@@ -190,7 +190,7 @@ export const EXPENSE_CATEGORIES = [
   'Impostos',
   'Poupança para Metas',
   'Investimentos',
-  'Outros'
+  'Crie sua categoria'
 ];
 
 export const PAYMENT_METHODS: Record<PaymentMethod, string> = {

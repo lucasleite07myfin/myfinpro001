@@ -349,7 +349,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         throw new Error('Usuário não autenticado');
       }
 
-      const categoryToAdd = category.startsWith('Outros: ') ? category : `Outros: ${category}`;
+      const categoryToAdd = category.startsWith('Crie sua categoria: ') ? category : `Crie sua categoria: ${category}`;
       
       // Verifica se a categoria já existe - retorna true pois não é erro
       if (customCategories[type].includes(categoryToAdd)) {
@@ -395,7 +395,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         throw new Error('Usuário não autenticado');
       }
 
-      const categoryToUpdate = newName.startsWith('Outros: ') ? newName : `Outros: ${newName}`;
+      const categoryToUpdate = newName.startsWith('Crie sua categoria: ') ? newName : `Crie sua categoria: ${newName}`;
       
       // Atualizar no banco
       const { error: updateError } = await supabase
