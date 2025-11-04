@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatCategoryForDisplay } from '@/utils/formatters';
 import { RecurringExpense } from '@/types/finance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -189,7 +189,7 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-medium text-sm">{expense.description}</h3>
-                    <p className="text-xs text-muted-foreground">{expense.category}</p>
+                    <p className="text-xs text-muted-foreground">{formatCategoryForDisplay(expense.category)}</p>
                   </div>
                   <Badge variant={paid ? "outline" : overdue ? "destructive" : "secondary"}>
                     {paid ? <CheckCircle2 className="h-3 w-3 mr-1" /> : overdue ? <AlertCircle className="h-3 w-3 mr-1" /> : null}

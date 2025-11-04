@@ -7,7 +7,7 @@ import EmptyState from '@/components/EmptyState';
 import TransactionsTable from '@/components/TransactionsTable';
 import MonthSelector from '@/components/MonthSelector';
 import AddTransactionModal from '@/components/AddTransactionModal';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatCategoryForDisplay } from '@/utils/formatters';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -160,7 +160,7 @@ const Incomes: React.FC = () => {
     const csvData = currentMonthIncomes.map(income => {
       const date = income.date.toLocaleDateString('pt-BR');
       const amount = income.amount.toFixed(2).replace('.', ',');
-      return `${date},"${income.description}",${income.category},${amount}`;
+      return `${date},"${income.description}",${formatCategoryForDisplay(income.category)},${amount}`;
     }).join('\n');
     
     const csvContent = csvHeader + csvData;
@@ -196,7 +196,7 @@ const Incomes: React.FC = () => {
       excelContent += `<tr>`;
       excelContent += `<td>${date}</td>`;
       excelContent += `<td>${income.description}</td>`;
-      excelContent += `<td>${income.category}</td>`;
+      excelContent += `<td>${formatCategoryForDisplay(income.category)}</td>`;
       excelContent += `<td>${amount}</td>`;
       excelContent += `</tr>`;
     });
@@ -252,7 +252,7 @@ const Incomes: React.FC = () => {
         <tr>
           <td>${date}</td>
           <td>${income.description}</td>
-          <td>${income.category}</td>
+          <td>${formatCategoryForDisplay(income.category)}</td>
           <td>${amount}</td>
         </tr>
       `;
@@ -411,8 +411,10 @@ const Incomes: React.FC = () => {
                       {allCategories.map((category) => (
                         <SelectItem key={category} value={category}>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary">{category.startsWith('Outros: ') ? 'Custom' : 'Padrão'}</Badge>
-                            <span>{category.startsWith('Outros: ') ? category.substring(7) : category}</span>
+                            <Badge variant="secondary" className="text-xs">
+                              {category.startsWith('Crie sua categoria: ') || category.startsWith('Outros: ') ? 'Personalizada' : 'Padrão'}
+                            </Badge>
+                            <span>{formatCategoryForDisplay(category)}</span>
                           </div>
                         </SelectItem>
                       ))}

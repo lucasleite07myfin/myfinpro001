@@ -113,3 +113,19 @@ export const formatValueForCurrencyInput = (value: string | number): string => {
   
   return formatNumberToCurrency(numValue);
 };
+
+/**
+ * Remove prefixos de categorias personalizadas para exibição
+ * Remove "Crie sua categoria: " e "Outros: " (retrocompatibilidade)
+ * @param categoryName Nome completo da categoria
+ * @returns Nome da categoria sem prefixo
+ */
+export const formatCategoryForDisplay = (categoryName: string): string => {
+  if (categoryName.startsWith('Crie sua categoria: ')) {
+    return categoryName.substring(20); // Remove "Crie sua categoria: " (20 caracteres)
+  }
+  if (categoryName.startsWith('Outros: ')) {
+    return categoryName.substring(8); // Remove "Outros: " (8 caracteres) - retrocompatibilidade
+  }
+  return categoryName;
+};

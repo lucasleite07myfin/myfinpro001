@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { format } from 'date-fns';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Transaction, PAYMENT_METHODS } from '@/types/finance';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatCategoryForDisplay } from '@/utils/formatters';
 import { sanitizeText } from '@/utils/xssSanitizer';
 import { useBusinessPermissions } from '@/hooks/useBusinessPermissions';
 import { useAppMode } from '@/contexts/AppModeContext';
@@ -68,14 +68,6 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
       );
     }
     return null;
-  };
-
-  // Format category name for display (removes "Outros: " prefix if present)
-  const formatCategoryName = (categoryName: string) => {
-    if (categoryName.startsWith('Outros: ')) {
-      return categoryName.substring(7);
-    }
-    return categoryName;
   };
 
   // Fixed column widths for alignment
@@ -178,7 +170,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                         </TableCell>
                         <TableCell className={`${columnWidths.categoria} py-4 px-6`}>
                           <span className="text-sm text-neutral-600 bg-neutral-100 px-2 py-1 rounded-md">
-                            {sanitizeText(formatCategoryName(transaction.category))}
+                            {sanitizeText(formatCategoryForDisplay(transaction.category))}
                           </span>
                         </TableCell>
                         <TableCell className={`${columnWidths.valor} text-right font-semibold py-4 px-6 ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>

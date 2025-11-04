@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Transaction } from '@/types/finance';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatCategoryForDisplay } from '@/utils/formatters';
 import {
   Dialog,
   DialogContent,
@@ -122,9 +122,9 @@ const Top10ExpensesModal: React.FC<Top10ExpensesModalProps> = ({
                             {expense.description}
                           </h4>
                           <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
-                              {expense.category}
-                            </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {formatCategoryForDisplay(expense.category)}
+                  </Badge>
                             {expense.count > 1 && (
                               <span className="text-xs text-muted-foreground">
                                 {expense.count} ocorrências

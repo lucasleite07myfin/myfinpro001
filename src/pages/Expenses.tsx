@@ -8,7 +8,7 @@ import TransactionsTable from '@/components/TransactionsTable';
 import MonthSelector from '@/components/MonthSelector';
 import AddTransactionModal from '@/components/AddTransactionModal';
 import Top10ExpensesModal from '@/components/Top10ExpensesModal';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatCategoryForDisplay } from '@/utils/formatters';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -233,7 +233,7 @@ const Expenses: React.FC = () => {
       const type = expense.isGoalContribution ? 'Contribuição para Meta' : 
                   expense.isInvestmentContribution ? 'Investimento' : 
                   expense.isRecurringPayment ? 'Despesa Fixa' : 'Despesa Regular';
-      return `${date},"${expense.description}",${expense.category},${amount},${expense.paymentMethod || 'N/A'},${type}`;
+      return `${date},"${expense.description}",${formatCategoryForDisplay(expense.category)},${amount},${expense.paymentMethod || 'N/A'},${type}`;
     }).join('\n');
     
     const csvContent = csvHeader + csvData;
@@ -282,7 +282,7 @@ const Expenses: React.FC = () => {
       excelContent += `<tr>`;
       excelContent += `<td>${date}</td>`;
       excelContent += `<td>${expense.description}</td>`;
-      excelContent += `<td>${expense.category}</td>`;
+      excelContent += `<td>${formatCategoryForDisplay(expense.category)}</td>`;
       excelContent += `<td>${amount}</td>`;
       excelContent += `<td>${expense.paymentMethod || 'N/A'}</td>`;
       excelContent += `<td>${type}</td>`;
@@ -345,7 +345,7 @@ const Expenses: React.FC = () => {
         <tr>
           <td>${date}</td>
           <td>${expense.description}</td>
-          <td>${expense.category}</td>
+          <td>${formatCategoryForDisplay(expense.category)}</td>
           <td>${amount}</td>
           <td>${expense.paymentMethod || 'N/A'}</td>
           <td>${type}</td>
@@ -618,8 +618,8 @@ const Expenses: React.FC = () => {
                                     <h4 className="font-semibold text-base flex items-center gap-2">
                                       {expense.description}
                                     </h4>
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                      <Badge variant="outline">{expense.category}</Badge>
+                                     <div className="flex flex-wrap gap-2 mt-2">
+                                      <Badge variant="outline">{formatCategoryForDisplay(expense.category)}</Badge>
                                       <Badge variant="secondary" className="gap-1">
                                         <Calendar className="h-3 w-3" />
                                         Dia {expense.dueDay}
