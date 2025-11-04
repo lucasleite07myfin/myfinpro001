@@ -745,8 +745,10 @@ const Expenses: React.FC = () => {
                       {allCategories.map((category) => (
                         <SelectItem key={category} value={category}>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary">{category.startsWith('Outros: ') ? 'Custom' : 'Padrão'}</Badge>
-                            <span>{category.startsWith('Outros: ') ? category.substring(7) : category}</span>
+                            <Badge variant="secondary">
+                              {category.startsWith('Crie sua categoria: ') || category.startsWith('Outros: ') ? 'Personalizada' : 'Padrão'}
+                            </Badge>
+                            <span>{formatCategoryForDisplay(category)}</span>
                           </div>
                         </SelectItem>
                       ))}
