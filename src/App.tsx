@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { FinanceProvider } from "./contexts/FinanceContext";
 import { BusinessProvider } from "./contexts/BusinessContext";
 import { AppModeProviderWithSubAccount } from "./contexts/AppModeContext";
-import { UserProvider } from "./contexts/UserContext";
 import { useAuth } from "@/hooks/useAuth";
 
 import Index from "./pages/Index";
@@ -108,18 +107,16 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster position="bottom-center" closeButton />
-      <UserProvider>
-        <AppModeProviderWithSubAccount>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/*" element={<ModeRoutes />} />
-            </Routes>
-          </BrowserRouter>
-        </AppModeProviderWithSubAccount>
-      </UserProvider>
+      <AppModeProviderWithSubAccount>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/*" element={<ModeRoutes />} />
+          </Routes>
+        </BrowserRouter>
+      </AppModeProviderWithSubAccount>
     </TooltipProvider>
   </QueryClientProvider>
 );
