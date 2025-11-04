@@ -344,8 +344,10 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
   const addCustomCategory = async (type: 'income' | 'expense', category: string): Promise<boolean> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user) {
+        console.error('Usuário não autenticado ao adicionar categoria');
+        throw new Error('Usuário não autenticado');
+      }
 
       const categoryToAdd = category.startsWith('Outros: ') ? category : `Outros: ${category}`;
       
@@ -362,7 +364,10 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
           name: categoryToAdd
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro detalhado ao inserir categoria no Supabase:', error);
+        throw error;
+      }
 
       setCustomCategories(prev => ({
         ...prev,
@@ -372,6 +377,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       toast.success('Categoria personalizada adicionada!');
       return true;
     } catch (error) {
+      console.error('Erro ao adicionar categoria:', error);
       toast.error('Erro ao adicionar categoria');
       return false;
     }
@@ -384,8 +390,10 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     newName: string
   ) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user) {
+        console.error('Usuário não autenticado ao editar categoria');
+        throw new Error('Usuário não autenticado');
+      }
 
       const categoryToUpdate = newName.startsWith('Outros: ') ? newName : `Outros: ${newName}`;
       
@@ -434,8 +442,10 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
   const deleteCustomCategory = async (type: 'income' | 'expense', categoryName: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user) {
+        console.error('Usuário não autenticado ao excluir categoria');
+        throw new Error('Usuário não autenticado');
+      }
 
       // Verificar se há transações usando essa categoria
       const { data: transactionsWithCategory } = await supabase
