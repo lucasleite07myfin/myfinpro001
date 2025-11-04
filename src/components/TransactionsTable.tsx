@@ -78,6 +78,16 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
     return categoryName;
   };
 
+  // Fixed column widths for alignment
+  const columnWidths = {
+    data: 'w-[110px] min-w-[110px]',
+    descricao: 'w-[200px] min-w-[200px]',
+    categoria: 'w-[140px] min-w-[140px]',
+    valor: 'w-[130px] min-w-[130px]',
+    pagamento: 'w-[120px] min-w-[120px]',
+    acoes: 'w-[120px] min-w-[120px]'
+  };
+
   // Virtualization setup
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -96,12 +106,12 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow className="bg-gradient-to-r from-neutral-50 to-neutral-100 border-b border-neutral-200">
-              <TableHead className="font-semibold text-neutral-700 py-4 px-6">Data</TableHead>
-              <TableHead className="font-semibold text-neutral-700 py-4 px-6">Descrição</TableHead>
-              <TableHead className="font-semibold text-neutral-700 py-4 px-6">Categoria</TableHead>
-              <TableHead className="text-right font-semibold text-neutral-700 py-4 px-6">Valor</TableHead>
-              <TableHead className="font-semibold text-neutral-700 py-4 px-6">Pagamento</TableHead>
-              <TableHead className="text-center font-semibold text-neutral-700 py-4 px-6 w-[120px]">Ações</TableHead>
+              <TableHead className={`${columnWidths.data} font-semibold text-neutral-700 py-4 px-6`}>Data</TableHead>
+              <TableHead className={`${columnWidths.descricao} font-semibold text-neutral-700 py-4 px-6`}>Descrição</TableHead>
+              <TableHead className={`${columnWidths.categoria} font-semibold text-neutral-700 py-4 px-6`}>Categoria</TableHead>
+              <TableHead className={`${columnWidths.valor} text-right font-semibold text-neutral-700 py-4 px-6`}>Valor</TableHead>
+              <TableHead className={`${columnWidths.pagamento} font-semibold text-neutral-700 py-4 px-6`}>Pagamento</TableHead>
+              <TableHead className={`${columnWidths.acoes} text-center font-semibold text-neutral-700 py-4 px-6`}>Ações</TableHead>
             </TableRow>
           </TableHeader>
         </Table>
@@ -111,7 +121,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
       <div 
         ref={parentRef}
         className="overflow-y-auto" 
-        style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '200px' }}
+        style={{ height: '500px' }}
       >
         {transactions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-neutral-500">
@@ -155,33 +165,33 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                           }
                         }}
                       >
-                        <TableCell className="font-medium text-neutral-900 py-4 px-6">
+                        <TableCell className={`${columnWidths.data} font-medium text-neutral-900 py-4 px-6`}>
                           <div className="text-sm font-medium">
                             {format(transaction.date, 'dd/MM/yyyy')}
                           </div>
                         </TableCell>
-                        <TableCell className="py-4 px-6">
+                        <TableCell className={`${columnWidths.descricao} py-4 px-6`}>
                           <div className="flex flex-col gap-2">
                             <span className="font-medium text-neutral-900 text-sm">{sanitizeText(transaction.description)}</span>
                             {renderBadge ? renderBadge(transaction) : defaultRenderBadge(transaction)}
                           </div>
                         </TableCell>
-                        <TableCell className="py-4 px-6">
+                        <TableCell className={`${columnWidths.categoria} py-4 px-6`}>
                           <span className="text-sm text-neutral-600 bg-neutral-100 px-2 py-1 rounded-md">
                             {sanitizeText(formatCategoryName(transaction.category))}
                           </span>
                         </TableCell>
-                        <TableCell className={`text-right font-semibold py-4 px-6 ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                        <TableCell className={`${columnWidths.valor} text-right font-semibold py-4 px-6 ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                           <span className="text-sm font-mono">
                             {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
                           </span>
                         </TableCell>
-                        <TableCell className="py-4 px-6">
+                        <TableCell className={`${columnWidths.pagamento} py-4 px-6`}>
                           <span className="text-xs text-neutral-500 bg-neutral-50 px-2 py-1 rounded-md">
                             {transaction.paymentMethod ? PAYMENT_METHODS[transaction.paymentMethod] : 'N/A'}
                           </span>
                         </TableCell>
-                        <TableCell className="py-4 px-6">
+                        <TableCell className={`${columnWidths.acoes} py-4 px-6`}>
                           <div className="flex justify-center space-x-1">
                             {onEdit && !transaction.isRecurringPayment && canEditTransactions && (
                               <Button
