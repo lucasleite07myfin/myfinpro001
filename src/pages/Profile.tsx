@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { User, Mail, KeyRound, Loader2 } from 'lucide-react';
+import { User, Mail, KeyRound, Loader2, Lock } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Building2 } from 'lucide-react';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusiness } from '@/contexts/BusinessContext';
+import ChangePinSection from '@/components/ChangePinSection';
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
@@ -234,6 +235,21 @@ const Profile = () => {
                   <Button variant="outline" onClick={handlePasswordReset}>Redefinir</Button>
                 </TooltipHelper>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                PIN de Alternância de Modos
+              </CardTitle>
+              <CardDescription>
+                Gerencie o PIN que protege a alternância entre os modos pessoal e empresarial.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChangePinSection userId={userId} />
             </CardContent>
           </Card>
 
