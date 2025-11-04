@@ -105,7 +105,7 @@ const Expenses: React.FC = () => {
   // Get all expense categories including custom ones
   const getAllExpenseCategories = () => {
     const userCustomCategories = customCategories?.expense || [];
-    return [...userCustomCategories, ...EXPENSE_CATEGORIES.filter(cat => cat !== 'Outros')];
+    return [...userCustomCategories, ...EXPENSE_CATEGORIES.filter(cat => cat !== 'Crie sua categoria')];
   };
   
   // Filter only expense transactions
