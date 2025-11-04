@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useUser } from '@/contexts/UserContext';
+
+// Cache global de roles
+let roleCache: { userId: string; isAdmin: boolean } | null = null;
 
 export const useUserRole = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -11,13 +14,19 @@ export const useUserRole = () => {
     let mounted = true;
     
     const checkRole = async () => {
-      console.log('🔍 Checking role for user:', user?.id);
-      
       if (!user) {
-        console.log('❌ No user found - waiting for auth');
         if (mounted) {
           setIsAdmin(false);
-          // ✅ NÃO marcar loading = false aqui - esperar autenticação completar
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Usa cache se disponível
+      if (roleCache?.userId === user.id) {
+        if (mounted) {
+          setIsAdmin(roleCache.isAdmin);
+          setLoading(false);
         }
         return;
       }
@@ -29,17 +38,19 @@ export const useUserRole = () => {
           .eq('user_id', user.id)
           .eq('role', 'admin')
           .maybeSingle();
-
-        console.log('📊 Query result:', { data, error });
         
         if (error) throw error;
         
+        const isAdminRole = !!data;
+        
+        // Atualiza cache
+        roleCache = { userId: user.id, isAdmin: isAdminRole };
+        
         if (mounted) {
-          setIsAdmin(!!data);
-          console.log('✅ Is admin:', !!data);
+          setIsAdmin(isAdminRole);
         }
       } catch (error) {
-        console.error('❌ Error checking user role:', error);
+        console.error('Erro ao verificar role:', error);
         if (mounted) {
           setIsAdmin(false);
         }

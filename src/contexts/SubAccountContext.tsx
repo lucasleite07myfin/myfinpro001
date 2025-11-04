@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useUser } from '@/contexts/UserContext';
 
 interface BusinessPermissions {
   can_view_transactions: boolean;
@@ -55,7 +55,7 @@ interface SubAccountProviderProps {
 }
 
 export const SubAccountProvider: React.FC<SubAccountProviderProps> = ({ children }) => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const [state, setState] = useState<SubAccountContextType>({
     isSubAccount: false,
     ownerId: null,
@@ -85,9 +85,22 @@ export const SubAccountProvider: React.FC<SubAccountProviderProps> = ({ children
           .select('*')
           .eq('sub_user_id', user.id)
           .eq('is_active', true)
+          .abortSignal(AbortSignal.timeout(5000))
           .maybeSingle();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao carregar sub-account:', error);
+          // Continue mesmo com erro, não trave o app
+          if (mounted) {
+            setState({
+              isSubAccount: false,
+              ownerId: null,
+              permissions: defaultPermissions,
+              loading: false,
+            });
+          }
+          return;
+        }
 
         if (mounted) {
           if (data) {

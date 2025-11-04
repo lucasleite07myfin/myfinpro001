@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useUser } from '@/contexts/UserContext';
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading: userLoading } = useUser();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -14,7 +15,6 @@ export const useAuth = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (mounted) {
         setSession(session);
-        setUser(session?.user ?? null);
         setLoading(false);
       }
     });
@@ -24,7 +24,6 @@ export const useAuth = () => {
       (event, session) => {
         if (mounted) {
           setSession(session);
-          setUser(session?.user ?? null);
         }
       }
     );
@@ -37,7 +36,6 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
-      setUser(null);
       setSession(null);
       await supabase.auth.signOut({ scope: 'global' });
       window.location.href = '/auth';
@@ -50,7 +48,7 @@ export const useAuth = () => {
   return {
     user,
     session,
-    loading,
+    loading: loading || userLoading,
     signOut,
     isAuthenticated: !!user
   };

@@ -3,6 +3,7 @@ import { Transaction, Goal, Asset, Liability, MonthlyFinanceData, RecurringExpen
 import { getCurrentMonth } from '@/utils/formatters';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useUser } from '@/contexts/UserContext';
 
 // Gerar dados de 12 meses para o gráfico
 const generateMonthlyData = (): MonthlyFinanceData[] => {
@@ -75,6 +76,8 @@ interface FinanceProviderProps {
 }
 
 export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) => {
+  const { user } = useUser();
+  
   // Estado principal da aplicação
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>([]);
@@ -87,25 +90,25 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const [secondaryDataLoaded, setSecondaryDataLoaded] = useState(false);
 
-  // Carregar dados do Supabase
+  // Carregar dados do Supabase quando user estiver disponível
   useEffect(() => {
-    loadData();
-  }, []);
-
-  // Limpar timer no cleanup
-  useEffect(() => {
-    return () => {
-      if (loading === false && !secondaryDataLoaded) {
-        // Timer já foi limpo automaticamente pelo return do setTimeout
-      }
-    };
-  }, [loading, secondaryDataLoaded]);
+    if (user) {
+      loadData();
+      
+      // Carrega dados secundários após 500ms
+      const timer = setTimeout(() => {
+        loadSecondaryData();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user?.id]);
 
   // Carrega dados ESSENCIAIS (apenas o que é necessário para a tela inicial)
   const loadData = async () => {
+    if (!user) return;
+    
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
 
       // Carregar apenas dados essenciais em paralelo
       const [
@@ -185,9 +188,9 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
   // Carrega dados SECUNDÁRIOS (lazy load - apenas quando necessário)
   const loadSecondaryData = async () => {
+    if (!user) return;
+    
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
 
       const [
         goalsResult,
