@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts"
+import { compare, hash } from "https://deno.land/x/bcrypt@v0.4.1/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -80,13 +80,13 @@ serve(async (req) => {
         }
 
         // Criar hash do PIN
-        const hash = await bcrypt.hash(pin)
+        const pinHash = await hash(pin)
         logStep('pin-hash-created');
 
         // Salvar no banco
         const { error: updateError } = await supabaseClient
           .from('profiles')
-          .update({ mode_switch_pin_hash: hash })
+          .update({ mode_switch_pin_hash: pinHash })
           .eq('id', user.id)
 
         if (updateError) {
@@ -112,7 +112,7 @@ serve(async (req) => {
         }
 
         // Validar PIN
-        const isValid = await bcrypt.compare(pin, profile.mode_switch_pin_hash)
+        const isValid = await compare(pin, profile.mode_switch_pin_hash)
         logStep('pin-validated', { isValid });
 
         return new Response(
@@ -143,7 +143,7 @@ serve(async (req) => {
           )
         }
 
-        const isValid = await bcrypt.compare(pin, profile.mode_switch_pin_hash)
+        const isValid = await compare(pin, profile.mode_switch_pin_hash)
         if (!isValid) {
           logStep('current-pin-incorrect');
           return new Response(
@@ -153,7 +153,7 @@ serve(async (req) => {
         }
 
         // Criar hash do novo PIN
-        const newHash = await bcrypt.hash(newPin)
+        const newHash = await hash(newPin)
         logStep('new-pin-hash-created');
 
         // Atualizar no banco
@@ -183,10 +183,11 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    logStep('error', { error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    logStep('error', { error: errorMessage });
     console.error('Erro ao processar PIN:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
