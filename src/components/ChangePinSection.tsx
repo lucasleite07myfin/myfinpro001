@@ -61,11 +61,23 @@ const ChangePinSection: React.FC<ChangePinSectionProps> = ({ userId }) => {
     setLoading(true);
 
     try {
+      // Verificar sessão ativa
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error('Sessão expirada. Faça login novamente.');
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('validate-mode-pin', {
         body: {
           pin: currentPinValue,
           newPin: newPinValue,
           action: 'update',
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 

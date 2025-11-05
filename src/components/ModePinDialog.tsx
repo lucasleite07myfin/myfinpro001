@@ -93,10 +93,23 @@ const ModePinDialog: React.FC<ModePinDialogProps> = ({
     setLoading(true);
 
     try {
+      // Verificar sessão ativa
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error('Sessão expirada. Faça login novamente.');
+        onOpenChange(false);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('validate-mode-pin', {
         body: {
           pin: pinValue,
           action: mode,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
