@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/utils/logger';
 
 export interface CryptoCoin {
   id: string;
@@ -42,7 +43,7 @@ export const useCryptoList = () => {
       setCoins(formattedCoins);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
-      console.error('Error fetching crypto list:', err);
+      logger.error('Error fetching crypto list:', err);
     } finally {
       setLoading(false);
     }

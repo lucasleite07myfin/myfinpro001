@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
+import { logger } from '@/utils/logger';
 
 interface BusinessPermissions {
   can_view_transactions: boolean;
@@ -89,7 +90,7 @@ export const SubAccountProvider: React.FC<SubAccountProviderProps> = ({ children
           .maybeSingle();
 
         if (error) {
-          console.error('Erro ao carregar sub-account:', error);
+          logger.error('Erro ao carregar sub-account:', error);
           // Continue mesmo com erro, não trave o app
           if (mounted) {
             setState({
@@ -131,7 +132,7 @@ export const SubAccountProvider: React.FC<SubAccountProviderProps> = ({ children
           }
         }
       } catch (error) {
-        console.error('Erro ao carregar dados de sub-account:', error);
+        logger.error('Erro ao carregar dados de sub-account:', error);
         if (mounted) {
           setState({
             isSubAccount: false,

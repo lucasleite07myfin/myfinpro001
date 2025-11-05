@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Loader2, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 interface ModePinDialogProps {
   open: boolean;
@@ -134,7 +135,7 @@ const ModePinDialog: React.FC<ModePinDialogProps> = ({
       onOpenChange(false);
 
     } catch (error) {
-      console.error('Erro ao validar PIN:', error);
+      logger.error('Erro ao validar PIN:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao validar PIN');
     } finally {
       setLoading(false);

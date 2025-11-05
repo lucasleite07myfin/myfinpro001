@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { UserPlus, Trash2, Eye, Edit, Check, X, Mail, Clock, DoorOpen } from 'lucide-react';
 import InviteSubAccountModal from '@/components/InviteSubAccountModal';
 import { useSubAccount } from '@/contexts/SubAccountContext';
+import { logger } from '@/utils/logger';
 import {
   Table,
   TableBody,
@@ -80,7 +81,7 @@ const SubAccounts: React.FC = () => {
 
       setSubAccounts(data || []);
     } catch (error) {
-      console.error('Erro ao carregar funcionários:', error);
+      logger.error('Erro ao carregar funcionários:', error);
       toast.error('Erro ao carregar funcionários');
     } finally {
       setLoading(false);
@@ -100,7 +101,7 @@ const SubAccounts: React.FC = () => {
 
       setPendingInvites((data || []) as PendingInvite[]);
     } catch (error) {
-      console.error('Erro ao carregar convites:', error);
+      logger.error('Erro ao carregar convites:', error);
       toast.error('Erro ao carregar convites pendentes');
     }
   };
@@ -117,7 +118,7 @@ const SubAccounts: React.FC = () => {
       toast.success('Convite cancelado com sucesso');
       loadPendingInvites();
     } catch (error) {
-      console.error('Erro ao cancelar convite:', error);
+      logger.error('Erro ao cancelar convite:', error);
       toast.error('Erro ao cancelar convite');
     } finally {
       setCancelInviteDialogOpen(false);
@@ -142,7 +143,7 @@ const SubAccounts: React.FC = () => {
       toast.success('Funcionário desativado com sucesso');
       loadSubAccounts();
     } catch (error) {
-      console.error('Erro ao desativar funcionário:', error);
+      logger.error('Erro ao desativar funcionário:', error);
       toast.error('Erro ao desativar funcionário');
     } finally {
       setDeleteDialogOpen(false);
@@ -162,7 +163,7 @@ const SubAccounts: React.FC = () => {
       toast.success('Funcionário reativado com sucesso');
       loadSubAccounts();
     } catch (error) {
-      console.error('Erro ao reativar funcionário:', error);
+      logger.error('Erro ao reativar funcionário:', error);
       toast.error('Erro ao reativar funcionário');
     }
   };
@@ -185,7 +186,7 @@ const SubAccounts: React.FC = () => {
 
       navigate('/');
     } catch (error) {
-      console.error('Erro ao remover acesso:', error);
+      logger.error('Erro ao remover acesso:', error);
       toast.error('Erro ao remover acesso', {
         description: 'Tente novamente mais tarde.',
       });

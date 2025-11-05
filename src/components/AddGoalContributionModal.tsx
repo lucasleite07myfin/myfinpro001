@@ -11,6 +11,7 @@ import { Goal } from '@/types/finance';
 import { PlusCircle, MinusCircle, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 interface AddGoalContributionModalProps {
   open: boolean;
@@ -99,7 +100,7 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
       onOpenChange(false);
       
     } catch (error) {
-      console.error('Erro ao processar operação:', error);
+      logger.error('Erro ao processar operação:', error);
       toast.error('Erro ao processar operação. Tente novamente.');
     } finally {
       setIsLoading(false);

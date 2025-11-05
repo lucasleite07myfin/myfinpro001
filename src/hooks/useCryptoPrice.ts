@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/utils/logger';
 
 export interface CryptoPrice {
   current_price: number;
@@ -39,7 +40,7 @@ export const useCryptoPrice = (coinId: string | null) => {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
-      console.error('Error fetching crypto price:', err);
+      logger.error('Error fetching crypto price:', err);
     } finally {
       setLoading(false);
     }

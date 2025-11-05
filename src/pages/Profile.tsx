@@ -20,6 +20,7 @@ import ResetPinModal from '@/components/ResetPinModal';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { logger } from '@/utils/logger';
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
@@ -137,7 +138,7 @@ const Profile = () => {
 
       toast.success("Nome da empresa atualizado com sucesso!");
     } catch (error) {
-      console.error('Erro ao atualizar nome da empresa:', error);
+      logger.error('Erro ao atualizar nome da empresa:', error);
       toast.error('Erro ao atualizar nome da empresa');
     } finally {
       setSaving(false);
@@ -173,7 +174,7 @@ const Profile = () => {
         setPinRequired(true);
         toast.success('PIN ativado com sucesso');
       } catch (error) {
-        console.error('Erro ao ativar PIN:', error);
+        logger.error('Erro ao ativar PIN:', error);
         toast.error('Erro ao ativar PIN');
       }
     } else {
@@ -223,7 +224,7 @@ const Profile = () => {
       setCurrentPin(['', '', '', '']);
       toast.success('PIN desativado. A alternância de modos não requer mais PIN.');
     } catch (error) {
-      console.error('Erro ao desativar PIN:', error);
+      logger.error('Erro ao desativar PIN:', error);
       toast.error('Erro ao desativar PIN');
     } finally {
       setDisablingPin(false);

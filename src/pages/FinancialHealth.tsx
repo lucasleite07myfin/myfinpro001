@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 const FinancialHealth: React.FC = () => {
   const { mode } = useAppMode();
@@ -51,7 +52,7 @@ const FinancialHealth: React.FC = () => {
         setHistoricalData(snapshots);
       }
     } catch (error) {
-      console.error('Erro ao carregar dados de saúde financeira:', error);
+      logger.error('Erro ao carregar dados de saúde financeira:', error);
       toast.error('Erro ao carregar dados de saúde financeira');
     } finally {
       setLoading(false);
@@ -70,7 +71,7 @@ const FinancialHealth: React.FC = () => {
       toast.success('Saúde financeira recalculada com sucesso!');
       await loadHealthData();
     } catch (error) {
-      console.error('Erro ao recalcular:', error);
+      logger.error('Erro ao recalcular:', error);
       toast.error('Erro ao recalcular saúde financeira');
     } finally {
       setCalculating(false);

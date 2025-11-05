@@ -14,6 +14,7 @@ import TooltipHelper from './TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
 import { cn } from '@/lib/utils';
 import BitcoinModal from './BitcoinModal';
+import { logger } from '@/utils/logger';
 
 interface BTCNowCardProps {
   className?: string;
@@ -79,7 +80,7 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
       }
       
     } catch (error) {
-      console.error('Erro ao buscar histórico do Bitcoin:', error);
+      logger.error('Erro ao buscar histórico do Bitcoin:', error);
       // Fallback para dados mockados realistas
       const basePrice = 45000;
       const mockData = Array.from({ length: 24 }, (_, i) => {
@@ -130,7 +131,7 @@ const BTCNowCard: React.FC<BTCNowCardProps> = ({ className }) => {
       setIsLoading(false);
       
     } catch (error) {
-      console.error('Erro ao buscar preço do Bitcoin:', error);
+      logger.error('Erro ao buscar preço do Bitcoin:', error);
       toast.error('Falha ao carregar dados do Bitcoin');
       setIsLoading(false);
       

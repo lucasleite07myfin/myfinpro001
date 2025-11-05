@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 interface ChangePinSectionProps {
   userId: string;
@@ -91,7 +92,7 @@ const ChangePinSection: React.FC<ChangePinSectionProps> = ({ userId }) => {
       setNewPin(['', '', '', '']);
       
     } catch (error) {
-      console.error('Erro ao atualizar PIN:', error);
+      logger.error('Erro ao atualizar PIN:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao atualizar PIN');
     } finally {
       setLoading(false);
@@ -123,7 +124,7 @@ const ChangePinSection: React.FC<ChangePinSectionProps> = ({ userId }) => {
       toast.success('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
       
     } catch (error) {
-      console.error('Erro ao solicitar reset:', error);
+      logger.error('Erro ao solicitar reset:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao enviar e-mail de recuperação');
     } finally {
       setResetLoading(false);

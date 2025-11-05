@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { checkRateLimit } from '@/utils/rateLimiter';
 import { sanitizeEmail, sanitizeText } from '@/utils/xssSanitizer';
+import { logger } from '@/utils/logger';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -98,7 +99,7 @@ const Auth = () => {
           });
 
           if (inviteError) {
-            console.error('Erro ao processar convite:', inviteError);
+            logger.error('Erro ao processar convite:', inviteError);
             toast.error('Conta criada, mas houve erro ao vincular ao proprietário.');
           } else if (inviteResponse?.already_linked) {
             toast.success('Você já está vinculado a este proprietário!');
@@ -246,7 +247,7 @@ const Auth = () => {
         });
 
         if (inviteError) {
-          console.error('Erro ao processar convite:', inviteError);
+          logger.error('Erro ao processar convite:', inviteError);
           toast.error('Login realizado, mas houve erro ao vincular ao convite.');
         } else if (processData?.already_linked) {
           toast.success('Você já está vinculado a este proprietário!');

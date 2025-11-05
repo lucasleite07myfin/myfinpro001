@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Asset } from '@/types/finance';
+import { logger } from '@/utils/logger';
 
 interface CryptoPriceData {
   [coinId: string]: {
@@ -168,7 +169,7 @@ export const useCryptoPriceUpdater = (
         return; // Requisição cancelada, não é erro
       }
 
-      console.error('Error updating crypto prices:', err);
+      logger.error('Error updating crypto prices:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);
       

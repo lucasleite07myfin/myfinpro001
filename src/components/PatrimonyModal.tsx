@@ -37,6 +37,7 @@ import {
   DollarSign,
   Calendar as CalendarLucide
 } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface PatrimonyModalProps {
   open: boolean;
@@ -162,7 +163,7 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
       }
       onOpenChange(false);
     } catch (error) {
-      console.error('Error saving asset:', error);
+      logger.error('Error saving asset:', error);
       toast.error('Erro ao salvar patrimônio');
     }
   };

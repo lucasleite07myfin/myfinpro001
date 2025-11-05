@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 interface UserContextType {
   user: User | null;
@@ -28,7 +29,7 @@ const getUserOnce = async (): Promise<User | null> => {
       return user;
     })
     .catch((error) => {
-      console.error('Erro ao carregar usuário:', error);
+      logger.error('Erro ao carregar usuário:', error);
       userPromise = null;
       return null;
     });
