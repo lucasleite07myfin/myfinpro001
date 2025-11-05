@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { compare, hash } from "https://deno.land/x/bcrypt@v0.4.1/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +9,20 @@ const corsHeaders = {
 const logStep = (step: string, details?: unknown) => {
   console.log(JSON.stringify({ step, details, timestamp: new Date().toISOString() }));
 };
+
+// Funções de hashing usando Web Crypto API (compatível com Deno)
+async function hashPin(pin: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function comparePin(pin: string, hash: string): Promise<boolean> {
+  const pinHash = await hashPin(pin);
+  return pinHash === hash;
+}
 
 interface RequestBody {
   pin: string;
@@ -80,7 +93,7 @@ serve(async (req) => {
         }
 
         // Criar hash do PIN
-        const pinHash = await hash(pin)
+        const pinHash = await hashPin(pin)
         logStep('pin-hash-created');
 
         // Salvar no banco
@@ -112,7 +125,7 @@ serve(async (req) => {
         }
 
         // Validar PIN
-        const isValid = await compare(pin, profile.mode_switch_pin_hash)
+        const isValid = await comparePin(pin, profile.mode_switch_pin_hash)
         logStep('pin-validated', { isValid });
 
         return new Response(
@@ -143,7 +156,7 @@ serve(async (req) => {
           )
         }
 
-        const isValid = await compare(pin, profile.mode_switch_pin_hash)
+        const isValid = await comparePin(pin, profile.mode_switch_pin_hash)
         if (!isValid) {
           logStep('current-pin-incorrect');
           return new Response(
@@ -153,7 +166,7 @@ serve(async (req) => {
         }
 
         // Criar hash do novo PIN
-        const newHash = await hash(newPin)
+        const newHash = await hashPin(newPin)
         logStep('new-pin-hash-created');
 
         // Atualizar no banco
