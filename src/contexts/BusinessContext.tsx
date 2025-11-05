@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Transaction, RecurringExpense, Goal, Asset, Liability, MonthlyFinanceData, PaymentMethod } from '@/types/finance';
+import { Transaction, RecurringExpense, Goal, Asset, Liability, MonthlyFinanceData, PaymentMethod, CustomCategories } from '@/types/finance';
 import { Investment } from '@/components/AddInvestmentModal';
 import { Supplier } from '@/types/supplier';
 import { toast } from 'sonner';
@@ -57,6 +57,10 @@ interface BusinessContextType {
   setMonthlyExpenseValue: (expenseId: string, month: string, value: number | null) => void;
   calculateHealthSnapshot: () => Promise<void>;
   reloadData: () => Promise<void>;
+  customCategories: CustomCategories;
+  addCustomCategory: (type: 'income' | 'expense', category: string) => Promise<boolean>;
+  editCustomCategory: (id: string, type: 'income' | 'expense', oldName: string, newName: string) => Promise<void>;
+  deleteCustomCategory: (type: 'income' | 'expense', categoryName: string) => Promise<boolean>;
 }
 
 interface BusinessProviderProps {
@@ -125,6 +129,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   
   // New state variables for investments
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [customCategories, setCustomCategories] = useState<CustomCategories>({ income: [], expense: [] });
 
   // Carregar dados do Supabase
   useEffect(() => {
@@ -163,7 +168,8 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
         assetsResult,
         suppliersResult,
         liabilitiesResult,
-        monthlyResult
+        monthlyResult,
+        categoriesResult
       ] = await Promise.all([
         (supabase.from('emp_transactions') as any).select('*').eq('user_id', user.id),
         (supabase.from('emp_recurring_expenses') as any).select('*').eq('user_id', user.id),
@@ -171,7 +177,8 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
         (supabase.from('emp_assets') as any).select('*').eq('user_id', user.id),
         (supabase.from('suppliers') as any).select('*').eq('user_id', user.id),
         (supabase.from('emp_liabilities') as any).select('*').eq('user_id', user.id),
-        (supabase.from('emp_monthly_finance_data') as any).select('*').eq('user_id', user.id)
+        (supabase.from('emp_monthly_finance_data') as any).select('*').eq('user_id', user.id),
+        supabase.from('custom_categories').select('*').eq('user_id', user.id)
       ]);
 
       if (transactionsResult.data) {
@@ -283,6 +290,16 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
           expenseTotal: Number(m.expense_total)
         }));
         setMonthlyData(formattedMonthly);
+      }
+
+      if (categoriesResult.data) {
+        const customCats: CustomCategories = { income: [], expense: [] };
+        categoriesResult.data.forEach(cat => {
+          if (cat.type === 'income' || cat.type === 'expense') {
+            customCats[cat.type].push(cat.name);
+          }
+        });
+        setCustomCategories(customCats);
       }
 
     } catch (error) {
@@ -1002,6 +1019,161 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     }
   };
 
+  // Custom category functions
+  const addCustomCategory = async (type: 'income' | 'expense', category: string): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        logger.error('Usuário não autenticado ao adicionar categoria');
+        throw new Error('Usuário não autenticado');
+      }
+
+      const categoryToAdd = category.startsWith('Crie sua categoria: ') ? category : `Crie sua categoria: ${category}`;
+      
+      // Verifica se a categoria já existe
+      if (customCategories[type].includes(categoryToAdd)) {
+        return true;
+      }
+
+      const { error } = await supabase
+        .from('custom_categories')
+        .insert({
+          user_id: user.id,
+          type,
+          name: categoryToAdd
+        });
+
+      if (error) {
+        logger.error('Erro ao inserir categoria:', error);
+        throw error;
+      }
+
+      setCustomCategories(prev => ({
+        ...prev,
+        [type]: [...prev[type], categoryToAdd]
+      }));
+
+      toast.success('Categoria personalizada adicionada!');
+      return true;
+    } catch (error) {
+      logger.error('Erro ao adicionar categoria:', error);
+      toast.error('Erro ao adicionar categoria');
+      return false;
+    }
+  };
+
+  const editCustomCategory = async (
+    id: string, 
+    type: 'income' | 'expense', 
+    oldName: string, 
+    newName: string
+  ) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const categoryToUpdate = newName.startsWith('Crie sua categoria: ') ? newName : `Crie sua categoria: ${newName}`;
+      
+      // Atualizar no banco
+      const { error: updateError } = await supabase
+        .from('custom_categories')
+        .update({ name: categoryToUpdate })
+        .eq('user_id', user.id)
+        .eq('type', type)
+        .eq('name', oldName);
+
+      if (updateError) throw updateError;
+
+      // Atualizar transações que usam essa categoria
+      const { error: transError } = await supabase
+        .from('emp_transactions')
+        .update({ category: categoryToUpdate })
+        .eq('user_id', user.id)
+        .eq('category', oldName);
+
+      if (transError) logger.error('Erro ao atualizar transações:', transError);
+
+      // Atualizar despesas recorrentes
+      const { error: recurringError } = await supabase
+        .from('emp_recurring_expenses')
+        .update({ category: categoryToUpdate })
+        .eq('user_id', user.id)
+        .eq('category', oldName);
+
+      if (recurringError) logger.error('Erro ao atualizar despesas recorrentes:', recurringError);
+
+      // Atualizar estado local
+      setCustomCategories(prev => ({
+        ...prev,
+        [type]: prev[type].map(cat => cat === oldName ? categoryToUpdate : cat)
+      }));
+
+      setTransactions(prev => prev.map(t => 
+        t.category === oldName ? { ...t, category: categoryToUpdate } : t
+      ));
+
+      setRecurringExpenses(prev => prev.map(e => 
+        e.category === oldName ? { ...e, category: categoryToUpdate } : e
+      ));
+
+      toast.success('Categoria atualizada com sucesso!');
+    } catch (error) {
+      logger.error('Erro ao editar categoria:', error);
+      toast.error('Erro ao editar categoria');
+    }
+  };
+
+  const deleteCustomCategory = async (type: 'income' | 'expense', categoryName: string): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      // Verificar se categoria está em uso
+      const { data: transactionsInUse } = await supabase
+        .from('emp_transactions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('category', categoryName)
+        .limit(1);
+
+      const { data: recurringInUse } = await supabase
+        .from('emp_recurring_expenses')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('category', categoryName)
+        .limit(1);
+
+      if ((transactionsInUse && transactionsInUse.length > 0) || 
+          (recurringInUse && recurringInUse.length > 0)) {
+        toast.error('Esta categoria está em uso e não pode ser excluída');
+        return false;
+      }
+
+      // Deletar do banco
+      const { error } = await supabase
+        .from('custom_categories')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('type', type)
+        .eq('name', categoryName);
+
+      if (error) throw error;
+
+      // Atualizar estado local
+      setCustomCategories(prev => ({
+        ...prev,
+        [type]: prev[type].filter(cat => cat !== categoryName)
+      }));
+
+      toast.success('Categoria excluída com sucesso!');
+      return true;
+    } catch (error) {
+      logger.error('Erro ao deletar categoria:', error);
+      toast.error('Erro ao deletar categoria');
+      return false;
+    }
+  };
+
   // Calcula os totais do mês atual
   const getMonthTotals = () => {
     const currentMonthTransactions = transactions.filter(t => {
@@ -1133,7 +1305,11 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     getMonthlyExpenseValue,
     setMonthlyExpenseValue,
     calculateHealthSnapshot,
-    reloadData
+    reloadData,
+    customCategories,
+    addCustomCategory,
+    editCustomCategory,
+    deleteCustomCategory
   };
 
   return (
