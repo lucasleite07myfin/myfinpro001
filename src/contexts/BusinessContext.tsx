@@ -5,6 +5,7 @@ import { Supplier } from '@/types/supplier';
 import { toast } from 'sonner';
 import { getCurrentMonth } from '@/utils/formatters';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 // Add Investment to the interface
 interface BusinessContextType {
@@ -285,7 +286,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       }
 
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      logger.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados');
     } finally {
       setLoading(false);
@@ -344,7 +345,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       
       toast.success('Transação adicionada com sucesso!');
     } catch (error) {
-      console.error('Erro ao adicionar transação:', error);
+      logger.error('Erro ao adicionar transação:', error);
       toast.error('Erro ao adicionar transação');
     }
   };
@@ -382,7 +383,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       
       toast.success('Transação atualizada com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar transação:', error);
+      logger.error('Erro ao atualizar transação:', error);
       toast.error('Erro ao atualizar transação');
     }
   };
@@ -406,7 +407,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       
       toast.success('Transação excluída com sucesso!');
     } catch (error) {
-      console.error('Erro ao excluir transação:', error);
+      logger.error('Erro ao excluir transação:', error);
       toast.error('Erro ao excluir transação');
     }
   };
@@ -453,7 +454,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       setRecurringExpenses(prev => [...prev, newExpense]);
       toast.success('Despesa recorrente adicionada com sucesso!');
     } catch (error) {
-      console.error('Erro ao adicionar despesa recorrente:', error);
+      logger.error('Erro ao adicionar despesa recorrente:', error);
       toast.error('Erro ao adicionar despesa recorrente');
     }
   };
@@ -478,7 +479,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       setRecurringExpenses(prev => prev.map(item => item.id === expense.id ? expense : item));
       toast.success('Despesa recorrente atualizada com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar despesa recorrente:', error);
+      logger.error('Erro ao atualizar despesa recorrente:', error);
       toast.error('Erro ao atualizar despesa recorrente');
     }
   };
@@ -495,7 +496,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       setRecurringExpenses(prev => prev.filter(item => item.id !== id));
       toast.success('Despesa recorrente excluída com sucesso!');
     } catch (error) {
-      console.error('Erro ao excluir despesa recorrente:', error);
+      logger.error('Erro ao excluir despesa recorrente:', error);
       toast.error('Erro ao excluir despesa recorrente');
     }
   };
@@ -527,7 +528,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       setRecurringExpenses(prev => prev.map(e => e.id === id ? { ...e, paidMonths: newPaidMonths } : e));
       toast.success(`Despesa marcada como ${!isPaid ? 'paga' : 'não paga'}`);
     } catch (error) {
-      console.error('Erro ao atualizar despesa recorrente:', error);
+      logger.error('Erro ao atualizar despesa recorrente:', error);
       toast.error('Erro ao atualizar despesa recorrente');
     }
   };
@@ -652,7 +653,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       setGoals(prev => [...prev, newGoal]);
       toast.success('Meta adicionada com sucesso!');
     } catch (error) {
-      console.error('Erro ao adicionar meta:', error);
+      logger.error('Erro ao adicionar meta:', error);
       toast.error('Erro ao adicionar meta');
     }
   };
@@ -677,7 +678,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       setGoals(prev => prev.filter(item => item.id !== id));
       toast.success('Meta excluída com sucesso!');
     } catch (error) {
-      console.error('Erro ao excluir meta:', error);
+      logger.error('Erro ao excluir meta:', error);
       toast.error('Erro ao excluir meta');
     }
   };
@@ -749,7 +750,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       setAssets(prev => [...prev, newAsset]);
       toast.success('Ativo adicionado com sucesso!');
     } catch (error) {
-      console.error('Erro ao adicionar ativo:', error);
+      logger.error('Erro ao adicionar ativo:', error);
       toast.error('Erro ao adicionar ativo');
     }
   };
@@ -819,7 +820,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       setSuppliers(prev => [...prev, newSupplier]);
       toast.success('Fornecedor adicionado com sucesso!');
     } catch (error) {
-      console.error('Erro ao adicionar fornecedor:', error);
+      logger.error('Erro ao adicionar fornecedor:', error);
       toast.error('Erro ao adicionar fornecedor');
     }
   };
@@ -875,7 +876,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       setLiabilities(prev => [...prev, newLiability]);
       toast.success('Passivo adicionado com sucesso!');
     } catch (error) {
-      console.error('Erro ao adicionar passivo:', error);
+      logger.error('Erro ao adicionar passivo:', error);
       toast.error('Erro ao adicionar passivo');
     }
   };
@@ -920,7 +921,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       setInvestments(prev => [...prev, investment]);
       toast.success('Investimento salvo com sucesso!');
     } catch (error) {
-      console.error('Erro ao salvar investimento:', error);
+      logger.error('Erro ao salvar investimento:', error);
       toast.error('Erro ao salvar investimento');
     }
   };
@@ -948,7 +949,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       setInvestments(prev => prev.map(item => item.id === investment.id ? investment : item));
       toast.success('Investimento atualizado com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar investimento:', error);
+      logger.error('Erro ao atualizar investimento:', error);
       toast.error('Erro ao atualizar investimento');
     }
   };
@@ -965,7 +966,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       setInvestments(prev => prev.filter(item => item.id !== id));
       toast.success('Investimento excluído com sucesso!');
     } catch (error) {
-      console.error('Erro ao excluir investimento:', error);
+      logger.error('Erro ao excluir investimento:', error);
       toast.error('Erro ao excluir investimento');
     }
   };
@@ -996,7 +997,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       ));
       toast.success('Parcelas pagas atualizadas!');
     } catch (error) {
-      console.error('Erro ao atualizar parcelas pagas:', error);
+      logger.error('Erro ao atualizar parcelas pagas:', error);
       toast.error('Erro ao atualizar parcelas pagas');
     }
   };
@@ -1072,7 +1073,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       
       if (error) throw error;
     } catch (error) {
-      console.error('Erro ao calcular saúde financeira:', error);
+      logger.error('Erro ao calcular saúde financeira:', error);
       throw error;
     }
   };

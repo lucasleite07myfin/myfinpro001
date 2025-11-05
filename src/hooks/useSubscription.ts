@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import type { Subscription, PlanType } from '@/types/subscription';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export const useSubscription = () => {
   const { user } = useAuth();
@@ -27,7 +28,7 @@ export const useSubscription = () => {
       if (error) throw error;
       setSubscription(data as Subscription | null);
     } catch (error) {
-      console.error('Error fetching subscription:', error);
+      logger.error('Error fetching subscription:', error);
       toast.error('Erro ao carregar assinatura. Tente novamente mais tarde.');
     } finally {
       setLoading(false);
@@ -50,7 +51,6 @@ export const useSubscription = () => {
             filter: `user_id=eq.${user.id}`,
           },
           () => {
-            console.log('Subscription changed, refetching...');
             fetchSubscription();
           }
         )
@@ -101,7 +101,7 @@ export const useSubscription = () => {
         throw new Error('URL de checkout não recebida');
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
+      logger.error('Error creating checkout:', error);
       const message = error instanceof Error ? error.message : 'Tente novamente mais tarde';
       toast.error(`Erro ao criar checkout: ${message}`);
       setCreating(false);
@@ -120,7 +120,7 @@ export const useSubscription = () => {
 
       fetchSubscription();
     } catch (error) {
-      console.error('Error canceling subscription:', error);
+      logger.error('Error canceling subscription:', error);
       const message = error instanceof Error ? error.message : 'Tente novamente mais tarde';
       toast.error(`Erro ao cancelar assinatura: ${message}`);
     }

@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import type { DiscountCoupon } from '@/types/subscription';
+import { logger } from '@/utils/logger';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,7 +60,7 @@ const AdminCoupons = () => {
       if (error) throw error;
       setCoupons(data as DiscountCoupon[]);
     } catch (error) {
-      console.error('Error fetching coupons:', error);
+      logger.error('Error fetching coupons:', error);
       toast.error('Erro ao carregar cupons');
     } finally {
       setLoading(false);
@@ -109,7 +110,7 @@ const AdminCoupons = () => {
       // Refresh list
       fetchCoupons();
     } catch (error) {
-      console.error('Error creating coupon:', error);
+      logger.error('Error creating coupon:', error);
       const message = error instanceof Error ? error.message : 'Erro ao criar cupom';
       toast.error(message);
     } finally {
@@ -129,7 +130,7 @@ const AdminCoupons = () => {
       toast.success(coupon.is_active ? 'Cupom desativado' : 'Cupom ativado');
       fetchCoupons();
     } catch (error) {
-      console.error('Error toggling coupon:', error);
+      logger.error('Error toggling coupon:', error);
       toast.error('Erro ao atualizar cupom');
     }
   };
@@ -141,7 +142,6 @@ const AdminCoupons = () => {
 
   // Aguardar tanto user quanto roleLoading
   if (!user || roleLoading) {
-    console.log('⏳ Waiting for auth or role check - user:', !!user, 'roleLoading:', roleLoading);
     return (
       <div className="container mx-auto max-w-6xl p-4 space-y-6">
         <Skeleton className="h-12 w-64" />

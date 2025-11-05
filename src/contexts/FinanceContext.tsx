@@ -4,6 +4,7 @@ import { getCurrentMonth } from '@/utils/formatters';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
+import { logger } from '@/utils/logger';
 
 // Gerar dados de 12 meses para o gráfico
 const generateMonthlyData = (): MonthlyFinanceData[] => {
@@ -247,7 +248,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       setSecondaryDataLoaded(true);
     } catch (error) {
-      console.error('Erro ao carregar dados secundários:', error);
+      logger.error('Erro ao carregar dados secundários:', error);
       // Não mostra toast aqui para não atrapalhar a UX
     }
   };
@@ -345,7 +346,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   const addCustomCategory = async (type: 'income' | 'expense', category: string): Promise<boolean> => {
     try {
       if (!user) {
-        console.error('Usuário não autenticado ao adicionar categoria');
+        logger.error('Usuário não autenticado ao adicionar categoria');
         throw new Error('Usuário não autenticado');
       }
 
@@ -365,7 +366,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         });
 
       if (error) {
-        console.error('Erro detalhado ao inserir categoria no Supabase:', error);
+        logger.error('Erro detalhado ao inserir categoria no Supabase:', error);
         throw error;
       }
 
@@ -377,7 +378,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       toast.success('Categoria personalizada adicionada!');
       return true;
     } catch (error) {
-      console.error('Erro ao adicionar categoria:', error);
+      logger.error('Erro ao adicionar categoria:', error);
       toast.error('Erro ao adicionar categoria');
       return false;
     }
@@ -391,7 +392,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   ) => {
     try {
       if (!user) {
-        console.error('Usuário não autenticado ao editar categoria');
+        logger.error('Usuário não autenticado ao editar categoria');
         throw new Error('Usuário não autenticado');
       }
 
@@ -435,7 +436,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       toast.success('Categoria atualizada com sucesso!');
     } catch (error) {
-      console.error('Erro ao editar categoria:', error);
+      logger.error('Erro ao editar categoria:', error);
       toast.error('Erro ao editar categoria');
     }
   };
@@ -443,7 +444,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   const deleteCustomCategory = async (type: 'income' | 'expense', categoryName: string) => {
     try {
       if (!user) {
-        console.error('Usuário não autenticado ao excluir categoria');
+        logger.error('Usuário não autenticado ao excluir categoria');
         throw new Error('Usuário não autenticado');
       }
 
@@ -484,7 +485,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       toast.success('Categoria excluída com sucesso!');
       return true;
     } catch (error) {
-      console.error('Erro ao excluir categoria:', error);
+      logger.error('Erro ao excluir categoria:', error);
       toast.error('Erro ao excluir categoria');
       return false;
     }
@@ -532,7 +533,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setRecurringExpenses([...recurringExpenses, newExpense]);
       toast.success('Despesa recorrente adicionada com sucesso!');
     } catch (error) {
-      console.error('Erro ao adicionar despesa recorrente:', error);
+      logger.error('Erro ao adicionar despesa recorrente:', error);
       toast.error('Erro ao adicionar despesa recorrente');
     }
   };
@@ -579,7 +580,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setRecurringExpenses(recurringExpenses.map(e => e.id === expenseId ? { ...e, monthlyValues } : e));
       toast.success('Valor mensal atualizado com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar valor mensal:', error);
+      logger.error('Erro ao atualizar valor mensal:', error);
       toast.error('Erro ao atualizar valor mensal');
     }
   };
@@ -627,7 +628,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       toast.success('Despesa fixa atualizada com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar despesa recorrente:', error);
+      logger.error('Erro ao atualizar despesa recorrente:', error);
       toast.error('Erro ao atualizar despesa recorrente');
     }
   };
@@ -659,7 +660,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       
       toast.success('Despesa fixa excluída com sucesso!');
     } catch (error) {
-      console.error('Erro ao excluir despesa recorrente:', error);
+      logger.error('Erro ao excluir despesa recorrente:', error);
       toast.error('Erro ao excluir despesa recorrente');
     }
   };
@@ -719,7 +720,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       toast.success(`Despesa marcada como ${paid ? 'paga' : 'não paga'}!`);
       updateMonthlyData();
     } catch (error) {
-      console.error('Erro ao marcar despesa como paga:', error);
+      logger.error('Erro ao marcar despesa como paga:', error);
       toast.error('Erro ao marcar despesa como paga');
     }
   };
@@ -762,7 +763,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setGoals([...goals, newGoal]);
       toast.success('Meta adicionada com sucesso!');
     } catch (error) {
-      console.error('Erro ao adicionar meta:', error);
+      logger.error('Erro ao adicionar meta:', error);
       toast.error('Erro ao adicionar meta');
     }
   };
@@ -785,7 +786,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setGoals(goals.map(g => g.id === goal.id ? goal : g));
       toast.success('Meta atualizada com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar meta:', error);
+      logger.error('Erro ao atualizar meta:', error);
       toast.error('Erro ao atualizar meta');
     }
   };
@@ -813,7 +814,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setGoals(goals.map(g => g.id === id ? updatedGoal : g));
       toast.success('Meta atualizada com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar meta:', error);
+      logger.error('Erro ao atualizar meta:', error);
       toast.error('Erro ao atualizar meta');
     }
   };
@@ -888,7 +889,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setAssets([...assets, newAsset]);
       toast.success('Ativo adicionado com sucesso!');
     } catch (error) {
-      console.error('Erro ao adicionar ativo:', error);
+      logger.error('Erro ao adicionar ativo:', error);
       toast.error('Erro ao adicionar ativo');
     }
   };
@@ -920,7 +921,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setAssets(assets.map(a => a.id === asset.id ? asset : a));
       toast.success('Ativo atualizado com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar ativo:', error);
+      logger.error('Erro ao atualizar ativo:', error);
       toast.error('Erro ao atualizar ativo');
     }
   };
@@ -937,7 +938,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setAssets(assets.filter(a => a.id !== id));
       toast.success('Ativo excluído com sucesso!');
     } catch (error) {
-      console.error('Erro ao excluir ativo:', error);
+      logger.error('Erro ao excluir ativo:', error);
       toast.error('Erro ao excluir ativo');
     }
   };
@@ -971,7 +972,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setLiabilities([...liabilities, newLiability]);
       toast.success('Passivo adicionado com sucesso!');
     } catch (error) {
-      console.error('Erro ao adicionar passivo:', error);
+      logger.error('Erro ao adicionar passivo:', error);
       toast.error('Erro ao adicionar passivo');
     }
   };
@@ -992,7 +993,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setLiabilities(liabilities.map(l => l.id === liability.id ? liability : l));
       toast.success('Passivo atualizado com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar passivo:', error);
+      logger.error('Erro ao atualizar passivo:', error);
       toast.error('Erro ao atualizar passivo');
     }
   };
@@ -1009,7 +1010,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setLiabilities(liabilities.filter(l => l.id !== id));
       toast.success('Passivo excluído com sucesso!');
     } catch (error) {
-      console.error('Erro ao excluir passivo:', error);
+      logger.error('Erro ao excluir passivo:', error);
       toast.error('Erro ao excluir passivo');
     }
   };
@@ -1060,7 +1061,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       // Atualizar os dados mensais no estado
       setMonthlyData(updatedMonthlyData);
     } catch (error) {
-      console.error('Erro ao atualizar dados mensais:', error);
+      logger.error('Erro ao atualizar dados mensais:', error);
       toast.error('Erro ao atualizar dados mensais');
     }
   };
@@ -1099,7 +1100,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       
       if (error) throw error;
     } catch (error) {
-      console.error('Erro ao calcular saúde financeira:', error);
+      logger.error('Erro ao calcular saúde financeira:', error);
       throw error;
     }
   };

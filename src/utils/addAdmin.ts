@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 export const addAdminRole = async (email: string) => {
   const { data, error } = await supabase.functions.invoke('add-admin', {
@@ -6,19 +7,18 @@ export const addAdminRole = async (email: string) => {
   });
 
   if (error) {
-    console.error('Error adding admin role:', error);
+    logger.error('Error adding admin role:', error);
     throw error;
   }
 
-  console.log('Admin role added:', data);
   return data;
 };
 
 // Execute immediately to add the admin
 addAdminRole('leite.07@hotmail.com')
   .then((result) => {
-    console.log('✅ Admin added successfully:', result);
+    logger.info('Admin added successfully:', result);
   })
   .catch((error) => {
-    console.error('❌ Failed to add admin:', error);
+    logger.error('Failed to add admin:', error);
   });
