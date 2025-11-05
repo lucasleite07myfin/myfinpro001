@@ -383,7 +383,7 @@ const Profile = () => {
                     id="pin-toggle"
                     checked={pinRequired}
                     onCheckedChange={handleTogglePin}
-                    className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
+                    className="data-[state=checked]:!bg-green-500 data-[state=unchecked]:!bg-red-500"
                   />
                 </TooltipHelper>
               </div>
