@@ -88,7 +88,9 @@ export const ManageCustomCategories: React.FC<ManageCustomCategoriesProps> = ({
               key={cat}
               className="flex items-center justify-between gap-2 p-1.5 rounded-md hover:bg-muted/80 group"
             >
-              <span className="text-sm flex-1 truncate">{cat}</span>
+              <span className="text-sm flex-1 truncate">
+                {cat.replace('Crie sua categoria: ', '')}
+              </span>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
                   variant="ghost"

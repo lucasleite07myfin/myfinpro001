@@ -97,16 +97,34 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       setTransactionType(initialData.type);
       setDate(initialData.date);
       setDescription(initialData.description);
-      setCategory(initialData.category);
       setAmount(initialData.amount.toString());
       setFormattedAmount(formatNumberToCurrency(initialData.amount));
       setPaymentMethod(initialData.paymentMethod);
+      
+      // Verificar se a categoria tem o prefixo "Crie sua categoria: "
       if (initialData.category.startsWith('Crie sua categoria: ')) {
         setCategory('Crie sua categoria');
         setCustomCategory(initialData.category.substring(20));
+      } else {
+        // Para categorias normais ou categorias personalizadas que já estão no customCategories,
+        // remover o prefixo se existir
+        const categoryWithoutPrefix = initialData.category.replace('Crie sua categoria: ', '');
+        setCategory(categoryWithoutPrefix);
       }
     }
   }, [mode, initialData, open]);
+
+  // Forçar atualização quando categorias personalizadas mudarem
+  useEffect(() => {
+    if (open) {
+      const updatedCategories = getCurrentCategories();
+      // Se a categoria selecionada não existe mais, limpar
+      const categoryWithoutPrefix = category.replace('Crie sua categoria: ', '');
+      if (category && !updatedCategories.includes(categoryWithoutPrefix) && category !== 'Crie sua categoria') {
+        setCategory('');
+      }
+    }
+  }, [customCategories, transactionType, open]);
 
   const resetForm = () => {
     setActiveTab('transaction');
@@ -134,8 +152,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const getCurrentCategories = () => {
     const defaultCategories = transactionType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
     const userCustomCategories = customCategories?.[transactionType] || [];
+    
+    // Remover prefixo "Crie sua categoria: " para exibição
+    const displayUserCategories = userCustomCategories.map(cat => 
+      cat.replace('Crie sua categoria: ', '')
+    );
+    
     const filteredDefaultCategories = defaultCategories.filter(cat => cat !== 'Crie sua categoria');
-    return [...userCustomCategories, ...filteredDefaultCategories, 'Crie sua categoria'];
+    return [...displayUserCategories, ...filteredDefaultCategories, 'Crie sua categoria'];
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -204,10 +228,22 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       }
     }
 
+    // Mapear categoria exibida (sem prefixo) para valor real no banco (com prefixo)
+    let finalCategory = category;
+    if (category === 'Crie sua categoria' && customCategory.trim()) {
+      finalCategory = `Crie sua categoria: ${customCategory.trim()}`;
+    } else if (category !== 'Crie sua categoria') {
+      // Verificar se é uma categoria personalizada (precisa adicionar o prefixo de volta)
+      const fullCategory = customCategories[transactionType].find(
+        cat => cat.replace('Crie sua categoria: ', '') === category
+      );
+      finalCategory = fullCategory || category;
+    }
+
     const transactionData = {
       date,
       description: sanitizedDescription,
-      category: category === 'Crie sua categoria' && customCategory.trim() ? `Crie sua categoria: ${customCategory.trim()}` : category,
+      category: finalCategory,
       amount: numericAmount,
       type: transactionType,
       paymentMethod
@@ -264,7 +300,18 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       }
     }
 
-    const finalCategory = category === 'Crie sua categoria' && customCategory.trim() ? `Crie sua categoria: ${customCategory.trim()}` : category;
+    // Mapear categoria exibida (sem prefixo) para valor real no banco (com prefixo)
+    let finalCategory = category;
+    if (category === 'Crie sua categoria' && customCategory.trim()) {
+      finalCategory = `Crie sua categoria: ${customCategory.trim()}`;
+    } else if (category !== 'Crie sua categoria') {
+      // Verificar se é uma categoria personalizada (precisa adicionar o prefixo de volta)
+      const fullCategory = customCategories['expense'].find(
+        cat => cat.replace('Crie sua categoria: ', '') === category
+      );
+      finalCategory = fullCategory || category;
+    }
+
     addRecurringExpense({
         description: sanitizedDescription,
         category: finalCategory,
