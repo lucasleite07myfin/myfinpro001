@@ -3,7 +3,7 @@ import { Transaction, RecurringExpense, Goal, Asset, Liability, MonthlyFinanceDa
 import { Investment } from '@/components/AddInvestmentModal';
 import { Supplier } from '@/types/supplier';
 import { toast } from 'sonner';
-import { getCurrentMonth } from '@/utils/formatters';
+import { getCurrentMonth, parseDateFromDB, formatDateToDB } from '@/utils/formatters';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 
@@ -184,7 +184,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       if (transactionsResult.data) {
         const formattedTransactions = transactionsResult.data.map((t: any) => ({
           id: t.id,
-          date: new Date(t.date + 'T12:00:00'),
+          date: parseDateFromDB(t.date),
           description: t.description,
           category: t.category,
           amount: Number(t.amount),
@@ -224,7 +224,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
           name: g.name,
           targetAmount: Number(g.target_amount),
           currentAmount: Number(g.current_amount || 0),
-          targetDate: new Date(g.target_date),
+          targetDate: parseDateFromDB(g.target_date),
           savingLocation: g.saving_location
         }));
         setGoals(formattedGoals);
@@ -236,15 +236,15 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
           name: a.name,
           type: a.type,
           value: Number(a.value),
-          evaluationDate: a.evaluation_date ? new Date(a.evaluation_date) : null,
+          evaluationDate: a.evaluation_date ? parseDateFromDB(a.evaluation_date) : null,
           acquisitionValue: a.acquisition_value ? Number(a.acquisition_value) : undefined,
-          acquisitionDate: a.acquisition_date ? new Date(a.acquisition_date) : null,
+          acquisitionDate: a.acquisition_date ? parseDateFromDB(a.acquisition_date) : null,
           insured: a.insured || false,
           wallet: a.wallet,
           symbol: a.symbol,
           notes: a.notes,
           location: a.location,
-          lastUpdated: a.last_updated ? new Date(a.last_updated) : null,
+          lastUpdated: a.last_updated ? parseDateFromDB(a.last_updated) : null,
           lastPriceBrl: a.last_price_brl ? Number(a.last_price_brl) : undefined,
           quantity: a.quantity ? Number(a.quantity) : undefined
         }));
@@ -320,7 +320,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
         .from('emp_transactions')
         .insert({
           user_id: user.id,
-          date: transaction.date.toISOString().split('T')[0],
+          date: formatDateToDB(transaction.date),
           description: transaction.description,
           category: transaction.category,
           amount: transaction.amount,
@@ -342,7 +342,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       const newTransaction = {
         ...transaction,
         id: data.id,
-        date: new Date(data.date)
+        date: parseDateFromDB(data.date)
       };
 
       setTransactions(prev => [newTransaction, ...prev]);
@@ -372,7 +372,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       const { error } = await supabase
         .from('emp_transactions')
         .update({
-          date: transaction.date.toISOString().split('T')[0],
+          date: formatDateToDB(transaction.date),
           description: transaction.description,
           category: transaction.category,
           amount: transaction.amount,
@@ -650,7 +650,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
           name: goal.name,
           target_amount: goal.targetAmount,
           current_amount: goal.currentAmount || 0,
-          target_date: goal.targetDate.toISOString().split('T')[0],
+          target_date: formatDateToDB(goal.targetDate),
           saving_location: goal.savingLocation
         })
         .select()
@@ -730,9 +730,9 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
           name: asset.name,
           type: asset.type,
           value: asset.value,
-          evaluation_date: asset.evaluationDate?.toISOString().split('T')[0],
+          evaluation_date: asset.evaluationDate ? formatDateToDB(asset.evaluationDate) : null,
           acquisition_value: asset.acquisitionValue,
-          acquisition_date: asset.acquisitionDate?.toISOString().split('T')[0],
+          acquisition_date: asset.acquisitionDate ? formatDateToDB(asset.acquisitionDate) : null,
           insured: asset.insured || false,
           wallet: asset.wallet,
           symbol: asset.symbol,

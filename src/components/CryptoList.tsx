@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Asset } from '@/types/finance';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatDateToDB } from '@/utils/formatters';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -140,7 +140,7 @@ const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
     const a = document.createElement('a');
     a.setAttribute('hidden', '');
     a.setAttribute('href', url);
-    a.setAttribute('download', `criptomoedas_${new Date().toISOString().split('T')[0]}.csv`);
+    a.setAttribute('download', `criptomoedas_${formatDateToDB(new Date())}.csv`);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

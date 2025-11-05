@@ -3,7 +3,7 @@ import MainLayout from '@/components/MainLayout';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatDateToDB } from '@/utils/formatters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -177,7 +177,7 @@ const Patrimony: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `patrimonio_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `patrimonio_${formatDateToDB(new Date())}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -213,7 +213,7 @@ const Patrimony: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `patrimonio_${new Date().toISOString().split('T')[0]}.xls`;
+    link.download = `patrimonio_${formatDateToDB(new Date())}.xls`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

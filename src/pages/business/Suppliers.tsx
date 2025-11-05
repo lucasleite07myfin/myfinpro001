@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, FileUp, Search, Edit, Trash2, AlertTriangle, FileText } from 'lucide-react';
 import { useBusiness } from '@/contexts/BusinessContext';
+import { formatDateToDB } from '@/utils/formatters';
 import MainLayout from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -175,7 +176,7 @@ const Suppliers: React.FC = () => {
     const link = document.createElement('a');
     
     // Set up the download
-    const date = new Date().toISOString().split('T')[0];
+    const date = formatDateToDB(new Date());
     link.setAttribute('href', url);
     link.setAttribute('download', `fornecedores_${date}.csv`);
     link.style.visibility = 'hidden';
@@ -219,7 +220,7 @@ const Suppliers: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const date = new Date().toISOString().split('T')[0];
+    const date = formatDateToDB(new Date());
     link.download = `fornecedores_${date}.xls`;
     document.body.appendChild(link);
     link.click();
@@ -285,7 +286,7 @@ const Suppliers: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const date = new Date().toISOString().split('T')[0];
+    const date = formatDateToDB(new Date());
     link.download = `fornecedores_${date}.html`;
     document.body.appendChild(link);
     link.click();
