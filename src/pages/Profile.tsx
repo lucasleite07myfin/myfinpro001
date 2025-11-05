@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { User, Mail, KeyRound, Loader2, Lock } from 'lucide-react';
+import { User, Mail, KeyRound, Loader2, Lock, ShieldAlert } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import TooltipHelper from '@/components/TooltipHelper';
 import { tooltipContent } from '@/data/tooltipContent';
@@ -17,6 +17,9 @@ import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import ChangePinSection from '@/components/ChangePinSection';
 import ResetPinModal from '@/components/ResetPinModal';
+import { Switch } from '@/components/ui/switch';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
@@ -25,6 +28,10 @@ const Profile = () => {
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [pinRequired, setPinRequired] = useState(true);
+  const [showDisablePinDialog, setShowDisablePinDialog] = useState(false);
+  const [disablingPin, setDisablingPin] = useState(false);
+  const [currentPin, setCurrentPin] = useState(['', '', '', '']);
   
   const { mode } = useAppMode();
   const { setCompanyName: updateBusinessContext } = useBusiness();
@@ -41,15 +48,16 @@ const Profile = () => {
         setUserEmail(user.email || '');
         setUserName(user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || '');
         
-        // Load company name from profiles
+        // Load company name and pin settings from profiles
         const { data: profile } = await supabase
           .from('profiles')
-          .select('company_name')
+          .select('company_name, pin_required')
           .eq('id', user.id)
           .single();
         
         if (profile) {
           setCompanyName(profile.company_name || '');
+          setPinRequired(profile.pin_required ?? true);
         }
       }
     } catch (error) {
@@ -133,6 +141,106 @@ const Profile = () => {
       toast.error('Erro ao atualizar nome da empresa');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTogglePin = async (enabled: boolean) => {
+    if (enabled) {
+      // Ativar PIN - apenas atualizar o flag
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Verificar se já tem PIN configurado
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('mode_switch_pin_hash')
+          .eq('id', user.id)
+          .single();
+
+        if (!profile?.mode_switch_pin_hash) {
+          toast.error('Configure um PIN primeiro antes de ativar a proteção');
+          return;
+        }
+
+        const { error } = await supabase
+          .from('profiles')
+          .update({ pin_required: true })
+          .eq('id', user.id);
+
+        if (error) throw error;
+
+        setPinRequired(true);
+        toast.success('PIN ativado com sucesso');
+      } catch (error) {
+        console.error('Erro ao ativar PIN:', error);
+        toast.error('Erro ao ativar PIN');
+      }
+    } else {
+      // Desativar PIN - mostrar diálogo de confirmação
+      setShowDisablePinDialog(true);
+    }
+  };
+
+  const confirmDisablePin = async () => {
+    setDisablingPin(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Usuário não encontrado');
+        return;
+      }
+
+      const pin = currentPin.join('');
+      if (pin.length !== 4) {
+        toast.error('Digite o PIN de 4 dígitos');
+        return;
+      }
+
+      // Validar PIN atual
+      const { data, error } = await supabase.functions.invoke('validate-mode-pin', {
+        body: { pin, action: 'validate' }
+      });
+
+      if (error) throw error;
+
+      if (!data.success) {
+        toast.error('PIN incorreto');
+        setCurrentPin(['', '', '', '']);
+        return;
+      }
+
+      // Desativar PIN
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ pin_required: false })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setPinRequired(false);
+      setShowDisablePinDialog(false);
+      setCurrentPin(['', '', '', '']);
+      toast.success('PIN desativado. A alternância de modos não requer mais PIN.');
+    } catch (error) {
+      console.error('Erro ao desativar PIN:', error);
+      toast.error('Erro ao desativar PIN');
+    } finally {
+      setDisablingPin(false);
+    }
+  };
+
+  const handlePinChange = (index: number, value: string) => {
+    if (value.length > 1) value = value.slice(-1);
+    if (!/^\d*$/.test(value)) return;
+
+    const newPin = [...currentPin];
+    newPin[index] = value;
+    setCurrentPin(newPin);
+
+    if (value && index < 3) {
+      const nextInput = document.getElementById(`disable-pin-${index + 1}`);
+      nextInput?.focus();
     }
   };
   
@@ -249,7 +357,36 @@ const Profile = () => {
                 Gerencie o PIN que protege a alternância entre os modos pessoal e empresarial.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
+              {!pinRequired && (
+                <Alert variant="destructive">
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Aviso de Segurança:</strong> O PIN está desativado. A alternância entre modos pessoal e empresarial pode ser feita sem autenticação. Recomendamos manter o PIN ativado se você compartilha este dispositivo.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="pin-toggle" className="text-base font-medium">
+                    Exigir PIN para Alternar Modos
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {pinRequired 
+                      ? 'PIN é necessário ao alternar entre modo pessoal e empresarial'
+                      : 'Você pode alternar entre modos sem digitar o PIN'}
+                  </p>
+                </div>
+                <TooltipHelper content={pinRequired ? 'Desativar proteção por PIN' : 'Ativar proteção por PIN'}>
+                  <Switch
+                    id="pin-toggle"
+                    checked={pinRequired}
+                    onCheckedChange={handleTogglePin}
+                  />
+                </TooltipHelper>
+              </div>
+
               <ChangePinSection userId={userId} />
             </CardContent>
           </Card>
@@ -302,6 +439,61 @@ const Profile = () => {
         </div>
       </TooltipProvider>
       <ResetPinModal />
+
+      <AlertDialog open={showDisablePinDialog} onOpenChange={setShowDisablePinDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desativar PIN de Segurança?</AlertDialogTitle>
+            <AlertDescription className="space-y-4">
+              <p>
+                <strong>Atenção:</strong> Ao desativar o PIN, qualquer pessoa com acesso ao seu dispositivo poderá alternar entre os modos pessoal e empresarial sem autenticação.
+              </p>
+              <p>
+                Para confirmar, digite seu PIN atual:
+              </p>
+              <div className="flex gap-2 justify-center mt-4">
+                {[0, 1, 2, 3].map((index) => (
+                  <Input
+                    key={index}
+                    id={`disable-pin-${index}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    className="w-12 h-12 text-center text-lg font-semibold"
+                    value={currentPin[index]}
+                    onChange={(e) => handlePinChange(index, e.target.value)}
+                    disabled={disablingPin}
+                  />
+                ))}
+              </div>
+            </AlertDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={() => {
+                setCurrentPin(['', '', '', '']);
+              }}
+              disabled={disablingPin}
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDisablePin}
+              disabled={disablingPin || currentPin.join('').length !== 4}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {disablingPin ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Desativando...
+                </>
+              ) : (
+                'Desativar PIN'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };

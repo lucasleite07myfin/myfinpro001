@@ -28,12 +28,19 @@ const ModeToggle: React.FC = () => {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('mode_switch_pin_hash')
+        .select('mode_switch_pin_hash, pin_required')
         .eq('id', user.id)
         .single();
 
       const newMode = mode === 'personal' ? 'business' : 'personal';
       setTargetMode(newMode);
+
+      // Se PIN não é obrigatório, alternar diretamente
+      if (profile?.pin_required === false) {
+        toggleMode();
+        navigate('/');
+        return;
+      }
 
       if (!profile?.mode_switch_pin_hash) {
         // Primeira vez - criar PIN
