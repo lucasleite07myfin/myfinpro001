@@ -288,7 +288,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         date: new Date(data.date)
       };
 
-      setTransactions([...transactions, newTransaction]);
+      setTransactions([newTransaction, ...transactions]);
       toast.success('Transação adicionada com sucesso!');
       updateMonthlyData();
     } catch (error) {

@@ -328,7 +328,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
         date: new Date(data.date)
       };
 
-      setTransactions(prev => [...prev, newTransaction]);
+      setTransactions(prev => [newTransaction, ...prev]);
       
       // Atualizar monthlyData localmente ao invés de reload completo
       const monthStr = `${newTransaction.date.getFullYear()}-${String(newTransaction.date.getMonth() + 1).padStart(2, '0')}`;
