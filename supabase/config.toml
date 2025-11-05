@@ -54,3 +54,6 @@ verify_jwt = true
 
 [functions.validate-mode-pin]
 verify_jwt = true
+
+[functions.reset-mode-pin]
+verify_jwt = false

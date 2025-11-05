@@ -14,6 +14,7 @@ const ChangePinSection: React.FC<ChangePinSectionProps> = ({ userId }) => {
   const [currentPin, setCurrentPin] = useState(['', '', '', '']);
   const [newPin, setNewPin] = useState(['', '', '', '']);
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   
   const currentPinRefs = [
     useRef<HTMLInputElement>(null),
@@ -97,6 +98,38 @@ const ChangePinSection: React.FC<ChangePinSectionProps> = ({ userId }) => {
     }
   };
 
+  const handleForgotPin = async () => {
+    setResetLoading(true);
+    
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error('Sessão expirada. Faça login novamente.');
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('reset-mode-pin', {
+        body: { action: 'request' },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Erro ao enviar e-mail');
+      }
+
+      toast.success('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
+      
+    } catch (error) {
+      console.error('Erro ao solicitar reset:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao enviar e-mail de recuperação');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
@@ -116,6 +149,23 @@ const ChangePinSection: React.FC<ChangePinSectionProps> = ({ userId }) => {
             />
           ))}
         </div>
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          onClick={handleForgotPin}
+          disabled={resetLoading || loading}
+          className="h-auto p-0 text-xs"
+        >
+          {resetLoading ? (
+            <>
+              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              Enviando...
+            </>
+          ) : (
+            'Esqueci meu PIN'
+          )}
+        </Button>
       </div>
 
       <div className="space-y-2">

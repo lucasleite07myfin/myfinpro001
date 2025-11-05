@@ -16,6 +16,7 @@ import { Building2 } from 'lucide-react';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import ChangePinSection from '@/components/ChangePinSection';
+import ResetPinModal from '@/components/ResetPinModal';
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
@@ -300,6 +301,7 @@ const Profile = () => {
           )}
         </div>
       </TooltipProvider>
+      <ResetPinModal />
     </MainLayout>
   );
 };
