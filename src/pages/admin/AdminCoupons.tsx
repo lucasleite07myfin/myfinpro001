@@ -67,18 +67,9 @@ const AdminCoupons = () => {
   };
 
   useEffect(() => {
-    console.log('🎯 AdminCoupons mounted/updated');
-    console.log('🎯 user:', user?.id);
-    console.log('🎯 roleLoading:', roleLoading);
-    console.log('🎯 isAdmin:', isAdmin);
-    
     if (user && isAdmin && !roleLoading) {
       fetchCoupons();
     }
-    
-    return () => {
-      console.log('🎯 AdminCoupons cleanup');
-    };
   }, [user, isAdmin, roleLoading]);
 
   const handleCreateCoupon = async () => {
@@ -159,14 +150,9 @@ const AdminCoupons = () => {
     );
   }
 
-  // Só redirecionar se user existe E não é admin
   if (!isAdmin) {
-    console.log('⚠️ Redirecting: user is not admin');
     return <Navigate to="/" replace />;
   }
-
-  // Se chegou aqui, é admin autenticado
-  console.log('✅ Rendering admin coupons page for user:', user.id);
 
   return (
     <AdminLayout>

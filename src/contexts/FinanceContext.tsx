@@ -820,35 +820,20 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
   const deleteGoal = async (id: string) => {
     try {
-      console.log('🗑️ Iniciando exclusão de meta:', { goalId: id });
-      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
-      
-      console.log('👤 Usuário autenticado:', { userId: user.id });
 
-      const { error, data } = await supabase
+      const { error } = await supabase
         .from('goals')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id)
-        .select();
+        .eq('user_id', user.id);
 
-      if (error) {
-        console.error('❌ Erro Supabase completo:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('✅ Meta excluída do banco:', data);
       setGoals(goals.filter(g => g.id !== id));
       toast.success('Meta excluída com sucesso!');
     } catch (error) {
-      console.error('❌ Erro completo ao excluir meta:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao excluir meta');
     }
   };

@@ -33,16 +33,9 @@ const AdminSubscriptions = () => {
 
   const fetchSubscriptions = async () => {
     try {
-      console.log('Fetching subscriptions via Edge Function...');
-      
       const { data, error } = await supabase.functions.invoke('admin-list-subscriptions');
       
-      if (error) {
-        console.error('Error fetching subscriptions:', error);
-        throw error;
-      }
-
-      console.log('Subscriptions received:', data);
+      if (error) throw error;
 
       const subsWithEmail: SubscriptionWithEmail[] = data.subscriptions.map((sub: any) => ({
         ...sub,
@@ -51,9 +44,7 @@ const AdminSubscriptions = () => {
       }));
 
       setSubscriptions(subsWithEmail);
-      console.log('Subscriptions loaded:', subsWithEmail.length);
     } catch (error) {
-      console.error('Error loading subscriptions:', error);
       toast.error('Erro ao carregar assinaturas');
     } finally {
       setLoading(false);

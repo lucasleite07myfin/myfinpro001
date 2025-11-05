@@ -37,16 +37,9 @@ const AdminDashboard = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      console.log('🔍 Fetching dashboard stats via Edge Function...');
-      
       const { data, error } = await supabase.functions.invoke('admin-dashboard-stats');
       
-      if (error) {
-        console.error('❌ Error fetching dashboard stats:', error);
-        throw error;
-      }
-
-      console.log('✅ Dashboard stats received:', data);
+      if (error) throw error;
 
       setStats({
         totalUsers: data.users.total,
@@ -57,10 +50,7 @@ const AdminDashboard = () => {
         monthlyRevenue: data.financial.monthly_revenue,
         totalTransactions: data.financial.total_transactions,
       });
-
-      console.log('✅ Dashboard stats loaded successfully');
     } catch (error) {
-      console.error('❌ Error loading dashboard stats:', error);
       toast.error('Erro ao carregar estatísticas');
     } finally {
       setLoading(false);

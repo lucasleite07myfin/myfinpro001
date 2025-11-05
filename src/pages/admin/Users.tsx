@@ -48,16 +48,9 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      console.log('Fetching users via Edge Function...');
-      
       const { data, error } = await supabase.functions.invoke('admin-list-users');
       
-      if (error) {
-        console.error('Error fetching users:', error);
-        throw error;
-      }
-
-      console.log('Users received:', data);
+      if (error) throw error;
 
       const usersData: UserData[] = data.users.map((user: any) => ({
         id: user.id,
@@ -69,9 +62,7 @@ const AdminUsers = () => {
 
       setUsers(usersData);
       setFilteredUsers(usersData);
-      console.log('Users loaded:', usersData.length);
     } catch (error) {
-      console.error('Error loading users:', error);
       toast.error('Erro ao carregar usuários');
     } finally {
       setLoading(false);

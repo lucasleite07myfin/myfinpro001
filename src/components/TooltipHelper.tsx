@@ -14,17 +14,19 @@ interface TooltipHelperProps {
   delayDuration?: number;
 }
 
-const TooltipHelper: React.FC<TooltipHelperProps> = ({ 
+const TooltipHelper = React.forwardRef<HTMLDivElement, TooltipHelperProps>(({ 
   children, 
   content, 
   side = "top", 
   align = "center",
   delayDuration = 300
-}) => {
+}, ref) => {
   return (
     <Tooltip delayDuration={delayDuration}>
       <TooltipTrigger asChild>
-        {children}
+        <div ref={ref}>
+          {children}
+        </div>
       </TooltipTrigger>
       <TooltipContent 
         side={side} 
@@ -35,6 +37,8 @@ const TooltipHelper: React.FC<TooltipHelperProps> = ({
       </TooltipContent>
     </Tooltip>
   );
-};
+});
+
+TooltipHelper.displayName = 'TooltipHelper';
 
 export default TooltipHelper;
