@@ -204,7 +204,7 @@ const Profile = () => {
 
       if (error) throw error;
 
-      if (!data.success) {
+      if (!data.valid) {
         toast.error('PIN incorreto');
         setCurrentPin(['', '', '', '']);
         return;
