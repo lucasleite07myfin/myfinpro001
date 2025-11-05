@@ -1022,41 +1022,75 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Custom category functions
   const addCustomCategory = async (type: 'income' | 'expense', category: string): Promise<boolean> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      logger.info('🔵 [addCustomCategory] Iniciando...', { type, category });
+      
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      logger.info('🔵 [addCustomCategory] Usuário:', { userId: user?.id, email: user?.email });
+      
+      if (authError) {
+        logger.error('❌ [addCustomCategory] Erro de autenticação:', authError);
+        throw new Error('Erro ao verificar autenticação');
+      }
+
       if (!user) {
-        logger.error('Usuário não autenticado ao adicionar categoria');
+        logger.error('❌ [addCustomCategory] Usuário não autenticado');
         throw new Error('Usuário não autenticado');
       }
 
       const categoryToAdd = category.startsWith('Crie sua categoria: ') ? category : `Crie sua categoria: ${category}`;
+      logger.info('🔵 [addCustomCategory] Categoria formatada:', { categoryToAdd });
       
       // Verifica se a categoria já existe
       if (customCategories[type].includes(categoryToAdd)) {
+        logger.info('⚠️ [addCustomCategory] Categoria já existe no estado local');
         return true;
       }
 
-      const { error } = await supabase
+      logger.info('🔵 [addCustomCategory] Tentando inserir no banco...', {
+        user_id: user.id,
+        type,
+        name: categoryToAdd
+      });
+
+      const { data, error } = await supabase
         .from('custom_categories')
         .insert({
           user_id: user.id,
           type,
           name: categoryToAdd
-        });
+        })
+        .select();
 
       if (error) {
-        logger.error('Erro ao inserir categoria:', error);
+        logger.error('❌ [addCustomCategory] Erro ao inserir:', {
+          error,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         throw error;
       }
 
-      setCustomCategories(prev => ({
-        ...prev,
-        [type]: [...prev[type], categoryToAdd]
-      }));
+      logger.info('✅ [addCustomCategory] Inserção bem-sucedida:', data);
+
+      setCustomCategories(prev => {
+        const updated = {
+          ...prev,
+          [type]: [...prev[type], categoryToAdd]
+        };
+        logger.info('🔵 [addCustomCategory] Estado atualizado:', updated);
+        return updated;
+      });
+
+      // Forçar reload dos dados para garantir sincronia
+      await loadData();
+      logger.info('✅ [addCustomCategory] Dados recarregados');
 
       toast.success('Categoria personalizada adicionada!');
       return true;
     } catch (error) {
-      logger.error('Erro ao adicionar categoria:', error);
+      logger.error('❌ [addCustomCategory] Erro geral:', error);
       toast.error('Erro ao adicionar categoria');
       return false;
     }

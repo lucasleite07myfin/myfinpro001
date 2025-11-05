@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { ManageCustomCategories } from '@/components/ManageCustomCategories';
+import { logger } from '@/utils/logger';
 
 interface AddTransactionModalProps {
   open: boolean;
@@ -116,11 +117,20 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   // Forçar atualização quando categorias personalizadas mudarem
   useEffect(() => {
+    logger.info('🔵 [AddTransactionModal] useEffect customCategories disparado', {
+      open,
+      transactionType,
+      customCategories: customCategories[transactionType]
+    });
+    
     if (open) {
       const updatedCategories = getCurrentCategories();
+      logger.info('🔵 [AddTransactionModal] Categorias atualizadas:', updatedCategories);
+      
       // Se a categoria selecionada não existe mais, limpar
       const categoryWithoutPrefix = category.replace('Crie sua categoria: ', '');
       if (category && !updatedCategories.includes(categoryWithoutPrefix) && category !== 'Crie sua categoria') {
+        logger.info('⚠️ [AddTransactionModal] Categoria não encontrada, limpando:', category);
         setCategory('');
       }
     }
