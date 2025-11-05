@@ -53,11 +53,10 @@ const Dashboard: React.FC = () => {
     });
   }, [transactions, currentMonth]);
 
-  // Obter as 5 transações mais recentes (memoizado)
+  // Obter transações mais recentes (memoizado)
   const recentTransactions = useMemo(() => {
     return [...currentMonthTransactions]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [currentMonthTransactions]);
 
   return (

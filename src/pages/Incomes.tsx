@@ -507,8 +507,7 @@ const Incomes: React.FC = () => {
           ) : (
             <TransactionsTable 
               transactions={[...currentMonthIncomes]
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                .slice(0, 5)} 
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())} 
               onDelete={handleDeleteTransaction}
               onEdit={handleEditTransaction}
               type="income"
