@@ -28,13 +28,15 @@ interface ManageCustomCategoriesProps {
   type: 'income' | 'expense';
   onEdit: (id: string, oldName: string, newName: string) => Promise<void>;
   onDelete: (categoryName: string) => Promise<boolean>;
+  onSelect?: (categoryName: string) => void;
 }
 
 export const ManageCustomCategories: React.FC<ManageCustomCategoriesProps> = ({
   categories,
   type,
   onEdit,
-  onDelete
+  onDelete,
+  onSelect
 }) => {
   const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null);
   const [newName, setNewName] = useState('');
@@ -75,42 +77,54 @@ export const ManageCustomCategories: React.FC<ManageCustomCategoriesProps> = ({
 
   return (
     <>
-      <div className="px-2 py-2 bg-muted/50 border-b">
+      <div className="px-2 py-2 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-200">
         <div className="flex items-center gap-2 mb-2">
-          <FolderEdit className="h-4 w-4 text-muted-foreground" />
-          <span className="text-xs font-semibold text-muted-foreground">
+          <FolderEdit className="h-4 w-4 text-orange-600" />
+          <span className="text-xs font-semibold text-orange-900">
             Minhas Categorias ({categories.length})
           </span>
         </div>
         <div className="space-y-1">
-          {categories.map((cat) => (
-            <div 
-              key={cat}
-              className="flex items-center justify-between gap-2 p-1.5 rounded-md hover:bg-muted/80 group"
-            >
-              <span className="text-sm flex-1 truncate">
-                {cat.replace('Crie sua categoria: ', '')}
-              </span>
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={() => handleEditClick(cat)}
-                >
-                  <Pencil className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-destructive hover:text-destructive"
-                  onClick={() => handleDeleteClick(cat)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+          {categories.map((cat) => {
+            const displayName = cat.replace('Crie sua categoria: ', '');
+            return (
+              <div 
+                key={cat}
+                className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-md hover:bg-white/60 group cursor-pointer transition-all"
+                onClick={() => onSelect?.(cat)}
+              >
+                <span className="text-sm flex-1 truncate font-medium">
+                  {displayName}
+                </span>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 hover:bg-blue-100 hover:text-blue-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditClick(cat);
+                    }}
+                    title="Editar categoria"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 hover:bg-red-100 hover:text-red-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(cat);
+                    }}
+                    title="Excluir categoria"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
       <Separator />

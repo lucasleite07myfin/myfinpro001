@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -161,15 +162,12 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   const getCurrentCategories = () => {
     const defaultCategories = transactionType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
-    const userCustomCategories = customCategories?.[transactionType] || [];
     
-    // Remover prefixo "Crie sua categoria: " para exibição
-    const displayUserCategories = userCustomCategories.map(cat => 
-      cat.replace('Crie sua categoria: ', '')
-    );
-    
+    // Filtrar "Crie sua categoria" das categorias padrão
     const filteredDefaultCategories = defaultCategories.filter(cat => cat !== 'Crie sua categoria');
-    return [...displayUserCategories, ...filteredDefaultCategories, 'Crie sua categoria'];
+    
+    // Retornar APENAS as categorias padrão (sem as customizadas)
+    return filteredDefaultCategories;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -422,17 +420,37 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
-              <SelectContent>
-                {editCustomCategory && deleteCustomCategory && (
+              <SelectContent className="max-h-[400px]">
+                {/* Seção: Minhas Categorias (Customizadas) */}
+                {customCategories[transactionType].length > 0 && editCustomCategory && deleteCustomCategory && (
                   <ManageCustomCategories 
                     categories={customCategories[transactionType]}
                     type={transactionType}
                     onEdit={(id, oldName, newName) => editCustomCategory(id, transactionType, oldName, newName)}
                     onDelete={(categoryName) => deleteCustomCategory(transactionType, categoryName)}
+                    onSelect={(categoryName) => setCategory(categoryName)}
                   />
                 )}
+                
+                {/* Seção: Categorias Padrão */}
                 <SelectGroup>
-                  {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Categorias Padrão
+                  </div>
+                  {getCurrentCategories().map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectGroup>
+                
+                {/* Seção: Criar Nova Categoria */}
+                <Separator className="my-1" />
+                <SelectGroup>
+                  <SelectItem value="Crie sua categoria" className="font-medium text-primary">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">➕</span>
+                      <span>Criar Nova Categoria</span>
+                    </div>
+                  </SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -487,17 +505,37 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
-              <SelectContent>
-                {editCustomCategory && deleteCustomCategory && (
+              <SelectContent className="max-h-[400px]">
+                {/* Seção: Minhas Categorias (Customizadas) */}
+                {customCategories['expense'].length > 0 && editCustomCategory && deleteCustomCategory && (
                   <ManageCustomCategories 
-                    categories={customCategories.expense}
+                    categories={customCategories['expense']}
                     type="expense"
                     onEdit={(id, oldName, newName) => editCustomCategory(id, 'expense', oldName, newName)}
                     onDelete={(categoryName) => deleteCustomCategory('expense', categoryName)}
+                    onSelect={(categoryName) => setCategory(categoryName)}
                   />
                 )}
+                
+                {/* Seção: Categorias Padrão */}
                 <SelectGroup>
-                  {getCurrentCategories().map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Categorias Padrão
+                  </div>
+                  {getCurrentCategories().map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectGroup>
+                
+                {/* Seção: Criar Nova Categoria */}
+                <Separator className="my-1" />
+                <SelectGroup>
+                  <SelectItem value="Crie sua categoria" className="font-medium text-primary">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">➕</span>
+                      <span>Criar Nova Categoria</span>
+                    </div>
+                  </SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
