@@ -73,10 +73,10 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   // Fixed column widths for alignment
   const columnWidths = {
     data: 'w-[110px] min-w-[110px]',
-    descricao: 'w-[200px] min-w-[200px]',
-    categoria: 'w-[140px] min-w-[140px]',
-    valor: 'w-[130px] min-w-[130px]',
-    pagamento: 'w-[120px] min-w-[120px]',
+    descricao: 'w-[240px] min-w-[240px]',
+    categoria: 'w-[160px] min-w-[160px]',
+    valor: 'w-[140px] min-w-[140px]',
+    pagamento: 'w-[130px] min-w-[130px]',
     acoes: 'w-[120px] min-w-[120px]'
   };
 
@@ -103,7 +103,9 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
               <TableHead className={`${columnWidths.categoria} font-semibold text-neutral-700 py-4 px-6`}>Categoria</TableHead>
               <TableHead className={`${columnWidths.valor} text-right font-semibold text-neutral-700 py-4 px-6`}>Valor</TableHead>
               <TableHead className={`${columnWidths.pagamento} font-semibold text-neutral-700 py-4 px-6`}>Pagamento</TableHead>
-              <TableHead className={`${columnWidths.acoes} text-center font-semibold text-neutral-700 py-4 px-6`}>Ações</TableHead>
+              {(onEdit || onDelete) && (
+                <TableHead className={`${columnWidths.acoes} text-center font-semibold text-neutral-700 py-4 px-6`}>Ações</TableHead>
+              )}
             </TableRow>
           </TableHeader>
         </Table>
@@ -183,38 +185,40 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                             {transaction.paymentMethod ? PAYMENT_METHODS[transaction.paymentMethod] : 'N/A'}
                           </span>
                         </TableCell>
-                        <TableCell className={`${columnWidths.acoes} py-4 px-6`}>
-                          <div className="flex justify-center space-x-1">
-                            {onEdit && !transaction.isRecurringPayment && canEditTransactions && (
-                              <Button
-                                onClick={() => handleEditClick(transaction)}
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
-                                aria-label="Editar transação"
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                            )}
-                            {onDelete && canDeleteTransactions && (
-                              <Button
-                                onClick={() => onDelete(transaction.id)}
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-                                aria-label={transaction.isRecurringPayment ? 
-                                  "Excluir esta transação (para cancelar o pagamento, use o card de despesas fixas)" : 
-                                  "Excluir esta transação"}
-                                title={transaction.isRecurringPayment ? 
-                                  "Excluir esta transação (para cancelar o pagamento, use o card de despesas fixas)" : 
-                                  "Excluir esta transação"}
-                                disabled={!canDeleteTransactions}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
+                        {(onEdit || onDelete) && (
+                          <TableCell className={`${columnWidths.acoes} py-4 px-6`}>
+                            <div className="flex justify-center space-x-1">
+                              {onEdit && !transaction.isRecurringPayment && canEditTransactions && (
+                                <Button
+                                  onClick={() => handleEditClick(transaction)}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+                                  aria-label="Editar transação"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                              )}
+                              {onDelete && canDeleteTransactions && (
+                                <Button
+                                  onClick={() => onDelete(transaction.id)}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                  aria-label={transaction.isRecurringPayment ? 
+                                    "Excluir esta transação (para cancelar o pagamento, use o card de despesas fixas)" : 
+                                    "Excluir esta transação"}
+                                  title={transaction.isRecurringPayment ? 
+                                    "Excluir esta transação (para cancelar o pagamento, use o card de despesas fixas)" : 
+                                    "Excluir esta transação"}
+                                  disabled={!canDeleteTransactions}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     </TableBody>
                   </Table>
