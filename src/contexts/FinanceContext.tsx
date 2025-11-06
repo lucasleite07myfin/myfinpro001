@@ -345,9 +345,11 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
   const addCustomCategory = async (type: 'income' | 'expense', category: string): Promise<boolean> => {
     try {
-      if (!user) {
-        logger.error('Usuário não autenticado ao adicionar categoria');
-        throw new Error('Usuário não autenticado');
+      // Validação mais robusta do usuário
+      if (!user?.id) {
+        logger.error('Usuário não autenticado ou user.id ausente');
+        toast.error('Sessão expirada. Faça login novamente.');
+        return false;
       }
 
       const categoryToAdd = category.startsWith('Crie sua categoria: ') ? category : `Crie sua categoria: ${category}`;
@@ -357,10 +359,19 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         return true;
       }
 
+      // Obter usuário atual do Supabase para garantir sessão válida
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (!currentUser) {
+        logger.error('Falha ao obter usuário do Supabase Auth');
+        toast.error('Sessão inválida. Tente novamente.');
+        return false;
+      }
+
       const { error } = await supabase
         .from('custom_categories')
         .insert({
-          user_id: user.id,
+          user_id: currentUser.id,
           type,
           name: categoryToAdd
         });
@@ -379,7 +390,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       return true;
     } catch (error) {
       logger.error('Erro ao adicionar categoria:', error);
-      toast.error('Erro ao adicionar categoria');
+      toast.error('Erro ao adicionar categoria. Verifique sua conexão.');
       return false;
     }
   };

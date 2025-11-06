@@ -88,10 +88,10 @@ export const ManageCustomCategories: React.FC<ManageCustomCategoriesProps> = ({
           {categories.map((cat) => {
             const displayName = cat.replace('Crie sua categoria: ', '');
             return (
-              <div 
-                key={cat}
-                className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-md hover:bg-white/60 group cursor-pointer transition-all"
-                onClick={() => onSelect?.(cat)}
+            <div 
+              key={cat}
+              className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-md hover:bg-white/60 group cursor-pointer transition-all"
+              onClick={() => onSelect?.(displayName)}
               >
                 <span className="text-sm flex-1 truncate font-medium">
                   {displayName}
