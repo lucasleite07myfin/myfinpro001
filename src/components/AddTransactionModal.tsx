@@ -418,7 +418,13 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             <Label htmlFor="category">Categoria</Label>
             <Select value={category} onValueChange={setCategory} required>
               <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
-                <SelectValue placeholder="Selecione uma categoria" />
+                <SelectValue 
+                  placeholder={
+                    category === 'Crie sua categoria' 
+                      ? "Digite a nova categoria abaixo ↓" 
+                      : "Selecione uma categoria"
+                  } 
+                />
               </SelectTrigger>
               <SelectContent className="max-h-[400px]">
                 {/* Seção: Minhas Categorias (Customizadas) */}
@@ -502,7 +508,13 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             <Label htmlFor="category">Categoria</Label>
             <Select value={category} onValueChange={setCategory} required>
               <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
-                <SelectValue placeholder="Selecione uma categoria" />
+                <SelectValue 
+                  placeholder={
+                    category === 'Crie sua categoria' 
+                      ? "Digite a nova categoria abaixo ↓" 
+                      : "Selecione uma categoria"
+                  } 
+                />
               </SelectTrigger>
               <SelectContent className="max-h-[400px]">
                 {/* Seção: Minhas Categorias (Customizadas) */}

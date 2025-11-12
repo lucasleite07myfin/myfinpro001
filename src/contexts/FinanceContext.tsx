@@ -354,21 +354,26 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       const categoryToAdd = category.startsWith('Crie sua categoria: ') ? category : `Crie sua categoria: ${category}`;
       
-      // Verifica se a categoria já existe - retorna true pois não é erro
-      if (customCategories[type].includes(categoryToAdd)) {
+      // Verificação de duplicata case-insensitive
+      const categoryExists = customCategories[type].some(
+        cat => cat.toLowerCase() === categoryToAdd.toLowerCase()
+      );
+      
+      if (categoryExists) {
+        toast.info('Esta categoria já existe!');
         return true;
       }
 
       // Obter usuário atual do Supabase para garantir sessão válida
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
       
-      if (!currentUser) {
-        logger.error('Falha ao obter usuário do Supabase Auth');
-        toast.error('Sessão inválida. Tente novamente.');
+      if (authError || !currentUser) {
+        logger.error('Falha ao obter usuário do Supabase Auth:', authError);
+        toast.error('Sessão inválida. Faça login novamente.');
         return false;
       }
 
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('custom_categories')
         .insert({
           user_id: currentUser.id,
@@ -376,9 +381,17 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
           name: categoryToAdd
         });
 
-      if (error) {
-        logger.error('Erro detalhado ao inserir categoria no Supabase:', error);
-        throw error;
+      if (insertError) {
+        logger.error('Erro ao inserir categoria no Supabase:', insertError);
+        
+        // Tratamento específico de erro de duplicata
+        if (insertError.code === '23505') {
+          toast.error('Esta categoria já existe!');
+          return false;
+        }
+        
+        toast.error('Erro ao salvar categoria. Tente novamente.');
+        return false;
       }
 
       setCustomCategories(prev => ({
@@ -389,7 +402,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       toast.success('Categoria personalizada adicionada!');
       return true;
     } catch (error) {
-      logger.error('Erro ao adicionar categoria:', error);
+      logger.error('Erro inesperado ao adicionar categoria:', error);
       toast.error('Erro ao adicionar categoria. Verifique sua conexão.');
       return false;
     }
