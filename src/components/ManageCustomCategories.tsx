@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pencil, Trash2, FolderEdit, Lightbulb, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SelectItem } from '@/components/ui/select';
 import { 
   Dialog, 
   DialogContent, 
@@ -28,15 +29,13 @@ interface ManageCustomCategoriesProps {
   type: 'income' | 'expense';
   onEdit: (id: string, oldName: string, newName: string) => Promise<void>;
   onDelete: (categoryName: string) => Promise<boolean>;
-  onSelect?: (categoryName: string) => void;
 }
 
 export const ManageCustomCategories: React.FC<ManageCustomCategoriesProps> = ({
   categories,
   type,
   onEdit,
-  onDelete,
-  onSelect
+  onDelete
 }) => {
   const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null);
   const [newName, setNewName] = useState('');
@@ -88,41 +87,47 @@ export const ManageCustomCategories: React.FC<ManageCustomCategoriesProps> = ({
           {categories.map((cat) => {
             const displayName = cat.replace('Crie sua categoria: ', '');
             return (
-            <div 
-              key={cat}
-              className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-md hover:bg-white/60 group cursor-pointer transition-all"
-              onClick={() => onSelect?.(displayName)}
+              <SelectItem 
+                key={cat}
+                value={displayName}
+                className="relative group"
               >
-                <span className="text-sm flex-1 truncate font-medium">
-                  {displayName}
-                </span>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 hover:bg-blue-100 hover:text-blue-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditClick(cat);
-                    }}
-                    title="Editar categoria"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 hover:bg-red-100 hover:text-red-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteClick(cat);
-                    }}
-                    title="Excluir categoria"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                <div className="flex items-center justify-between w-full pr-16">
+                  <span className="text-sm font-medium">
+                    {displayName}
+                  </span>
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 hover:bg-blue-100 hover:text-blue-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleEditClick(cat);
+                      }}
+                      title="Editar categoria"
+                      type="button"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 hover:bg-red-100 hover:text-red-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleDeleteClick(cat);
+                      }}
+                      title="Excluir categoria"
+                      type="button"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              </SelectItem>
             );
           })}
         </div>

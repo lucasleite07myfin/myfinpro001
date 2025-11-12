@@ -428,7 +428,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                     type={transactionType}
                     onEdit={(id, oldName, newName) => editCustomCategory(id, transactionType, oldName, newName)}
                     onDelete={(categoryName) => deleteCustomCategory(transactionType, categoryName)}
-                    onSelect={(categoryName) => setCategory(categoryName)}
                   />
                 )}
                 
@@ -513,7 +512,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                     type="expense"
                     onEdit={(id, oldName, newName) => editCustomCategory(id, 'expense', oldName, newName)}
                     onDelete={(categoryName) => deleteCustomCategory('expense', categoryName)}
-                    onSelect={(categoryName) => setCategory(categoryName)}
                   />
                 )}
                 
