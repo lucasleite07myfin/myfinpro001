@@ -554,7 +554,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         createdAt: new Date(data.created_at)
       };
 
-      setRecurringExpenses([...recurringExpenses, newExpense]);
+      setRecurringExpenses(prev => [...prev, newExpense]);
       toast.success('Despesa recorrente adicionada com sucesso!');
     } catch (error) {
       logger.error('Erro ao adicionar despesa recorrente:', error);
@@ -601,7 +601,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      setRecurringExpenses(recurringExpenses.map(e => e.id === expenseId ? { ...e, monthlyValues } : e));
+      setRecurringExpenses(prev => prev.map(e => e.id === expenseId ? { ...e, monthlyValues } : e));
       toast.success('Valor mensal atualizado com sucesso!');
     } catch (error) {
       logger.error('Erro ao atualizar valor mensal:', error);
@@ -626,7 +626,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      setRecurringExpenses(recurringExpenses.map(e => e.id === expense.id ? expense : e));
+      setRecurringExpenses(prev => prev.map(e => e.id === expense.id ? expense : e));
 
       const relatedTransactions = transactions.filter(t => 
         t.recurringExpenseId === expense.id &&
@@ -679,7 +679,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       if (error) throw error;
 
       // Atualiza o estado local
-      setRecurringExpenses(recurringExpenses.filter(e => e.id !== id));
+      setRecurringExpenses(prev => prev.filter(e => e.id !== id));
       setTransactions(transactions.filter(t => t.recurringExpenseId !== id));
       
       toast.success('Despesa fixa excluída com sucesso!');
@@ -713,7 +713,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      setRecurringExpenses(recurringExpenses.map(e => e.id === id ? { ...e, paidMonths } : e));
+      setRecurringExpenses(prev => prev.map(e => e.id === id ? { ...e, paidMonths } : e));
 
       if (paid && !isAlreadyPaid) {
         const amount = getMonthlyExpenseValue(id, month) || expense.amount;
