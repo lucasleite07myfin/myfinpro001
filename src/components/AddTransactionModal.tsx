@@ -13,7 +13,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusinessPermissions } from '@/hooks/useBusinessPermissions';
-import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, PAYMENT_METHODS, PaymentMethod, TransactionType, Goal, FinanceContextType, BusinessContextType, Transaction } from '@/types/finance';
+import { PAYMENT_METHODS, PaymentMethod, TransactionType, Goal, FinanceContextType, BusinessContextType, Transaction } from '@/types/finance';
 import { formatCurrency, formatNumberToCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { Info, Target, TrendingUp, Calendar as CalendarIcon } from 'lucide-react';
@@ -23,7 +23,8 @@ import { tooltipContent } from '@/data/tooltipContent';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { ManageCustomCategories } from '@/components/ManageCustomCategories';
+import { CategoryCombobox } from './CategoryCombobox';
+import { ManageCategoriesModal } from './ManageCategoriesModal';
 import { logger } from '@/utils/logger';
 
 interface AddTransactionModalProps {
@@ -71,7 +72,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const [date, setDate] = useState<Date>(new Date());
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [customCategory, setCustomCategory] = useState('');
   const [amount, setAmount] = useState('');
   const [formattedAmount, setFormattedAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank_transfer');
@@ -84,8 +84,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const [selectedGoal, setSelectedGoal] = useState('');
   const [selectedInvestment, setSelectedInvestment] = useState('');
   
-  // Category saving state
-  const [isSavingCategory, setIsSavingCategory] = useState(false);
+  // Modal state
+  const [showManageModal, setShowManageModal] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -95,47 +95,17 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   useEffect(() => {
     if (mode === 'edit' && initialData && open) {
-      setActiveTab('transaction'); // Força a aba de transação quando editando
+      setActiveTab('transaction');
       setTransactionType(initialData.type);
       setDate(initialData.date);
       setDescription(initialData.description);
       setAmount(initialData.amount.toString());
       setFormattedAmount(formatNumberToCurrency(initialData.amount));
       setPaymentMethod(initialData.paymentMethod);
-      
-      // Verificar se a categoria tem o prefixo "Crie sua categoria: "
-      if (initialData.category.startsWith('Crie sua categoria: ')) {
-        setCategory('Crie sua categoria');
-        setCustomCategory(initialData.category.substring(20));
-      } else {
-        // Para categorias normais ou categorias personalizadas que já estão no customCategories,
-        // remover o prefixo se existir
-        const categoryWithoutPrefix = initialData.category.replace('Crie sua categoria: ', '');
-        setCategory(categoryWithoutPrefix);
-      }
+      setCategory(initialData.category);
     }
   }, [mode, initialData, open]);
 
-  // Forçar atualização quando categorias personalizadas mudarem
-  useEffect(() => {
-    logger.info('🔵 [AddTransactionModal] useEffect customCategories disparado', {
-      open,
-      transactionType,
-      customCategories: customCategories[transactionType]
-    });
-    
-    if (open) {
-      const updatedCategories = getCurrentCategories();
-      logger.info('🔵 [AddTransactionModal] Categorias atualizadas:', updatedCategories);
-      
-      // Se a categoria selecionada não existe mais, limpar
-      const categoryWithoutPrefix = category.replace('Crie sua categoria: ', '');
-      if (category && !updatedCategories.includes(categoryWithoutPrefix) && category !== 'Crie sua categoria') {
-        logger.info('⚠️ [AddTransactionModal] Categoria não encontrada, limpando:', category);
-        setCategory('');
-      }
-    }
-  }, [customCategories, transactionType, open]);
 
   const resetForm = () => {
     setActiveTab('transaction');
@@ -143,7 +113,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     setDate(new Date());
     setDescription('');
     setCategory('');
-    setCustomCategory('');
     setAmount('');
     setFormattedAmount('');
     setPaymentMethod('bank_transfer');
@@ -160,14 +129,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     setFormattedAmount(formatNumberToCurrency(floatValue));
   };
 
-  const getCurrentCategories = () => {
-    const defaultCategories = transactionType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
-    
-    // Filtrar "Crie sua categoria" das categorias padrão
-    const filteredDefaultCategories = defaultCategories.filter(cat => cat !== 'Crie sua categoria');
-    
-    // Retornar APENAS as categorias padrão (sem as customizadas)
-    return filteredDefaultCategories;
+  const handleCreateCategory = async (name: string): Promise<boolean> => {
+    if (!addCustomCategory) return false;
+    const success = await addCustomCategory(transactionType, name);
+    return success;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -217,54 +182,22 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       return;
     }
 
-    // Sanitização da descrição (remover caracteres especiais perigosos)
     const sanitizedDescription = description.trim().replace(/[<>]/g, '');
     if (sanitizedDescription.length === 0) {
       toast.error('A descrição não pode estar vazia');
       return;
     }
 
-    // Aguardar salvamento da categoria personalizada ANTES de criar a transação
-    if (category === 'Crie sua categoria' && customCategory.trim() && addCustomCategory) {
-      setIsSavingCategory(true);
-      const success = await addCustomCategory(transactionType, customCategory.trim());
-      setIsSavingCategory(false);
-      
-      if (!success) {
-        toast.error('Erro ao salvar categoria. Tente novamente.');
-        return;
-      }
-    }
-
-    // Mapear categoria exibida (sem prefixo) para valor real no banco (com prefixo)
-    let finalCategory = category;
-    if (category === 'Crie sua categoria' && customCategory.trim()) {
-      finalCategory = `Crie sua categoria: ${customCategory.trim()}`;
-    } else if (category !== 'Crie sua categoria') {
-      // Verificar se é uma categoria personalizada (precisa adicionar o prefixo de volta)
-      const fullCategory = customCategories[transactionType].find(
-        cat => cat.replace('Crie sua categoria: ', '') === category
-      );
-      finalCategory = fullCategory || category;
-    }
-
     const transactionData = {
       date,
       description: sanitizedDescription,
-      category: finalCategory,
+      category: category,
       amount: numericAmount,
       type: transactionType,
       paymentMethod
     };
 
     if (mode === 'edit' && initialData) {
-        // Também salvar categoria no modo edit se for nova
-        if (category === 'Crie sua categoria' && customCategory.trim() && addCustomCategory) {
-          setIsSavingCategory(true);
-          await addCustomCategory(transactionType, customCategory.trim());
-          setIsSavingCategory(false);
-        }
-        // Cast para o tipo correto que sabemos que tem editTransaction
         const context = financeContext as FinanceContextType;
         context.editTransaction({ ...transactionData, id: initialData.id });
         toast.success('Transação atualizada com sucesso!');
@@ -289,40 +222,15 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       return;
     }
 
-    // Sanitização da descrição
     const sanitizedDescription = description.trim().replace(/[<>]/g, '');
     if (sanitizedDescription.length === 0) {
       toast.error('A descrição não pode estar vazia');
       return;
     }
 
-    // Aguardar salvamento da categoria personalizada
-    if (category === 'Crie sua categoria' && customCategory.trim() && addCustomCategory) {
-      setIsSavingCategory(true);
-      const success = await addCustomCategory('expense', customCategory.trim());
-      setIsSavingCategory(false);
-      
-      if (!success) {
-        toast.error('Erro ao salvar categoria. Tente novamente.');
-        return;
-      }
-    }
-
-    // Mapear categoria exibida (sem prefixo) para valor real no banco (com prefixo)
-    let finalCategory = category;
-    if (category === 'Crie sua categoria' && customCategory.trim()) {
-      finalCategory = `Crie sua categoria: ${customCategory.trim()}`;
-    } else if (category !== 'Crie sua categoria') {
-      // Verificar se é uma categoria personalizada (precisa adicionar o prefixo de volta)
-      const fullCategory = customCategories['expense'].find(
-        cat => cat.replace('Crie sua categoria: ', '') === category
-      );
-      finalCategory = fullCategory || category;
-    }
-
     addRecurringExpense({
         description: sanitizedDescription,
-        category: finalCategory,
+        category: category,
         amount: numericAmount,
         dueDay: parseInt(dueDay),
         paymentMethod,
@@ -364,8 +272,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     onOpenChange(false);
   };
 
-  const categories = getCurrentCategories();
-  const showCustomCategory = category === 'Crie sua categoria';
 
   const renderTransactionForm = () => (
     <>
@@ -416,58 +322,16 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         <TooltipHelper content={tooltipContent.modals.fields.category} delayDuration={500}>
           <div className="space-y-2">
             <Label htmlFor="category">Categoria</Label>
-            <Select value={category} onValueChange={setCategory} required>
-              <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
-                {category === 'Crie sua categoria' ? (
-                  <span className="flex items-center gap-2 text-primary font-medium">
-                    <span>➕</span>
-                    <span>Criar Nova Categoria</span>
-                  </span>
-                ) : (
-                  <SelectValue placeholder="Selecione uma categoria" />
-                )}
-              </SelectTrigger>
-              <SelectContent className="max-h-[400px]">
-                {/* Seção: Minhas Categorias (Customizadas) */}
-                {customCategories[transactionType].length > 0 && editCustomCategory && deleteCustomCategory && (
-                  <ManageCustomCategories 
-                    categories={customCategories[transactionType]}
-                    type={transactionType}
-                    onEdit={(id, oldName, newName) => editCustomCategory(id, transactionType, oldName, newName)}
-                    onDelete={(categoryName) => deleteCustomCategory(transactionType, categoryName)}
-                  />
-                )}
-                
-                {/* Seção: Categorias Padrão */}
-                <SelectGroup>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                    Categorias Padrão
-                  </div>
-                  {getCurrentCategories().map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectGroup>
-                
-                {/* Seção: Criar Nova Categoria */}
-                <Separator className="my-1" />
-                <SelectGroup>
-                  <SelectItem value="Crie sua categoria" className="font-medium text-primary">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">➕</span>
-                      <span>Criar Nova Categoria</span>
-                    </div>
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <CategoryCombobox
+              value={category}
+              onValueChange={setCategory}
+              type={transactionType}
+              customCategories={customCategories[transactionType]}
+              onCreateCategory={handleCreateCategory}
+              onManageCategories={() => setShowManageModal(true)}
+            />
           </div>
         </TooltipHelper>
-        {showCustomCategory && (
-          <div className="space-y-2">
-            <Label htmlFor="customCategory">Especificar categoria</Label>
-            <Input id="customCategory" value={customCategory} onChange={e => setCustomCategory(e.target.value)} placeholder="Digite o nome da categoria" className="bg-gray-50 border-gray-200" />
-          </div>
-        )}
         <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
           <div className="space-y-2">
             <Label htmlFor="amount">Valor (R$)</Label>
@@ -507,64 +371,16 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         <TooltipHelper content={tooltipContent.modals.fields.category} delayDuration={500}>
           <div className="space-y-2">
             <Label htmlFor="category">Categoria</Label>
-            <Select value={category} onValueChange={setCategory} required>
-              <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
-                {category === 'Crie sua categoria' ? (
-                  <span className="flex items-center gap-2 text-primary font-medium">
-                    <span>➕</span>
-                    <span>Criar Nova Categoria</span>
-                  </span>
-                ) : (
-                  <SelectValue placeholder="Selecione uma categoria" />
-                )}
-              </SelectTrigger>
-              <SelectContent className="max-h-[400px]">
-                {/* Seção: Minhas Categorias (Customizadas) */}
-                {customCategories['expense'].length > 0 && editCustomCategory && deleteCustomCategory && (
-                  <ManageCustomCategories 
-                    categories={customCategories['expense']}
-                    type="expense"
-                    onEdit={(id, oldName, newName) => editCustomCategory(id, 'expense', oldName, newName)}
-                    onDelete={(categoryName) => deleteCustomCategory('expense', categoryName)}
-                  />
-                )}
-                
-                {/* Seção: Categorias Padrão */}
-                <SelectGroup>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                    Categorias Padrão
-                  </div>
-                  {getCurrentCategories().map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectGroup>
-                
-                {/* Seção: Criar Nova Categoria */}
-                <Separator className="my-1" />
-                <SelectGroup>
-                  <SelectItem value="Crie sua categoria" className="font-medium text-primary">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">➕</span>
-                      <span>Criar Nova Categoria</span>
-                    </div>
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-        </TooltipHelper>
-        {category === 'Crie sua categoria' && (
-          <div className="space-y-2">
-            <Label htmlFor="customCategory">Especificar categoria</Label>
-            <Input 
-              id="customCategory" 
-              value={customCategory} 
-              onChange={e => setCustomCategory(e.target.value)} 
-              placeholder="Digite o nome da categoria" 
-              className="bg-gray-50 border-gray-200" 
+            <CategoryCombobox
+              value={category}
+              onValueChange={setCategory}
+              type="expense"
+              customCategories={customCategories.expense}
+              onCreateCategory={handleCreateCategory}
+              onManageCategories={() => setShowManageModal(true)}
             />
           </div>
-        )}
+        </TooltipHelper>
         <TooltipHelper content={tooltipContent.modals.fields.amount} delayDuration={500}>
           <div className="space-y-2">
             <Label htmlFor="amount">Valor (R$)</Label>
@@ -664,16 +480,15 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 {renderTransactionForm()}
               </div>
               <DialogFooter className="border-t pt-4 mt-6">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSavingCategory}
-                  style={{ backgroundColor: '#EE680D' }}
-                >
-                  {isSavingCategory ? 'Salvando categoria...' : 'Salvar'}
-                </Button>
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                    Cancelar
+                  </Button>
+                  <Button 
+                    type="submit"
+                    style={{ backgroundColor: '#EE680D' }}
+                  >
+                    Salvar
+                  </Button>
               </DialogFooter>
             </form>
           ) : (
@@ -729,10 +544,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   </Button>
                   <Button 
                     type="submit" 
-                    disabled={activeTab === 'invest' || isSavingCategory} 
+                    disabled={activeTab === 'invest'} 
                     style={{ backgroundColor: '#EE680D' }}
                   >
-                    {isSavingCategory ? 'Salvando categoria...' : 'Salvar'}
+                    Salvar
                   </Button>
                 </DialogFooter>
               </form>
@@ -740,6 +555,15 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           )}
         </DialogContent>
       </Dialog>
+
+      <ManageCategoriesModal
+        open={showManageModal}
+        onOpenChange={setShowManageModal}
+        categories={customCategories[transactionType]}
+        type={transactionType}
+        onEdit={(id, oldName, newName) => editCustomCategory ? editCustomCategory(id, transactionType, oldName, newName) : Promise.resolve()}
+        onDelete={(categoryName) => deleteCustomCategory ? deleteCustomCategory(transactionType, categoryName) : Promise.resolve(false)}
+      />
     </TooltipProvider>
   );
 };
