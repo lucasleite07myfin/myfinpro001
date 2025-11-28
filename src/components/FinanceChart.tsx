@@ -13,7 +13,7 @@ import {
   ResponsiveContainer, 
   Legend 
 } from 'recharts';
-import { formatCurrency, formatMonth } from '@/utils/formatters';
+import { formatCurrency, formatMonth, formatCategoryForDisplay } from '@/utils/formatters';
 import { MonthlyFinanceData, Transaction } from '@/types/finance';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -60,7 +60,7 @@ const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactio
     
     // Converter para o formato de dados do gráfico de pizza
     const chartData = Object.entries(expensesByCategory).map(([category, amount]) => ({
-      name: category,
+      name: formatCategoryForDisplay(category),
       value: amount
     }));
     
@@ -186,20 +186,36 @@ const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactio
                 <PieChart>
                   <ChartTooltip 
                     cursor={false}
-                    content={<ChartTooltipContent 
-                      formatter={(value, name) => [
-                        formatCurrency(Number(value)), 
-                        name,
-                        `${((Number(value) / pieChartData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}%`
-                      ]}
-                    />} 
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const data = payload[0];
+                      const total = pieChartData.reduce((sum, item) => sum + item.value, 0);
+                      const percentage = ((Number(data.value) / total) * 100).toFixed(1);
+                      
+                      return (
+                        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 min-w-[160px]">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: data.payload.fill }}
+                            />
+                            <span className="text-sm font-medium text-gray-900">
+                              {data.name}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {formatCurrency(Number(data.value))} ({percentage}%)
+                          </div>
+                        </div>
+                      );
+                    }}
                   />
                   <Pie
                     data={pieChartData}
                     dataKey="value"
                     nameKey="name"
-                    cx="50%"
-                    cy="45%"
+                    cx="60%"
+                    cy="50%"
                     outerRadius={80}
                     innerRadius={30}
                     strokeWidth={2}
@@ -214,10 +230,15 @@ const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactio
                     ))}
                   </Pie>
                   <Legend 
-                    verticalAlign="bottom" 
-                    height={36}
+                    layout="vertical"
+                    align="left"
+                    verticalAlign="middle"
+                    wrapperStyle={{ 
+                      paddingRight: 20,
+                      maxWidth: '40%'
+                    }}
                     formatter={(value) => (
-                      <span className="text-xs truncate max-w-[100px] inline-block">
+                      <span className="text-xs text-gray-700">
                         {value}
                       </span>
                     )}
