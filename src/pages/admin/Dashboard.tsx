@@ -37,7 +37,20 @@ const AdminDashboard = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('admin-dashboard-stats');
+      // Obter o token de sessão do usuário autenticado
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('Sessão expirada. Faça login novamente.');
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('admin-dashboard-stats', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       
       if (error) throw error;
 
@@ -51,6 +64,7 @@ const AdminDashboard = () => {
         totalTransactions: data.financial.total_transactions,
       });
     } catch (error) {
+      console.error('Error fetching admin dashboard stats:', error);
       toast.error('Erro ao carregar estatísticas');
     } finally {
       setLoading(false);
