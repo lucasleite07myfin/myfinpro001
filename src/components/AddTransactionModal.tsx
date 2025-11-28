@@ -418,13 +418,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             <Label htmlFor="category">Categoria</Label>
             <Select value={category} onValueChange={setCategory} required>
               <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
-                <SelectValue 
-                  placeholder={
-                    category === 'Crie sua categoria' 
-                      ? "Digite a nova categoria abaixo ↓" 
-                      : "Selecione uma categoria"
-                  } 
-                />
+                {category === 'Crie sua categoria' ? (
+                  <span className="flex items-center gap-2 text-primary font-medium">
+                    <span>➕</span>
+                    <span>Criar Nova Categoria</span>
+                  </span>
+                ) : (
+                  <SelectValue placeholder="Selecione uma categoria" />
+                )}
               </SelectTrigger>
               <SelectContent className="max-h-[400px]">
                 {/* Seção: Minhas Categorias (Customizadas) */}
@@ -508,13 +509,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             <Label htmlFor="category">Categoria</Label>
             <Select value={category} onValueChange={setCategory} required>
               <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
-                <SelectValue 
-                  placeholder={
-                    category === 'Crie sua categoria' 
-                      ? "Digite a nova categoria abaixo ↓" 
-                      : "Selecione uma categoria"
-                  } 
-                />
+                {category === 'Crie sua categoria' ? (
+                  <span className="flex items-center gap-2 text-primary font-medium">
+                    <span>➕</span>
+                    <span>Criar Nova Categoria</span>
+                  </span>
+                ) : (
+                  <SelectValue placeholder="Selecione uma categoria" />
+                )}
               </SelectTrigger>
               <SelectContent className="max-h-[400px]">
                 {/* Seção: Minhas Categorias (Customizadas) */}
