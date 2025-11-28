@@ -189,7 +189,13 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-medium text-sm">{expense.description}</h3>
-                    <p className="text-xs text-muted-foreground">{formatCategoryForDisplay(expense.category)}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs text-muted-foreground">{formatCategoryForDisplay(expense.category)}</p>
+                      <span className="text-xs text-gray-300">•</span>
+                      <p className="text-xs text-gray-600 font-medium">
+                        Vencimento: dia {expense.dueDay}
+                      </p>
+                    </div>
                   </div>
                   <Badge variant={paid ? "outline" : overdue ? "destructive" : "secondary"}>
                     {paid ? <CheckCircle2 className="h-3 w-3 mr-1" /> : overdue ? <AlertCircle className="h-3 w-3 mr-1" /> : null}
