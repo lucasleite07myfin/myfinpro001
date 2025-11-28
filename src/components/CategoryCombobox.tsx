@@ -195,23 +195,25 @@ export function CategoryCombobox({
               </CommandGroup>
             )}
 
-            {/* Botão Gerenciar Categorias - Sempre Visível */}
-            {onManageCategories && (
-              <CommandGroup>
-                <CommandItem
-                  onSelect={() => {
-                    setOpen(false);
-                    onManageCategories();
-                  }}
-                  className="text-muted-foreground"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Gerenciar minhas categorias
-                </CommandItem>
-              </CommandGroup>
-            )}
           </CommandList>
         </Command>
+        
+        {/* Botão Gerenciar Categorias - Sempre Visível (fora do CommandList) */}
+        {onManageCategories && (
+          <div className="border-t p-2">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setOpen(false);
+                onManageCategories();
+              }}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Gerenciar minhas categorias
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
