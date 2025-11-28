@@ -4,6 +4,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { formatCurrency, formatDateToDB } from '@/utils/formatters';
+import { generateCSV, generateExcelHTML, downloadFile } from '@/utils/exportUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -163,60 +164,45 @@ const Patrimony: React.FC = () => {
   
   // Export functions implementation
   const exportToCSV = () => {
-    const csvHeader = 'Categoria,Nome,Valor,Data de avaliação,Segurado\n';
-    const csvData = filteredAssets.map(asset => {
+    // Sort assets by evaluation date
+    const sortedAssets = [...filteredAssets].sort((a, b) => {
+      const dateA = a.evaluationDate ? new Date(a.evaluationDate).getTime() : 0;
+      const dateB = b.evaluationDate ? new Date(b.evaluationDate).getTime() : 0;
+      return dateA - dateB;
+    });
+    
+    const headers = ['Categoria', 'Nome', 'Valor', 'Data de avaliação', 'Segurado'];
+    const rows = sortedAssets.map(asset => {
       const date = asset.evaluationDate ? format(new Date(asset.evaluationDate), 'dd/MM/yyyy') : 'N/A';
       const value = asset.value.toFixed(2).replace('.', ',');
       const insured = asset.insured ? 'Sim' : 'Não';
-      return `${asset.type},"${asset.name}",${value},${date},${insured}`;
-    }).join('\n');
+      return [asset.type, asset.name, value, date, insured];
+    });
     
-    const csvContent = csvHeader + csvData;
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `patrimonio_${formatDateToDB(new Date())}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = generateCSV(headers, rows);
+    downloadFile(csvContent, `patrimonio_${formatDateToDB(new Date())}.csv`, 'text/csv;charset=utf-8;');
     
     toast.success('Patrimônio exportado com sucesso para CSV');
   };
   
   const exportToExcel = () => {
-    let excelContent = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-    excelContent += '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Patrimônio</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
-    excelContent += '<body>';
-    excelContent += '<table>';
-    excelContent += '<tr><th>Categoria</th><th>Nome</th><th>Valor (R$)</th><th>Data de avaliação</th><th>Segurado</th></tr>';
+    // Sort assets by evaluation date
+    const sortedAssets = [...filteredAssets].sort((a, b) => {
+      const dateA = a.evaluationDate ? new Date(a.evaluationDate).getTime() : 0;
+      const dateB = b.evaluationDate ? new Date(b.evaluationDate).getTime() : 0;
+      return dateA - dateB;
+    });
     
-    filteredAssets.forEach(asset => {
+    const headers = ['Categoria', 'Nome', 'Valor (R$)', 'Data de avaliação', 'Segurado'];
+    const rows = sortedAssets.map(asset => {
       const date = asset.evaluationDate ? format(new Date(asset.evaluationDate), 'dd/MM/yyyy') : 'N/A';
       const value = asset.value.toFixed(2).replace('.', ',');
       const insured = asset.insured ? 'Sim' : 'Não';
-      
-      excelContent += `<tr>`;
-      excelContent += `<td>${asset.type}</td>`;
-      excelContent += `<td>${asset.name}</td>`;
-      excelContent += `<td>${value}</td>`;
-      excelContent += `<td>${date}</td>`;
-      excelContent += `<td>${insured}</td>`;
-      excelContent += `</tr>`;
+      return [asset.type, asset.name, value, date, insured];
     });
     
-    excelContent += '</table></body></html>';
-    
-    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `patrimonio_${formatDateToDB(new Date())}.xls`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const excelContent = generateExcelHTML('Patrimônio', headers, rows);
+    downloadFile(excelContent, `patrimonio_${formatDateToDB(new Date())}.xls`, 'application/vnd.ms-excel');
     
     toast.success('Patrimônio exportado com sucesso para Excel');
   };

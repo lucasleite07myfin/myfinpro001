@@ -8,6 +8,7 @@ import TransactionsTable from '@/components/TransactionsTable';
 import MonthSelector from '@/components/MonthSelector';
 import AddTransactionModal from '@/components/AddTransactionModal';
 import { formatCurrency, formatCategoryForDisplay } from '@/utils/formatters';
+import { generateCSV, generateExcelHTML, generatePDFHTML, downloadFile, sortByDate } from '@/utils/exportUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -155,26 +156,20 @@ const Incomes: React.FC = () => {
 
   const exportToCSV = () => {
     setIsLoading(true);
-    // Preparar dados para exportação
-    const csvHeader = 'Data,Descrição,Categoria,Valor\n';
-    const csvData = currentMonthIncomes.map(income => {
+    
+    // Sort incomes by date (oldest first)
+    const sortedIncomes = sortByDate(currentMonthIncomes, 'asc');
+    
+    // Prepare data for export
+    const headers = ['Data', 'Descrição', 'Categoria', 'Valor'];
+    const rows = sortedIncomes.map(income => {
       const date = income.date.toLocaleDateString('pt-BR');
       const amount = income.amount.toFixed(2).replace('.', ',');
-      return `${date},"${income.description}",${formatCategoryForDisplay(income.category)},${amount}`;
-    }).join('\n');
+      return [date, income.description, formatCategoryForDisplay(income.category), amount];
+    });
     
-    const csvContent = csvHeader + csvData;
-    
-    // Criar e fazer download do arquivo CSV
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `receitas_${currentMonth}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = generateCSV(headers, rows);
+    downloadFile(csvContent, `receitas_${currentMonth}.csv`, 'text/csv;charset=utf-8;');
     
     toast.success("Arquivo CSV exportado com sucesso!");
     setIsLoading(false);
@@ -182,35 +177,20 @@ const Incomes: React.FC = () => {
 
   const exportToExcel = () => {
     setIsLoading(true);
-    // Preparar os dados para exportação
-    let excelContent = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-    excelContent += '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Receitas</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
-    excelContent += '<body>';
-    excelContent += '<table>';
-    excelContent += '<tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr>';
     
-    currentMonthIncomes.forEach(income => {
+    // Sort incomes by date (oldest first)
+    const sortedIncomes = sortByDate(currentMonthIncomes, 'asc');
+    
+    // Prepare data for export
+    const headers = ['Data', 'Descrição', 'Categoria', 'Valor'];
+    const rows = sortedIncomes.map(income => {
       const date = income.date.toLocaleDateString('pt-BR');
       const amount = income.amount.toFixed(2).replace('.', ',');
-      
-      excelContent += `<tr>`;
-      excelContent += `<td>${date}</td>`;
-      excelContent += `<td>${income.description}</td>`;
-      excelContent += `<td>${formatCategoryForDisplay(income.category)}</td>`;
-      excelContent += `<td>${amount}</td>`;
-      excelContent += `</tr>`;
+      return [date, income.description, formatCategoryForDisplay(income.category), amount];
     });
     
-    excelContent += '</table></body></html>';
-    
-    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `receitas_${currentMonth}.xls`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const excelContent = generateExcelHTML('Receitas', headers, rows);
+    downloadFile(excelContent, `receitas_${currentMonth}.xls`, 'application/vnd.ms-excel');
     
     toast.success("Arquivo Excel exportado com sucesso!");
     setIsLoading(false);
@@ -218,67 +198,31 @@ const Incomes: React.FC = () => {
 
   const exportToPDF = () => {
     setIsLoading(true);
-    // Criar uma tabela HTML que será convertida para PDF
-    let pdfContent = `
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { border: 1px solid #ddd; padding: 8px; }
-          th { background-color: #f2f2f2; }
-          .total { font-weight: bold; }
-        </style>
-      </head>
-      <body>
-        <h1>Relatório de Receitas - ${currentMonth}</h1>
-        <table>
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Descrição</th>
-              <th>Categoria</th>
-              <th>Valor</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
     
-    currentMonthIncomes.forEach(income => {
+    // Sort incomes by date (oldest first)
+    const sortedIncomes = sortByDate(currentMonthIncomes, 'asc');
+    
+    // Prepare data for export
+    const headers = ['Data', 'Descrição', 'Categoria', 'Valor'];
+    const rows = sortedIncomes.map(income => {
       const date = income.date.toLocaleDateString('pt-BR');
       const amount = formatCurrency(income.amount);
-      
-      pdfContent += `
-        <tr>
-          <td>${date}</td>
-          <td>${income.description}</td>
-          <td>${formatCategoryForDisplay(income.category)}</td>
-          <td>${amount}</td>
-        </tr>
-      `;
+      return [date, income.description, formatCategoryForDisplay(income.category), amount];
     });
     
-    pdfContent += `
-          </tbody>
-          <tfoot>
-            <tr class="total">
-              <td colspan="3">Total</td>
-              <td>${formatCurrency(totalIncome)}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </body>
-      </html>
-    `;
+    const footer = [
+      ['Total', '', '', formatCurrency(totalIncome)]
+    ];
     
-    const blob = new Blob([pdfContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `receitas_${currentMonth}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const pdfContent = generatePDFHTML(
+      `Relatório de Receitas - ${currentMonth}`,
+      null,
+      headers,
+      rows,
+      footer
+    );
+    
+    downloadFile(pdfContent, `receitas_${currentMonth}.html`, 'text/html');
     
     toast.success("Arquivo PDF exportado com sucesso! (HTML formatado para impressão)");
     setIsLoading(false);
