@@ -43,10 +43,14 @@ export function ManageCategoriesModal({
   const [editValue, setEditValue] = useState('');
   const [deletingCategory, setDeletingCategory] = useState<string | null>(null);
 
-  // Remove o prefixo "Crie sua categoria: " para exibição
-  const displayCategories = categories.map(cat => 
-    cat.replace('Crie sua categoria: ', '')
-  );
+  // Criar mapeamento displayName -> originalName (com prefixo)
+  const categoryMap = categories.reduce((acc, cat) => {
+    const displayName = cat.replace('Crie sua categoria: ', '');
+    acc[displayName] = cat; // displayName -> originalName
+    return acc;
+  }, {} as Record<string, string>);
+
+  const displayCategories = Object.keys(categoryMap);
 
   const handleEditClick = (category: string) => {
     setEditingCategory(category);
@@ -56,8 +60,8 @@ export function ManageCategoriesModal({
   const handleSaveEdit = async () => {
     if (!editingCategory || !editValue.trim()) return;
 
-    // O id não é usado na implementação atual, mas mantemos para compatibilidade
-    await onEdit('', editingCategory, editValue.trim());
+    const originalName = categoryMap[editingCategory]; // Pega o nome original COM prefixo
+    await onEdit('', originalName, editValue.trim());
     setEditingCategory(null);
     setEditValue('');
   };
@@ -74,7 +78,8 @@ export function ManageCategoriesModal({
   const handleConfirmDelete = async () => {
     if (!deletingCategory) return;
 
-    const success = await onDelete(deletingCategory);
+    const originalName = categoryMap[deletingCategory]; // Pega o nome original COM prefixo
+    const success = await onDelete(originalName);
     if (success) {
       setDeletingCategory(null);
     }

@@ -151,18 +151,6 @@ export function CategoryCombobox({
                     {cat}
                   </CommandItem>
                 ))}
-                {onManageCategories && (
-                  <CommandItem
-                    onSelect={() => {
-                      setOpen(false);
-                      onManageCategories();
-                    }}
-                    className="text-muted-foreground"
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Gerenciar categorias
-                  </CommandItem>
-                )}
               </CommandGroup>
             )}
 
@@ -203,6 +191,22 @@ export function CategoryCombobox({
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Criar <span className="font-semibold ml-1">"{searchValue}"</span>
+                </CommandItem>
+              </CommandGroup>
+            )}
+
+            {/* Botão Gerenciar Categorias - Sempre Visível */}
+            {onManageCategories && (
+              <CommandGroup>
+                <CommandItem
+                  onSelect={() => {
+                    setOpen(false);
+                    onManageCategories();
+                  }}
+                  className="text-muted-foreground"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Gerenciar minhas categorias
                 </CommandItem>
               </CommandGroup>
             )}
