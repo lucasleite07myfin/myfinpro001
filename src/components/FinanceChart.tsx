@@ -214,10 +214,10 @@ const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactio
                     data={pieChartData}
                     dataKey="value"
                     nameKey="name"
-                    cx="60%"
+                    cx="65%"
                     cy="50%"
-                    outerRadius={80}
-                    innerRadius={30}
+                    outerRadius={130}
+                    innerRadius={45}
                     strokeWidth={2}
                     label={false}
                   >
@@ -234,11 +234,13 @@ const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactio
                     align="left"
                     verticalAlign="middle"
                     wrapperStyle={{ 
-                      paddingRight: 20,
-                      maxWidth: '40%'
+                      paddingRight: 10,
+                      maxWidth: '35%',
+                      fontSize: '11px'
                     }}
+                    iconSize={8}
                     formatter={(value) => (
-                      <span className="text-xs text-gray-700">
+                      <span className="text-[11px] text-gray-700 leading-tight">
                         {value}
                       </span>
                     )}
