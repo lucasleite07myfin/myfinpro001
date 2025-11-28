@@ -131,7 +131,6 @@ const Suppliers: React.FC = () => {
   
   // Export suppliers to CSV
   const exportToCSV = () => {
-    // Headers for the CSV file
     const headers = [
       'Nome/Razão Social',
       'CNPJ/CPF',
@@ -145,77 +144,71 @@ const Suppliers: React.FC = () => {
       'Observações'
     ];
     
-    // Map each supplier to a CSV row
-    const csvRows = filteredSuppliers.map(supplier => [
+    const rows = filteredSuppliers.map(supplier => [
       supplier.name,
-      supplier.document,
+      supplier.document || '',
       supplier.stateRegistration || '',
       formatAddress(supplier),
       supplier.phone || '',
       supplier.email || '',
       supplier.contactPerson || '',
-      supplier.productType === 'Outro' ? (supplier.otherProductType || 'Outro') : supplier.productType,
+      supplier.productType === 'Outro' ? (supplier.otherProductType || 'Outro') : (supplier.productType || ''),
       supplier.paymentTerms || '',
       supplier.notes || ''
     ]);
     
-    // Combine headers and rows
+    // Note: generateCSV already handles BOM and proper cell escaping
     const csvContent = [
-      headers.join(','),
-      ...csvRows.map(row => 
-        row.map(cell => 
-          // Escape quotes and wrap cells with commas in quotes
-          typeof cell === 'string' ? `"${cell.replace(/"/g, '""')}"` : cell
-        ).join(',')
-      )
+      '\ufeff', // BOM
+      headers.map(h => `"${h}"`).join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     ].join('\n');
     
-    // Create a blob and download link
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    
-    // Set up the download
     const date = formatDateToDB(new Date());
     link.setAttribute('href', url);
     link.setAttribute('download', `fornecedores_${date}.csv`);
     link.style.visibility = 'hidden';
-    
-    // Append to the document, click and remove
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     
     toast.success("Arquivo CSV de fornecedores exportado com sucesso!");
   };
   
   // Export suppliers to Excel
   const exportToExcel = () => {
-    // Prepare data for Excel export
+    const headers = [
+      'Nome/Razão Social', 'CNPJ/CPF', 'Inscrição Estadual', 'Endereço', 
+      'Telefone', 'Email', 'Pessoa de Contato', 'Tipo de Produto/Serviço', 
+      'Condições de Pagamento', 'Observações'
+    ];
+    
+    const rows = filteredSuppliers.map(supplier => [
+      supplier.name || '',
+      supplier.document || '',
+      supplier.stateRegistration || '',
+      formatAddress(supplier),
+      supplier.phone || '',
+      supplier.email || '',
+      supplier.contactPerson || '',
+      supplier.productType === 'Outro' ? (supplier.otherProductType || 'Outro') : (supplier.productType || ''),
+      supplier.paymentTerms || '',
+      supplier.notes || ''
+    ]);
+    
     let excelContent = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-    excelContent += '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Fornecedores</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
-    excelContent += '<body>';
-    excelContent += '<table>';
-    excelContent += '<tr><th>Nome/Razão Social</th><th>CNPJ/CPF</th><th>Inscrição Estadual</th><th>Endereço</th><th>Telefone</th><th>Email</th><th>Pessoa de Contato</th><th>Tipo de Produto/Serviço</th><th>Condições de Pagamento</th><th>Observações</th></tr>';
-    
-    filteredSuppliers.forEach(supplier => {
-      excelContent += `<tr>`;
-      excelContent += `<td>${supplier.name || ''}</td>`;
-      excelContent += `<td>${supplier.document || ''}</td>`;
-      excelContent += `<td>${supplier.stateRegistration || ''}</td>`;
-      excelContent += `<td>${formatAddress(supplier)}</td>`;
-      excelContent += `<td>${supplier.phone || ''}</td>`;
-      excelContent += `<td>${supplier.email || ''}</td>`;
-      excelContent += `<td>${supplier.contactPerson || ''}</td>`;
-      excelContent += `<td>${supplier.productType === 'Outro' ? (supplier.otherProductType || 'Outro') : supplier.productType}</td>`;
-      excelContent += `<td>${supplier.paymentTerms || ''}</td>`;
-      excelContent += `<td>${supplier.notes || ''}</td>`;
-      excelContent += `</tr>`;
+    excelContent += '<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Fornecedores</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
+    excelContent += '<body><table>';
+    excelContent += '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+    rows.forEach(row => {
+      excelContent += '<tr>' + row.map(cell => `<td>${cell}</td>`).join('') + '</tr>';
     });
-    
     excelContent += '</table></body></html>';
     
-    // Create and download Excel file
     const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -225,63 +218,53 @@ const Suppliers: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     
     toast.success("Arquivo Excel de fornecedores exportado com sucesso!");
   };
   
   // Export suppliers to PDF (HTML for printing)
   const exportToPDF = () => {
-    // Create an HTML table that will be converted to PDF
+    const headers = ['Nome/Razão Social', 'CNPJ/CPF', 'Telefone', 'Email', 'Pessoa de Contato', 'Endereço', 'Tipo de Produto'];
+    
+    const rows = filteredSuppliers.map(supplier => [
+      supplier.name || '',
+      supplier.document || '',
+      supplier.phone || '',
+      supplier.email || '',
+      supplier.contactPerson || '',
+      formatAddress(supplier),
+      supplier.productType === 'Outro' ? (supplier.otherProductType || 'Outro') : (supplier.productType || '')
+    ]);
+    
     let pdfContent = `
       <html>
       <head>
+        <meta charset="UTF-8">
         <style>
           body { font-family: Arial, sans-serif; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { border: 1px solid #ddd; padding: 8px; }
-          th { background-color: #f2f2f2; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; font-weight: bold; }
+          h1 { color: #333; margin-bottom: 5px; }
+          .subtitle { color: #666; margin-bottom: 20px; }
         </style>
       </head>
       <body>
         <h1>Lista de Fornecedores</h1>
-        <p>Data: ${new Date().toLocaleDateString('pt-BR')}</p>
+        <p class="subtitle">Data: ${new Date().toLocaleDateString('pt-BR')}</p>
         <table>
           <thead>
-            <tr>
-              <th>Nome/Razão Social</th>
-              <th>CNPJ/CPF</th>
-              <th>Telefone</th>
-              <th>Email</th>
-              <th>Pessoa de Contato</th>
-              <th>Endereço</th>
-              <th>Tipo de Produto</th>
-            </tr>
+            <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
           </thead>
           <tbody>
-    `;
-    
-    filteredSuppliers.forEach(supplier => {
-      pdfContent += `
-        <tr>
-          <td>${supplier.name || ''}</td>
-          <td>${supplier.document || ''}</td>
-          <td>${supplier.phone || ''}</td>
-          <td>${supplier.email || ''}</td>
-          <td>${supplier.contactPerson || ''}</td>
-          <td>${formatAddress(supplier)}</td>
-          <td>${supplier.productType === 'Outro' ? (supplier.otherProductType || 'Outro') : supplier.productType}</td>
-        </tr>
-      `;
-    });
-    
-    pdfContent += `
+            ${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}
           </tbody>
         </table>
       </body>
       </html>
     `;
     
-    // Create and download PDF (HTML) file
     const blob = new Blob([pdfContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -291,6 +274,7 @@ const Suppliers: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     
     toast.success("Arquivo PDF de fornecedores exportado com sucesso! (HTML formatado para impressão)");
   };

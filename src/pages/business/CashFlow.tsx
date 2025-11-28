@@ -6,6 +6,7 @@ import MainLayout from '@/components/MainLayout';
 import MonthSelector from '@/components/MonthSelector';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { formatCurrency } from '@/utils/formatters';
+import { generateCSV, generateExcelHTML, generatePDFHTML, downloadFile } from '@/utils/exportUtils';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { FileText, FileSpreadsheet, ChevronDown, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Info, Eye, EyeOff } from 'lucide-react';
@@ -81,120 +82,60 @@ const CashFlow: React.FC = () => {
   };
 
   const exportToCSV = () => {
-    // Preparar dados para exportação
-    const csvHeader = 'Mês,Entradas,Saídas,Saldo\n';
-    const csvData = chartData.map(item => {
-      return `${item.month},${item.income},${item.expenses},${item.balance}`;
-    }).join('\n');
+    // Prepare data for export
+    const headers = ['Mês', 'Entradas', 'Saídas', 'Saldo'];
+    const rows = chartData.map(item => [
+      item.month,
+      item.income.toFixed(2).replace('.', ','),
+      item.expenses.toFixed(2).replace('.', ','),
+      item.balance.toFixed(2).replace('.', ',')
+    ]);
     
-    const csvContent = csvHeader + csvData;
-    
-    // Criar e fazer download do arquivo CSV
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `fluxo-de-caixa_${currentMonth}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = generateCSV(headers, rows);
+    downloadFile(csvContent, `fluxo-de-caixa_${currentMonth}.csv`, 'text/csv;charset=utf-8;');
     
     toast.success("Arquivo CSV exportado com sucesso!");
   };
 
   const exportToExcel = () => {
-    // Preparar os dados para exportação
-    let excelContent = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-    excelContent += '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Fluxo de Caixa</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
-    excelContent += '<body>';
-    excelContent += '<table>';
-    excelContent += '<tr><th>Mês</th><th>Entradas</th><th>Saídas</th><th>Saldo</th></tr>';
+    // Prepare data for export
+    const headers = ['Mês', 'Entradas', 'Saídas', 'Saldo'];
+    const rows = chartData.map(item => [
+      item.month,
+      formatCurrency(item.income),
+      formatCurrency(item.expenses),
+      formatCurrency(item.balance)
+    ]);
     
-    chartData.forEach(item => {
-      excelContent += `<tr>`;
-      excelContent += `<td>${item.month}</td>`;
-      excelContent += `<td>${formatCurrency(item.income)}</td>`;
-      excelContent += `<td>${formatCurrency(item.expenses)}</td>`;
-      excelContent += `<td>${formatCurrency(item.balance)}</td>`;
-      excelContent += `</tr>`;
-    });
-    
-    excelContent += '</table></body></html>';
-    
-    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `fluxo-de-caixa_${currentMonth}.xls`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const excelContent = generateExcelHTML('Fluxo de Caixa', headers, rows);
+    downloadFile(excelContent, `fluxo-de-caixa_${currentMonth}.xls`, 'application/vnd.ms-excel');
     
     toast.success("Arquivo Excel exportado com sucesso!");
   };
 
   const exportToPDF = () => {
-    // Criar uma tabela HTML que será convertida para PDF
-    let pdfContent = `
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { border: 1px solid #ddd; padding: 8px; }
-          th { background-color: #f2f2f2; }
-          .total { font-weight: bold; }
-        </style>
-      </head>
-      <body>
-        <h1>Relatório de Fluxo de Caixa - ${currentMonth}</h1>
-        <table>
-          <thead>
-            <tr>
-              <th>Mês</th>
-              <th>Entradas</th>
-              <th>Saídas</th>
-              <th>Saldo</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
+    // Prepare data for export
+    const headers = ['Mês', 'Entradas', 'Saídas', 'Saldo'];
+    const rows = chartData.map(item => [
+      item.month,
+      formatCurrency(item.income),
+      formatCurrency(item.expenses),
+      formatCurrency(item.balance)
+    ]);
     
-    chartData.forEach(item => {
-      pdfContent += `
-        <tr>
-          <td>${item.month}</td>
-          <td>${formatCurrency(item.income)}</td>
-          <td>${formatCurrency(item.expenses)}</td>
-          <td>${formatCurrency(item.balance)}</td>
-        </tr>
-      `;
-    });
+    const footer = [
+      ['Total', formatCurrency(totalIncome), formatCurrency(totalExpenses), formatCurrency(totalBalance)]
+    ];
     
-    pdfContent += `
-          </tbody>
-          <tfoot>
-            <tr class="total">
-              <td>Total</td>
-              <td>${formatCurrency(totalIncome)}</td>
-              <td>${formatCurrency(totalExpenses)}</td>
-              <td>${formatCurrency(totalBalance)}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </body>
-      </html>
-    `;
+    const pdfContent = generatePDFHTML(
+      `Relatório de Fluxo de Caixa - ${currentMonth}`,
+      null,
+      headers,
+      rows,
+      footer
+    );
     
-    const blob = new Blob([pdfContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `fluxo-de-caixa_${currentMonth}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadFile(pdfContent, `fluxo-de-caixa_${currentMonth}.html`, 'text/html');
     
     toast.success("Arquivo PDF exportado com sucesso! (HTML formatado para impressão)");
   };
