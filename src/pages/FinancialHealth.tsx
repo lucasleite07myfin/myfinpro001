@@ -1,5 +1,3 @@
-// @ts-nocheck
-// NOTA: Tabelas health_snapshots e emp_health_snapshots serão criadas quando o sistema de saúde financeira for implementado
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/MainLayout';
 import FinancialHealthCards from '@/components/FinancialHealthCards';
@@ -10,6 +8,7 @@ import { useAppMode } from '@/contexts/AppModeContext';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { logger } from '@/utils/logger';
+import { Tables } from '@/integrations/supabase/types';
 
 const FinancialHealth: React.FC = () => {
   const { mode } = useAppMode();
@@ -29,8 +28,9 @@ const FinancialHealth: React.FC = () => {
 
       const tableName = mode === 'business' ? 'emp_health_snapshots' : 'health_snapshots';
       
+      // Consulta tipada baseada no modo
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as 'health_snapshots' | 'emp_health_snapshots')
         .select('*')
         .eq('user_id', user.id)
         .order('snapshot_date', { ascending: false });
@@ -38,14 +38,15 @@ const FinancialHealth: React.FC = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const snapshots = data.map(item => ({
+        type HealthSnapshotRow = Tables<'health_snapshots'>;
+        const snapshots = (data as HealthSnapshotRow[]).map(item => ({
           id: item.id,
           snapshotDate: new Date(item.snapshot_date),
           savingsRatePct: item.savings_rate_pct || 0,
           debtIncomePct: item.debt_income_pct || 0,
           monthsEmergencyFund: item.months_emergency_fund || 0,
           netWorthGrowth12m: item.net_worth_growth_12m || 0,
-          createdAt: new Date(item.created_at)
+          createdAt: new Date(item.created_at || new Date())
         }));
 
         setCurrentHealth(snapshots[0]);

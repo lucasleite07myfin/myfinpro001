@@ -144,7 +144,7 @@ const Dashboard: React.FC = () => {
             {/* Evolução Financeira */}
             <TooltipHelper content={tooltipContent.dashboard.chart}>
               <div>
-                <FinanceChart data={monthlyData} transactions={transactions} />
+                <FinanceChart data={monthlyData} transactions={transactions} currentMonth={currentMonth} />
               </div>
             </TooltipHelper>
             

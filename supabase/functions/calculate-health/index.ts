@@ -176,7 +176,8 @@ async function calculateHealthForMode(
   const totalDebt = (liabilities || []).reduce((sum: number, l: any) => sum + Number(l.value), 0);
 
   // Identificar ativos líquidos para reserva de emergência
-  const liquidAssetTypes = ['cash', 'checking_account', 'savings_account', 'crypto'];
+  // CORREÇÃO: Usar tipos de ativos em português conforme definido no sistema
+  const liquidAssetTypes = ['Conta Bancária', 'Investimento', 'Cripto'];
   const emergencyFund = (assets || [])
     .filter((a: any) => liquidAssetTypes.includes(a.type))
     .reduce((sum: number, a: any) => sum + Number(a.value), 0);

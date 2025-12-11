@@ -99,11 +99,12 @@ const Incomes: React.FC = () => {
   });
 
   // Apply filter by category, if selected
+  // CORREÇÃO: Padronizado para usar apenas prefixo 'Outros: ' (igual ao Expenses.tsx)
   if (filterCategory && filterCategory !== 'all') {
     currentMonthIncomes = currentMonthIncomes.filter(t => {
-      // Handle both regular categories and custom categories with prefixes
-      if (t.category.startsWith('Crie sua categoria: ') || t.category.startsWith('Outros: ')) {
-        if (filterCategory.startsWith('Crie sua categoria: ') || filterCategory.startsWith('Outros: ')) {
+      // Handle both regular categories and 'Outros: X' categories
+      if (t.category.startsWith('Outros: ')) {
+        if (filterCategory.startsWith('Outros: ')) {
           return t.category === filterCategory;
         }
         return false;
@@ -356,7 +357,7 @@ const Incomes: React.FC = () => {
                         <SelectItem key={category} value={category}>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-xs">
-                              {category.startsWith('Crie sua categoria: ') || category.startsWith('Outros: ') ? 'Personalizada' : 'Padrão'}
+                              {category.startsWith('Outros: ') ? 'Personalizada' : 'Padrão'}
                             </Badge>
                             <span>{formatCategoryForDisplay(category)}</span>
                           </div>

@@ -25,6 +25,7 @@ import { tooltipContent } from '@/data/tooltipContent';
 interface FinanceChartProps {
   data: MonthlyFinanceData[];
   transactions: Transaction[];
+  currentMonth?: string; // Formato: "YYYY-MM"
 }
 
 // Cores para o gráfico de pizza
@@ -33,7 +34,7 @@ const COLORS = [
   '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
 ];
 
-const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactions }) => {
+const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactions, currentMonth }) => {
   const [chartType, setChartType] = useState<'line' | 'pie'>('line');
 
   // Formatar dados para o gráfico de linha
@@ -44,11 +45,21 @@ const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactio
   }));
 
   // Calcular as despesas por categoria para o gráfico de pizza (memoizado)
+  // CORREÇÃO: Filtrar apenas transações do mês atual
   const pieChartData = useMemo(() => {
     const expensesByCategory: Record<string, number> = {};
     
-    // Filtrar apenas as despesas
-    const expenseTransactions = transactions.filter(t => t.type === 'expense');
+    // Filtrar apenas as despesas do mês atual
+    let expenseTransactions = transactions.filter(t => t.type === 'expense');
+    
+    // Se currentMonth foi fornecido, filtrar pelo mês
+    if (currentMonth) {
+      expenseTransactions = expenseTransactions.filter(t => {
+        const transactionDate = t.date instanceof Date ? t.date : new Date(t.date);
+        const transactionMonth = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, '0')}`;
+        return transactionMonth === currentMonth;
+      });
+    }
     
     // Somar os valores por categoria
     expenseTransactions.forEach(transaction => {
@@ -68,7 +79,7 @@ const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactio
     chartData.sort((a, b) => b.value - a.value);
     
     return chartData;
-  }, [transactions]);
+  }, [transactions, currentMonth]);
 
   // Configuração do ChartContainer
   const chartConfig = {
@@ -129,7 +140,11 @@ const FinanceChart: React.FC<FinanceChartProps> = React.memo(({ data, transactio
                     tickLine={false}
                     axisLine={false}
                     fontSize={12}
-                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                    tickFormatter={(value) => {
+                      if (value === 0) return 'R$0';
+                      if (value < 1000) return `R$${value}`;
+                      return `${(value / 1000).toFixed(0)}k`;
+                    }}
                   />
                   <ChartTooltip 
                     cursor={{ strokeDasharray: '3 3', stroke: 'hsl(var(--muted-foreground))' }}
