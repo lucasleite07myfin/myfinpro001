@@ -10,18 +10,98 @@ const logStep = (step: string, details?: unknown) => {
   console.log(JSON.stringify({ step, details, timestamp: new Date().toISOString() }));
 };
 
-// Funções de hashing usando Web Crypto API (compatível com Deno)
-async function hashPin(pin: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(pin);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+// PBKDF2 configuration
+const PBKDF2_ITERATIONS = 100000;
+const SALT_LENGTH = 16;
+const HASH_LENGTH = 32; // 256 bits
+
+// Generate cryptographically secure random salt
+function generateSalt(): Uint8Array {
+  return crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
 }
 
-async function comparePin(pin: string, hash: string): Promise<boolean> {
-  const pinHash = await hashPin(pin);
-  return pinHash === hash;
+// Convert bytes to hex string
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Convert hex string to bytes
+function hexToBytes(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+  }
+  return bytes;
+}
+
+// Hash PIN using PBKDF2 with salt
+async function hashPinWithSalt(pin: string, salt: Uint8Array): Promise<string> {
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(pin),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  
+  // Create a proper ArrayBuffer from the Uint8Array for TypeScript compatibility
+  const saltBuffer = new Uint8Array(salt).buffer as ArrayBuffer;
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: saltBuffer,
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    HASH_LENGTH * 8 // bits
+  );
+  
+  const hashBytes = new Uint8Array(derivedBits);
+  // Store as: salt$hash (both in hex)
+  return `${bytesToHex(salt)}$${bytesToHex(hashBytes)}`;
+}
+
+// Create a new salted hash for a PIN
+async function createPinHash(pin: string): Promise<string> {
+  const salt = generateSalt();
+  return hashPinWithSalt(pin, salt);
+}
+
+// Verify PIN against stored hash
+async function verifyPin(pin: string, storedHash: string): Promise<boolean> {
+  // Check if it's a legacy SHA-256 hash (no $ separator, 64 chars)
+  if (!storedHash.includes('$') && storedHash.length === 64) {
+    // Legacy verification - compare with simple SHA-256
+    const encoder = new TextEncoder();
+    const data = encoder.encode(pin);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const legacyHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return legacyHash === storedHash;
+  }
+  
+  // New PBKDF2 format: salt$hash
+  const [saltHex, hashHex] = storedHash.split('$');
+  if (!saltHex || !hashHex) {
+    logStep('invalid-hash-format', { format: 'expected salt$hash' });
+    return false;
+  }
+  
+  const salt = hexToBytes(saltHex);
+  const expectedHash = await hashPinWithSalt(pin, salt);
+  
+  // Constant-time comparison to prevent timing attacks
+  const expected = expectedHash.split('$')[1];
+  if (expected.length !== hashHex.length) return false;
+  
+  let result = 0;
+  for (let i = 0; i < expected.length; i++) {
+    result |= expected.charCodeAt(i) ^ hashHex.charCodeAt(i);
+  }
+  return result === 0;
 }
 
 interface RequestBody {
@@ -29,6 +109,10 @@ interface RequestBody {
   action: 'create' | 'validate' | 'update';
   newPin?: string;
 }
+
+// Rate limiting configuration
+const MAX_PIN_ATTEMPTS = 5;
+const RATE_LIMIT_WINDOW_MINUTES = 15;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -55,6 +139,39 @@ serve(async (req) => {
     }
 
     logStep('user-authenticated', { userId: user.id });
+
+    // Rate limiting check using service role
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000).toISOString();
+    const rateLimitIdentifier = `pin_${user.id}`;
+    
+    const { data: attempts, error: rateLimitError } = await supabaseAdmin
+      .from('rate_limit_attempts')
+      .select('id')
+      .eq('identifier', rateLimitIdentifier)
+      .eq('action', 'pin_validate')
+      .gte('created_at', windowStart);
+
+    if (rateLimitError) {
+      logStep('rate-limit-check-error', { error: rateLimitError.message });
+    }
+
+    const attemptCount = attempts?.length || 0;
+    
+    if (attemptCount >= MAX_PIN_ATTEMPTS) {
+      logStep('rate-limit-exceeded', { attempts: attemptCount, max: MAX_PIN_ATTEMPTS });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Muitas tentativas. Aguarde 15 minutos.',
+          retryAfter: RATE_LIMIT_WINDOW_MINUTES * 60
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     const { pin, action, newPin }: RequestBody = await req.json()
 
@@ -92,9 +209,9 @@ serve(async (req) => {
           )
         }
 
-        // Criar hash do PIN
-        const pinHash = await hashPin(pin)
-        logStep('pin-hash-created');
+        // Criar hash do PIN com PBKDF2 e salt
+        const pinHash = await createPinHash(pin)
+        logStep('pin-hash-created', { algorithm: 'PBKDF2' });
 
         // Salvar no banco
         const { error: updateError } = await supabaseClient
@@ -115,6 +232,11 @@ serve(async (req) => {
       }
 
       case 'validate': {
+        // Record the attempt for rate limiting
+        await supabaseAdmin
+          .from('rate_limit_attempts')
+          .insert({ identifier: rateLimitIdentifier, action: 'pin_validate' });
+
         // Verificar se existe PIN configurado
         if (!profile.mode_switch_pin_hash) {
           logStep('no-pin-configured');
@@ -124,9 +246,19 @@ serve(async (req) => {
           )
         }
 
-        // Validar PIN
-        const isValid = await comparePin(pin, profile.mode_switch_pin_hash)
+        // Validar PIN (supports both legacy and new format)
+        const isValid = await verifyPin(pin, profile.mode_switch_pin_hash)
         logStep('pin-validated', { isValid });
+
+        // If valid and using legacy hash, upgrade to PBKDF2
+        if (isValid && !profile.mode_switch_pin_hash.includes('$')) {
+          const upgradedHash = await createPinHash(pin);
+          await supabaseClient
+            .from('profiles')
+            .update({ mode_switch_pin_hash: upgradedHash })
+            .eq('id', user.id);
+          logStep('pin-hash-upgraded-to-pbkdf2');
+        }
 
         return new Response(
           JSON.stringify({ 
@@ -156,8 +288,13 @@ serve(async (req) => {
           )
         }
 
-        const isValid = await comparePin(pin, profile.mode_switch_pin_hash)
+        const isValid = await verifyPin(pin, profile.mode_switch_pin_hash)
         if (!isValid) {
+          // Record failed attempt
+          await supabaseAdmin
+            .from('rate_limit_attempts')
+            .insert({ identifier: rateLimitIdentifier, action: 'pin_validate' });
+          
           logStep('current-pin-incorrect');
           return new Response(
             JSON.stringify({ error: 'PIN atual incorreto' }),
@@ -165,9 +302,9 @@ serve(async (req) => {
           )
         }
 
-        // Criar hash do novo PIN
-        const newHash = await hashPin(newPin)
-        logStep('new-pin-hash-created');
+        // Criar hash do novo PIN com PBKDF2 e salt
+        const newHash = await createPinHash(newPin)
+        logStep('new-pin-hash-created', { algorithm: 'PBKDF2' });
 
         // Atualizar no banco
         const { error: updateError } = await supabaseClient
