@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const logStep = (step: string, details?: any) => {
+const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
@@ -31,26 +31,39 @@ serve(async (req) => {
     
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
+    // SECURITY: Webhook signature verification is MANDATORY
+    if (!webhookSecret) {
+      logStep("ERROR: STRIPE_WEBHOOK_SECRET is not configured - rejecting request");
+      return new Response(
+        JSON.stringify({ error: "Webhook secret not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const signature = req.headers.get("stripe-signature");
     const body = await req.text();
 
+    if (!signature) {
+      logStep("ERROR: No stripe-signature header present");
+      return new Response(
+        JSON.stringify({ error: "Missing stripe-signature header" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     let event: Stripe.Event;
 
-    // Validar webhook signature (segurança crítica)
-    if (webhookSecret && signature) {
-      try {
-        event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-        logStep("Webhook signature verified");
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        logStep("Webhook signature verification failed", { error: errorMsg });
-        return new Response("Invalid signature", { status: 400 });
-      }
-    } else {
-      // Em desenvolvimento, aceitar sem verificação (mas logar warning)
-      logStep("WARNING: No webhook secret configured - accepting unverified webhook");
-      event = JSON.parse(body);
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      logStep("Webhook signature verified successfully");
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      logStep("Webhook signature verification failed", { error: errorMsg });
+      return new Response(
+        JSON.stringify({ error: "Invalid signature" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     logStep("Processing event", { type: event.type, id: event.id });
@@ -68,7 +81,6 @@ serve(async (req) => {
           break;
         }
 
-        // Criar ou atualizar subscription
         const { error } = await supabaseClient
           .from("subscriptions")
           .upsert({
@@ -102,7 +114,6 @@ serve(async (req) => {
         });
 
         if (!userId) {
-          // Tentar buscar pelo customer_id
           const { data: existingSub } = await supabaseClient
             .from("subscriptions")
             .select("user_id")
@@ -225,7 +236,7 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: "Internal server error" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
