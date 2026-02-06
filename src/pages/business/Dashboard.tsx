@@ -6,6 +6,7 @@ import StatsCard from '@/components/StatsCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatPercent } from '@/utils/formatters';
 import FinanceChart from '@/components/FinanceChart';
+import MonthSelector from '@/components/MonthSelector';
 import { ArrowUp, ArrowDown, CreditCard, PiggyBank } from 'lucide-react';
 import TransactionsTable from '@/components/TransactionsTable';
 import RecurringExpensesCard from '@/components/RecurringExpensesCard';
@@ -52,16 +53,21 @@ const BusinessDashboard: React.FC = () => {
     return user?.email?.split('@')[0] || 'Usuário';
   };
 
-  // Get recent transactions (memoizado)
+  // Get recent transactions filtered by current month
   const recentTransactions = useMemo(() => {
     return [...transactions]
+      .filter(t => {
+        const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
+        return transactionMonth === currentMonth;
+      })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [transactions]);
+  }, [transactions, currentMonth]);
 
   return (
     <div className="space-y-4">
-      <div className="mb-2 md:mb-3 flex justify-between items-start">
+      <div className="mb-2 md:mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <h1 className="text-xl md:text-2xl font-bold text-neutral-800">Olá, {getGreeting()}</h1>
+        <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
       </div>
 
       <div className="mb-4 md:mb-6">

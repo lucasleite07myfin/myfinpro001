@@ -59,7 +59,9 @@ const CryptoModal: React.FC<CryptoModalProps> = ({
   crypto,
 }) => {
   const { mode } = useAppMode();
-  const financeContext = mode === 'personal' ? useFinance() : useBusiness();
+  const personalContext = useFinance();
+  const businessContext = useBusiness();
+  const financeContext = mode === 'personal' ? personalContext : businessContext;
   const { addAsset, editAsset, assets } = financeContext;
   const { coins, loading: coinsLoading, error: coinsError, refetch } = useCryptoList();
 

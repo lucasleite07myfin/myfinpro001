@@ -39,8 +39,9 @@ const LIABILITY_TYPES = [
 
 const AddLiabilityModal: React.FC<AddLiabilityModalProps> = ({ open, onOpenChange }) => {
   const { mode } = useAppMode();
-  // Use either finance or business context based on current mode
-  const financeContext = mode === 'personal' ? useFinance() : useBusiness();
+  const personalContext = useFinance();
+  const businessContext = useBusiness();
+  const financeContext = mode === 'personal' ? personalContext : businessContext;
   const { addLiability } = financeContext;
   
   const [name, setName] = useState('');

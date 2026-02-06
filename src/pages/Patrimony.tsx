@@ -56,7 +56,10 @@ const COLORS = ['#EE680D', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
 
 const Patrimony: React.FC = () => {
   const { mode } = useAppMode();
-  const financeContext = mode === 'personal' ? useFinance() : useBusiness();
+  // Call both hooks unconditionally to respect React's rules of hooks
+  const personalContext = useFinance();
+  const businessContext = useBusiness();
+  const financeContext = mode === 'personal' ? personalContext : businessContext;
   const { assets, deleteAsset } = financeContext;
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -139,12 +142,14 @@ const Patrimony: React.FC = () => {
       return acc;
     }, {} as Record<string, number>);
 
+    const filteredTotal = filteredAssets.reduce((sum, asset) => sum + asset.value, 0);
+
     return Object.entries(categoryTotals).map(([name, value]) => ({
       name,
       value,
-      percentage: ((value / totalValue) * 100).toFixed(1)
+      percentage: filteredTotal > 0 ? ((value / filteredTotal) * 100).toFixed(1) : '0.0'
     }));
-  }, [filteredAssets, totalValue]);
+  }, [filteredAssets]);
 
   // Calculate insurance stats
   const insuranceStats = useMemo(() => {

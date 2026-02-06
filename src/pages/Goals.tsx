@@ -19,8 +19,9 @@ import { Goal } from '@/types/finance';
 
 const Goals: React.FC = () => {
   const { mode } = useAppMode();
-  // Use either finance or business context based on current mode
-  const financeContext = mode === 'personal' ? useFinance() : useBusiness();
+  const personalContext = useFinance();
+  const businessContext = useBusiness();
+  const financeContext = mode === 'personal' ? personalContext : businessContext;
   const { goals, deleteGoal } = financeContext;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);

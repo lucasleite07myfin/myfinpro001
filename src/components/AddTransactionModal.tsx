@@ -47,7 +47,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 }) => {
   const { mode: appMode } = useAppMode();
   const { canCreate, canEdit } = useBusinessPermissions();
-  const financeContext = appMode === 'personal' ? useFinance() : useBusiness();
+  const personalContext = useFinance();
+  const businessContext = useBusiness();
+  const financeContext = appMode === 'personal' ? personalContext : businessContext;
   
   // Verificar permissões
   const hasCreatePermission = appMode === 'personal' || canCreate('transactions');

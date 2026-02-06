@@ -49,8 +49,9 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
   mode = 'add'
 }) => {
   const { mode: appMode } = useAppMode();
-  // Use either finance or business context based on current mode
-  const financeContext = appMode === 'personal' ? useFinance() : useBusiness();
+  const personalContext = useFinance();
+  const businessContext = useBusiness();
+  const financeContext = appMode === 'personal' ? personalContext : businessContext;
   const { addGoal, editGoal } = financeContext;
   
   const [name, setName] = useState('');

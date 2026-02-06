@@ -254,7 +254,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   };
 
   // Funções para manipular transações
-  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
+  const addTransaction = async (transaction: Omit<Transaction, 'id'>, silent = false) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
@@ -289,7 +289,9 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       };
 
       setTransactions([newTransaction, ...transactions]);
-      toast.success('Transação adicionada com sucesso!');
+      if (!silent) {
+        toast.success('Transação adicionada com sucesso!');
+      }
       updateMonthlyData();
     } catch (error) {
       toast.error('Erro ao adicionar transação');
@@ -729,7 +731,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
             paymentMethod: expense.paymentMethod,
             isRecurringPayment: true,
             recurringExpenseId: id,
-          });
+          }, true); // silent=true to avoid double toast
         }
       } else if (!paid && isAlreadyPaid) {
         const transactionToDelete = transactions.find(t => 
