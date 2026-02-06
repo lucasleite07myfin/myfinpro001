@@ -40,7 +40,9 @@ interface CryptoListProps {
 
 const CryptoList: React.FC<CryptoListProps> = ({ assets, onEditCrypto }) => {
   const { mode } = useAppMode();
-  const financeContext = mode === 'personal' ? useFinance() : useBusiness();
+  const personalContext = useFinance();
+  const businessContext = useBusiness();
+  const financeContext = mode === 'personal' ? personalContext : businessContext;
   const { deleteAsset, editAsset } = financeContext;
   
   const [showHighValue, setShowHighValue] = useState(false);

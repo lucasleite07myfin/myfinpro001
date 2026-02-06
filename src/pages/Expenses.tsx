@@ -85,8 +85,10 @@ import {
 
 const Expenses: React.FC = () => {
   const { mode } = useAppMode();
-  // Use either finance or business context based on current mode
-  const financeContext = mode === 'personal' ? useFinance() : useBusiness();
+  // Call both hooks unconditionally to respect React's rules of hooks
+  const personalContext = useFinance();
+  const businessContext = useBusiness();
+  const financeContext = mode === 'personal' ? personalContext : businessContext;
   const { transactions, currentMonth, setCurrentMonth, deleteTransaction, goals, customCategories, recurringExpenses, deleteRecurringExpense } = financeContext as FinanceContextType | BusinessContextType;
   
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -121,9 +123,9 @@ const Expenses: React.FC = () => {
   // Apply filter by category, if selected
   if (filterCategory && filterCategory !== 'all') {
     currentMonthExpenses = currentMonthExpenses.filter(t => {
-      // Handle both regular categories and 'Outros: X' categories
-      if (t.category.startsWith('Outros: ')) {
-        if (filterCategory.startsWith('Outros: ')) {
+      // Handle both regular categories and custom categories with different prefixes
+      if (t.category.startsWith('Outros: ') || t.category.startsWith('Crie sua categoria: ')) {
+        if (filterCategory.startsWith('Outros: ') || filterCategory.startsWith('Crie sua categoria: ')) {
           return t.category === filterCategory;
         }
         return false;

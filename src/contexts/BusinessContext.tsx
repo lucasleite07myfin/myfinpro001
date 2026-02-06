@@ -5,6 +5,7 @@ import { Supplier } from '@/types/supplier';
 import { toast } from 'sonner';
 import { getCurrentMonth, parseDateFromDB, formatDateToDB } from '@/utils/formatters';
 import { supabase } from '@/integrations/supabase/client';
+import { useUser } from '@/contexts/UserContext';
 import { logger } from '@/utils/logger';
 
 // Add Investment to the interface
@@ -132,9 +133,14 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   const [customCategories, setCustomCategories] = useState<CustomCategories>({ income: [], expense: [] });
 
   // Carregar dados do Supabase
+  // Usar useUser para obter o user autenticado
+  const { user } = useUser();
+
   useEffect(() => {
-    loadData();
-  }, []);
+    if (user) {
+      loadData();
+    }
+  }, [user?.id]);
 
   // Atualizar dados mensais quando as transações mudarem
   useEffect(() => {
@@ -632,9 +638,8 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     return expense ? (expense.paidMonths || []).includes(month) : false;
   };
 
-  const editRecurringExpense = (expense: RecurringExpense) => {
-    setRecurringExpenses(recurringExpenses.map(e => e.id === expense.id ? expense : e));
-    toast.success('Despesa fixa atualizada com sucesso!');
+  const editRecurringExpense = async (expense: RecurringExpense) => {
+    await updateRecurringExpense(expense);
   };
 
   // Goal functions
@@ -772,17 +777,56 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     }
   };
 
-  const updateAsset = (asset: Asset) => {
-    setAssets(prev => prev.map(item => item.id === asset.id ? asset : item));
+  const updateAsset = async (asset: Asset) => {
+    try {
+      const { error } = await supabase
+        .from('emp_assets')
+        .update({
+          name: asset.name,
+          type: asset.type,
+          value: asset.value,
+          evaluation_date: asset.evaluationDate ? formatDateToDB(asset.evaluationDate) : null,
+          acquisition_value: asset.acquisitionValue,
+          acquisition_date: asset.acquisitionDate ? formatDateToDB(asset.acquisitionDate) : null,
+          insured: asset.insured,
+          wallet: asset.wallet,
+          symbol: asset.symbol,
+          notes: asset.notes,
+          location: asset.location,
+          last_price_brl: asset.lastPriceBrl,
+          quantity: asset.quantity,
+          last_updated: new Date().toISOString()
+        })
+        .eq('id', asset.id);
+
+      if (error) throw error;
+
+      setAssets(prev => prev.map(item => item.id === asset.id ? asset : item));
+    } catch (error) {
+      logger.error('Erro ao atualizar ativo:', error);
+      toast.error('Erro ao atualizar ativo');
+    }
   };
 
-  const deleteAsset = (id: string) => {
-    setAssets(prev => prev.filter(item => item.id !== id));
+  const deleteAsset = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('emp_assets')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setAssets(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      logger.error('Erro ao excluir ativo:', error);
+      toast.error('Erro ao excluir ativo');
+    }
   };
 
   // Alias for updateAsset to match component expectations
-  const editAsset = (asset: Asset) => {
-    updateAsset(asset);
+  const editAsset = async (asset: Asset) => {
+    await updateAsset(asset);
     toast.success('Ativo atualizado com sucesso!');
   };
 
@@ -842,21 +886,60 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     }
   };
 
-  const updateSupplier = (supplier: Supplier) => {
-    setSuppliers(prev => prev.map(item => item.id === supplier.id ? supplier : item));
+  const updateSupplier = async (supplier: Supplier) => {
+    try {
+      const { error } = await supabase
+        .from('suppliers')
+        .update({
+          name: supplier.name,
+          document: supplier.document,
+          state_registration: supplier.stateRegistration,
+          is_company: supplier.isCompany,
+          product_type: supplier.productType,
+          other_product_type: supplier.otherProductType,
+          contact_person: supplier.contactPerson,
+          email: supplier.email,
+          phone: supplier.phone,
+          address: supplier.address,
+          bank_info: supplier.bankInfo,
+          payment_terms: supplier.paymentTerms,
+          notes: supplier.notes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', supplier.id);
+
+      if (error) throw error;
+
+      setSuppliers(prev => prev.map(item => item.id === supplier.id ? supplier : item));
+    } catch (error) {
+      logger.error('Erro ao atualizar fornecedor:', error);
+      toast.error('Erro ao atualizar fornecedor');
+    }
   };
 
-  const deleteSupplier = (id: string) => {
-    setSuppliers(prev => prev.filter(item => item.id !== id));
+  const deleteSupplier = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('suppliers')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setSuppliers(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      logger.error('Erro ao excluir fornecedor:', error);
+      toast.error('Erro ao excluir fornecedor');
+    }
   };
 
   // Alias for updateSupplier to match component expectations
-  const editSupplier = (supplier: Supplier) => {
+  const editSupplier = async (supplier: Supplier) => {
     const updatedSupplier = {
       ...supplier,
       updatedAt: new Date()
     };
-    updateSupplier(updatedSupplier);
+    await updateSupplier(updatedSupplier);
     toast.success('Fornecedor atualizado com sucesso!');
   };
 
@@ -898,14 +981,42 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     }
   };
 
-  const editLiability = (liability: Liability) => {
-    setLiabilities(liabilities.map(l => l.id === liability.id ? liability : l));
-    toast.success('Passivo atualizado com sucesso!');
+  const editLiability = async (liability: Liability) => {
+    try {
+      const { error } = await supabase
+        .from('emp_liabilities')
+        .update({
+          name: liability.name,
+          type: liability.type,
+          value: liability.value
+        })
+        .eq('id', liability.id);
+
+      if (error) throw error;
+
+      setLiabilities(liabilities.map(l => l.id === liability.id ? liability : l));
+      toast.success('Passivo atualizado com sucesso!');
+    } catch (error) {
+      logger.error('Erro ao atualizar passivo:', error);
+      toast.error('Erro ao atualizar passivo');
+    }
   };
 
-  const deleteLiability = (id: string) => {
-    setLiabilities(liabilities.filter(l => l.id !== id));
-    toast.success('Passivo excluído com sucesso!');
+  const deleteLiability = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('emp_liabilities')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setLiabilities(liabilities.filter(l => l.id !== id));
+      toast.success('Passivo excluído com sucesso!');
+    } catch (error) {
+      logger.error('Erro ao excluir passivo:', error);
+      toast.error('Erro ao excluir passivo');
+    }
   };
 
   // Functions for managing investments (salvando no banco de dados)
@@ -1243,31 +1354,35 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     return typeof expense.amount === 'number' ? expense.amount : null;
   };
   
-  const setMonthlyExpenseValue = (expenseId: string, month: string, value: number | null): void => {
-    setRecurringExpenses(prev => prev.map(expense => {
-      if (expense.id === expenseId) {
-        const monthlyValues = { ...(expense.monthlyValues || {}) };
-        
-        if (value === null) {
-          // Remove the specific month value if setting to null
-          delete monthlyValues[month];
-        } else {
-          // Set the specific month value
-          monthlyValues[month] = value;
-        }
-        
-        return {
-          ...expense,
-          monthlyValues
-        };
+  const setMonthlyExpenseValue = async (expenseId: string, month: string, value: number | null): Promise<void> => {
+    try {
+      const expense = recurringExpenses.find(e => e.id === expenseId);
+      if (!expense) throw new Error("Despesa recorrente não encontrada");
+
+      const monthlyValues = { ...(expense.monthlyValues || {}) };
+      if (value === null) {
+        delete monthlyValues[month];
+      } else {
+        monthlyValues[month] = value;
       }
-      return expense;
-    }));
-    
-    if (value === null) {
-      toast.success(`Valor personalizado removido para ${month}`);
-    } else {
-      toast.success(`Valor personalizado definido para ${month}`);
+
+      const { error } = await supabase
+        .from('emp_recurring_expenses')
+        .update({ monthly_values: monthlyValues })
+        .eq('id', expenseId);
+
+      if (error) throw error;
+
+      setRecurringExpenses(prev => prev.map(e => e.id === expenseId ? { ...e, monthlyValues } : e));
+      
+      if (value === null) {
+        toast.success(`Valor personalizado removido para ${month}`);
+      } else {
+        toast.success(`Valor personalizado definido para ${month}`);
+      }
+    } catch (error) {
+      logger.error('Erro ao atualizar valor mensal:', error);
+      toast.error('Erro ao atualizar valor mensal');
     }
   };
 
