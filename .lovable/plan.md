@@ -1,21 +1,28 @@
 
 
-## Adicionar Forma de Pagamento nas Despesas Recorrentes
+## Despesas Pagas vão para o Final da Fila
 
-### Problema
-O formulario de despesas recorrentes nao inclui o campo "Forma de Pagamento", embora o estado (`paymentMethod`) ja exista e ja seja enviado ao salvar.
+### O que muda
+Quando uma despesa recorrente for marcada como "Paga", ela desce automaticamente para o final da lista no card, mantendo a cor verde. As despesas pendentes ficam no topo, ordenadas por dia de vencimento.
 
-### Solucao
-Adicionar o campo de selecao de forma de pagamento no formulario de despesas recorrentes (`renderRecurringForm`) dentro do `AddTransactionModal.tsx`.
+### Detalhe Tecnico
 
-### Detalhes Tecnicos
+**Arquivo:** `src/components/RecurringExpensesCard.tsx`
 
-**Arquivo:** `src/components/AddTransactionModal.tsx`
+Alterar a logica de ordenacao na linha 146. Atualmente:
 
-Na funcao `renderRecurringForm()`, adicionar o componente `Select` de forma de pagamento logo apos o campo "Dia de Vencimento". O componente sera identico ao ja utilizado no formulario de transacoes normais (`renderTransactionForm`), reutilizando:
-- O estado `paymentMethod` ja existente
-- A constante `PAYMENT_METHODS` ja importada
-- O mesmo estilo visual com `TooltipHelper`
+```text
+const sortedExpenses = [...expenses].sort((a, b) => a.dueDay - b.dueDay);
+```
 
-Nenhuma alteracao de banco de dados e necessaria -- a coluna `payment_method` ja existe na tabela `recurring_expenses` e `emp_recurring_expenses`, e o valor ja e enviado pelo `handleSubmitRecurring`.
+A nova logica vai:
+1. Mover para dentro do bloco de renderizacao (apos o `filter`) para ter acesso ao `selectedMonth` e `isPaid`
+2. Ordenar primeiro por status de pagamento (nao pagas primeiro, pagas por ultimo)
+3. Dentro de cada grupo, manter a ordenacao por dia de vencimento
+
+A ordenacao ficara assim:
+- Primeiro criterio: `isPaid(a.id, selectedMonth)` vs `isPaid(b.id, selectedMonth)` -- nao pagas vem antes
+- Segundo criterio: `a.dueDay - b.dueDay` -- ordem crescente de vencimento
+
+Nenhuma outra alteracao e necessaria. O estilo verde (`bg-green-50`) ja esta implementado para itens pagos.
 
