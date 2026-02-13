@@ -18,7 +18,7 @@ interface BusinessContextType {
   addRecurringExpense: (expense: Omit<RecurringExpense, 'id' | 'isPaid' | 'paidMonths' | 'createdAt'>) => void;
   updateRecurringExpense: (expense: RecurringExpense) => void;
   deleteRecurringExpense: (id: string) => void;
-  markRecurringAsPaid: (id: string, year: number, month: number) => void;
+  
   goals: Goal[];
   addGoal: (goal: Omit<Goal, 'id'>) => void;
   updateGoal: (goal: Goal) => void;
@@ -317,7 +317,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   };
 
   // Transaction functions
-  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
+  const addTransaction = async (transaction: Omit<Transaction, 'id'>, silent: boolean = false) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
@@ -366,7 +366,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
         return m;
       }));
       
-      toast.success('Transação adicionada com sucesso!');
+      if (!silent) toast.success('Transação adicionada com sucesso!');
     } catch (error) {
       logger.error('Erro ao adicionar transação:', error);
       toast.error('Erro ao adicionar transação');
@@ -524,112 +524,74 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     }
   };
 
-  const markRecurringAsPaid = async (id: string, year: number, month: number) => {
-    const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
-    const expense = recurringExpenses.find(e => e.id === id);
-    if (!expense) return;
-
-    const paidMonths = expense.paidMonths || [];
-    const isPaid = paidMonths.includes(monthKey);
-
-    let newPaidMonths: string[];
-
-    if (isPaid) {
-      newPaidMonths = paidMonths.filter(m => m !== monthKey);
-    } else {
-      newPaidMonths = [...paidMonths, monthKey];
-    }
-
+  const markRecurringExpenseAsPaid = async (id: string, month: string, paid: boolean) => {
     try {
+      const expense = recurringExpenses.find(e => e.id === id);
+      if (!expense) throw new Error("Despesa recorrente não encontrada");
+
+      // Check if amount is defined before proceeding
+      if (paid) {
+        const expenseAmount = getMonthlyExpenseValue(id, month);
+        if (expenseAmount === null) {
+          toast.error('Não é possível marcar como paga uma despesa sem valor definido');
+          return;
+        }
+      }
+
+      const paidMonths = [...(expense.paidMonths || [])];
+      const isAlreadyPaid = paidMonths.includes(month);
+
+      if (paid && !isAlreadyPaid) {
+        paidMonths.push(month);
+      } else if (!paid && isAlreadyPaid) {
+        const index = paidMonths.indexOf(month);
+        if (index > -1) {
+          paidMonths.splice(index, 1);
+        }
+      }
+
+      // Persist to database FIRST
       const { error } = await supabase
         .from('emp_recurring_expenses')
-        .update({ paid_months: newPaidMonths })
+        .update({ paid_months: paidMonths })
         .eq('id', id);
 
       if (error) throw error;
 
-      setRecurringExpenses(prev => prev.map(e => e.id === id ? { ...e, paidMonths: newPaidMonths } : e));
-      toast.success(`Despesa marcada como ${!isPaid ? 'paga' : 'não paga'}`);
-    } catch (error) {
-      logger.error('Erro ao atualizar despesa recorrente:', error);
-      toast.error('Erro ao atualizar despesa recorrente');
-    }
-  };
+      // Only update local state after DB confirmation
+      setRecurringExpenses(prev => prev.map(e => e.id === id ? { ...e, paidMonths } : e));
 
-  // Find transaction for a recurring expense in a specific month
-  const findRecurringExpenseTransaction = (expenseId: string, month: string) => {
-    return transactions.find(t => 
-      t.type === 'expense' && 
-      t.isRecurringPayment === true && 
-      t.recurringExpenseId === expenseId &&
-      `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}` === month
-    );
-  };
-
-  // Updated markRecurringExpenseAsPaid function to create/delete transactions
-  const markRecurringExpenseAsPaid = (id: string, month: string, paid: boolean) => {
-    // Find the expense first
-    const expense = recurringExpenses.find(e => e.id === id);
-    if (!expense) return;
-    
-    // Get expense amount for this specific month
-    const expenseAmount = getMonthlyExpenseValue(id, month);
-    
-    // Check if amount is defined before proceeding
-    if (expenseAmount === null && paid) {
-      toast.error('Não é possível marcar como paga uma despesa sem valor definido');
-      return;
-    }
-    
-    // Find any existing transaction for this expense in this month
-    const existingTransaction = findRecurringExpenseTransaction(id, month);
-    
-    // Update the recurring expense's paidMonths
-    setRecurringExpenses(prev => prev.map(expense => {
-      if (expense.id === id) {
-        const paidMonths = [...(expense.paidMonths || [])];
-        
-        if (paid && !paidMonths.includes(month)) {
-          paidMonths.push(month);
-        } else if (!paid && paidMonths.includes(month)) {
-          const index = paidMonths.indexOf(month);
-          if (index > -1) {
-            paidMonths.splice(index, 1);
-          }
+      // Create or delete transaction
+      if (paid && !isAlreadyPaid) {
+        const amount = getMonthlyExpenseValue(id, month) || expense.amount;
+        if (amount > 0) {
+          const [year, monthNum] = month.split('-').map(Number);
+          const dueDate = new Date(year, monthNum - 1, expense.dueDay);
+          addTransaction({
+            date: dueDate,
+            description: `${expense.description} (Despesa Fixa)`,
+            category: expense.category,
+            amount,
+            type: 'expense',
+            paymentMethod: expense.paymentMethod,
+            isRecurringPayment: true,
+            recurringExpenseId: id,
+          }, true); // silent=true to avoid double toast
         }
-        
-        return { ...expense, paidMonths };
+      } else if (!paid && isAlreadyPaid) {
+        const transactionToDelete = transactions.find(t => 
+          t.recurringExpenseId === id && 
+          `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}` === month
+        );
+        if (transactionToDelete) {
+          deleteTransaction(transactionToDelete.id);
+        }
       }
-      return expense;
-    }));
-    
-    // Create or delete transaction based on paid status
-    if (paid && !existingTransaction && expenseAmount !== null) {
-      // Parse month into Date
-      const [year, monthNum] = month.split('-').map(Number);
-      const dueDate = new Date(year, monthNum - 1, expense.dueDay);
-      
-      // Create a transaction for the paid recurring expense
-      addTransaction({
-        date: dueDate,
-        description: `${expense.description} (Despesa Fixa)`,
-        category: expense.category,
-        amount: expenseAmount,
-        type: 'expense',
-        paymentMethod: expense.paymentMethod,
-        isRecurringPayment: true,
-        recurringExpenseId: expense.id
-      });
-      
-      toast.success(`Despesa fixa marcada como paga para ${month}`);
-    } 
-    else if (!paid && existingTransaction) {
-      // Remove the transaction when unmarking as paid
-      deleteTransaction(existingTransaction.id);
-      toast.success(`Despesa fixa marcada como não paga para ${month}`);
-    }
-    else {
-      toast.success(`Status da despesa fixa atualizado para ${month}`);
+
+      toast.success(`Despesa marcada como ${paid ? 'paga' : 'não paga'}!`);
+    } catch (error) {
+      logger.error('Erro ao marcar despesa como paga:', error);
+      toast.error('Erro ao marcar despesa como paga');
     }
   };
 
@@ -1415,7 +1377,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     addRecurringExpense,
     updateRecurringExpense,
     deleteRecurringExpense,
-    markRecurringAsPaid,
+    
     goals,
     addGoal,
     updateGoal,
