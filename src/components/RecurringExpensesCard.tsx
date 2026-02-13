@@ -108,7 +108,7 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
     if (!editingExpense) return;
     const { month } = editingExpense;
     try {
-      const amount = editAmount.trim() === "" ? null : parseFloat(editAmount);
+      const amount = editAmount.trim() === "" ? null : parseFloat(editAmount.replace(",", "."));
       if (setMonthlyExpenseValue) {
         setMonthlyExpenseValue(expense.id, month, amount);
         toast.success(`Valor para ${formatMonth(month)} atualizado`);
