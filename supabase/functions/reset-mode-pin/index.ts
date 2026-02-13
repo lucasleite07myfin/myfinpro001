@@ -8,14 +8,46 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Função para hashear PIN usando SHA-256
+// PBKDF2 configuration (consistent with validate-mode-pin)
+const PBKDF2_ITERATIONS = 100000;
+const SALT_LENGTH = 16;
+const HASH_LENGTH = 32; // 256 bits
+
+function generateSalt(): Uint8Array {
+  return crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function hashPin(pin: string): Promise<string> {
+  const salt = generateSalt();
   const encoder = new TextEncoder();
-  const data = encoder.encode(pin);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(pin),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+
+  const saltBuffer = new Uint8Array(salt).buffer as ArrayBuffer;
+
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: saltBuffer,
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    HASH_LENGTH * 8
+  );
+
+  const hashBytes = new Uint8Array(derivedBits);
+  // Store as: salt$hash (both in hex) - consistent with validate-mode-pin
+  return `${bytesToHex(salt)}$${bytesToHex(hashBytes)}`;
 }
 
 serve(async (req) => {

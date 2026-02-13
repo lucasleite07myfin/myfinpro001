@@ -59,12 +59,19 @@ Deno.serve(async (req) => {
 
     console.log('Fetching admin dashboard stats...');
 
-    // Buscar estatísticas em paralelo
-    const [usersResponse, subscriptionsData, couponsData, transactionsData] = await Promise.all([
+    // Buscar estatísticas em paralelo - using aggregation for transactions (privacy)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [usersResponse, subscriptionsData, couponsData, totalTxCount, recentIncomeTx] = await Promise.all([
       adminClient.auth.admin.listUsers(),
-      adminClient.from('subscriptions').select('*'),
-      adminClient.from('discount_coupons').select('*'),
-      adminClient.from('transactions').select('amount, type, created_at')
+      adminClient.from('subscriptions').select('status'),
+      adminClient.from('discount_coupons').select('is_active'),
+      adminClient.from('transactions').select('id', { count: 'exact', head: true }),
+      adminClient.from('transactions')
+        .select('amount')
+        .eq('type', 'income')
+        .gte('created_at', thirtyDaysAgo.toISOString())
     ]);
 
     if (usersResponse.error) throw usersResponse.error;
@@ -72,7 +79,6 @@ Deno.serve(async (req) => {
     const users = usersResponse.data.users;
     const subscriptions = subscriptionsData.data || [];
     const coupons = couponsData.data || [];
-    const transactions = transactionsData.data || [];
 
     // Calcular estatísticas
     const totalUsers = users.length;
@@ -80,19 +86,10 @@ Deno.serve(async (req) => {
     const trialingSubscriptions = subscriptions.filter(s => s.status === 'trialing').length;
     const canceledSubscriptions = subscriptions.filter(s => s.status === 'canceled').length;
 
-    // Calcular receita mensal (últimos 30 dias)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const recentTransactions = transactions.filter(t => 
-      new Date(t.created_at) >= thirtyDaysAgo
-    );
-
-    const monthlyRevenue = recentTransactions
-      .filter(t => t.type === 'income')
+    const monthlyRevenue = (recentIncomeTx.data || [])
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
-    const totalTransactions = transactions.length;
+    const totalTransactions = totalTxCount.count || 0;
     const activeCoupons = coupons.filter(c => c.is_active).length;
 
     // Taxa de conversão
