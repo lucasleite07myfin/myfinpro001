@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// No external imports needed - uses Deno.serve
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -132,7 +132,7 @@ const validatePhone = (phone: string): { valid: boolean; message?: string } => {
   return { valid: true };
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

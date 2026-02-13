@@ -1,6 +1,5 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { Resend } from "npm:resend@2.0.0";
 import { generateResetPinEmail } from "./_templates/reset-pin-email.ts";
 
 const corsHeaders = {
@@ -50,7 +49,7 @@ async function hashPin(pin: string): Promise<string> {
   return `${bytesToHex(salt)}$${bytesToHex(hashBytes)}`;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
