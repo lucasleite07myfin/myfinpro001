@@ -1,35 +1,21 @@
 
 
-## Correção: Despesas Recorrentes não mantêm status "Pago" após recarregar
+## Adicionar Forma de Pagamento nas Despesas Recorrentes
 
-### Problema Identificado
+### Problema
+O formulario de despesas recorrentes nao inclui o campo "Forma de Pagamento", embora o estado (`paymentMethod`) ja exista e ja seja enviado ao salvar.
 
-No `BusinessContext.tsx`, existem **duas funções** para marcar despesas como pagas:
+### Solucao
+Adicionar o campo de selecao de forma de pagamento no formulario de despesas recorrentes (`renderRecurringForm`) dentro do `AddTransactionModal.tsx`.
 
-1. `markRecurringAsPaid` (linha 527) -- persiste corretamente no banco de dados, mas **não é usada**
-2. `markRecurringExpenseAsPaid` (linha 570) -- é a função exportada e usada pelo componente, mas **apenas atualiza o estado local** sem salvar no banco
+### Detalhes Tecnicos
 
-Quando você clica em "Pagar", a mudança aparece na tela, mas ao recarregar a página, os dados são lidos do banco onde o `paid_months` nunca foi atualizado.
+**Arquivo:** `src/components/AddTransactionModal.tsx`
 
-### Correção
+Na funcao `renderRecurringForm()`, adicionar o componente `Select` de forma de pagamento logo apos o campo "Dia de Vencimento". O componente sera identico ao ja utilizado no formulario de transacoes normais (`renderTransactionForm`), reutilizando:
+- O estado `paymentMethod` ja existente
+- A constante `PAYMENT_METHODS` ja importada
+- O mesmo estilo visual com `TooltipHelper`
 
-Reescrever `markRecurringExpenseAsPaid` no `BusinessContext.tsx` para:
-
-1. Persistir o `paid_months` no banco de dados via `supabase.from('emp_recurring_expenses').update({ paid_months })` **antes** de atualizar o estado local
-2. Criar a transação de despesa ao marcar como paga (comportamento atual mantido)
-3. Remover a transação ao desmarcar (comportamento atual mantido)
-4. Remover a função duplicada `markRecurringAsPaid` que não é utilizada
-
-### Detalhes Técnicos
-
-**Arquivo modificado:** `src/contexts/BusinessContext.tsx`
-
-A nova implementação seguirá o padrão já existente no `FinanceContext.tsx` (linhas 694-752), que:
-- Atualiza `paid_months` no banco primeiro
-- Só atualiza o estado local após confirmação do banco
-- Cria/remove transação conforme necessário
-- Usa `try/catch` para tratamento de erros
-- Usa `silent=true` no `addTransaction` para evitar toast duplicado
-
-A função `markRecurringAsPaid` (linhas 527-557) será removida por ser código morto.
+Nenhuma alteracao de banco de dados e necessaria -- a coluna `payment_method` ja existe na tabela `recurring_expenses` e `emp_recurring_expenses`, e o valor ja e enviado pelo `handleSubmitRecurring`.
 
