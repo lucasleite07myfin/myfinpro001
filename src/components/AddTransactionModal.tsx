@@ -398,6 +398,21 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             <Input id="dueDay" type="number" min="1" max="31" value={dueDay} onChange={e => setDueDay(e.target.value)} placeholder="1-31" required className="bg-gray-50 border-gray-200" />
           </div>
         </TooltipHelper>
+        <TooltipHelper content={tooltipContent.modals.fields.paymentMethod} delayDuration={500}>
+          <div className="space-y-2">
+            <Label htmlFor="paymentMethod">Forma de Pagamento</Label>
+            <Select value={paymentMethod} onValueChange={v => setPaymentMethod(v as PaymentMethod)}>
+              <SelectTrigger className="bg-white border-gray-300 focus:border-[#EE680D] focus:ring-[#EE680D]">
+                <SelectValue placeholder="Selecione uma forma" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {Object.entries(PAYMENT_METHODS).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        </TooltipHelper>
     </div>
   );
 
