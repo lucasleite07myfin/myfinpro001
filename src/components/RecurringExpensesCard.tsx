@@ -143,7 +143,12 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
     return value === null || value === 0 ? "Não definido" : formatCurrency(value);
   };
 
-  const sortedExpenses = [...expenses].sort((a, b) => a.dueDay - b.dueDay);
+  const sortedExpenses = [...expenses].sort((a, b) => {
+    const aPaid = isPaid(a.id, selectedMonth) ? 1 : 0;
+    const bPaid = isPaid(b.id, selectedMonth) ? 1 : 0;
+    if (aPaid !== bPaid) return aPaid - bPaid;
+    return a.dueDay - b.dueDay;
+  });
 
   if (sortedExpenses.length === 0) {
     return (
