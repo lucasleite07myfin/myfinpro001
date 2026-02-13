@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatCurrency, formatCategoryForDisplay } from '@/utils/formatters';
+import { formatCurrency, formatCategoryForDisplay, formatCurrencyInput, parseCurrencyToNumber } from '@/utils/formatters';
 import { RecurringExpense } from '@/types/finance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -101,14 +101,14 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
   const handleStartEdit = (expense: RecurringExpense, month: string) => {
     setEditingExpense({ id: expense.id, month });
     const value = getExpenseAmountForMonth(expense, month);
-    setEditAmount(value !== null ? value.toString() : "");
+    setEditAmount(value !== null ? formatCurrencyInput(Math.round(value * 100).toString()) : "");
   };
 
   const handleSaveEdit = (expense: RecurringExpense) => {
     if (!editingExpense) return;
     const { month } = editingExpense;
     try {
-      const amount = editAmount.trim() === "" ? null : parseFloat(editAmount.replace(",", "."));
+      const amount = editAmount.trim() === "" ? null : parseCurrencyToNumber(editAmount);
       if (setMonthlyExpenseValue) {
         setMonthlyExpenseValue(expense.id, month, amount);
         toast.success(`Valor para ${formatMonth(month)} atualizado`);
@@ -210,7 +210,7 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
                 <div className="flex justify-between items-center mt-2">
                    {isEditing ? (
                     <div className="flex items-center gap-2">
-                      <Input type="text" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} className="h-8 w-24" placeholder="Valor" autoFocus />
+                      <Input type="text" value={editAmount} onChange={(e) => { const inputValue = e.target.value.replace(/[^\d]/g, ''); setEditAmount(formatCurrencyInput(inputValue)); }} className="h-8 w-28" placeholder="0,00" autoFocus />
                       <Button size="sm" onClick={() => handleSaveEdit(expense)}>Salvar</Button>
                       <Button size="sm" variant="ghost" onClick={handleCancelEdit}>Cancelar</Button>
                     </div>
