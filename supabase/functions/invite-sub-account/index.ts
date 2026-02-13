@@ -32,6 +32,14 @@ interface InviteRequest {
   };
 }
 
+async function hashToken(token: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(token);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -88,8 +96,9 @@ serve(async (req) => {
       );
     }
 
-    // Gerar token único
-    const token = crypto.randomUUID();
+    // Gerar token único e hash para armazenamento seguro
+    const rawToken = crypto.randomUUID();
+    const tokenHash = await hashToken(rawToken);
 
     // Criar convite com expiração de 7 dias
     const expiresAt = new Date();
@@ -100,7 +109,7 @@ serve(async (req) => {
       .insert({
         owner_id: user.id,
         email: email.toLowerCase(),
-        token,
+        token: tokenHash, // Store hash instead of plaintext
         permissions,
         additional_info,
         expires_at: expiresAt.toISOString(),
@@ -123,12 +132,11 @@ serve(async (req) => {
 
     const companyName = ownerProfile?.full_name || 'Empresa';
 
-    // Gerar link de convite
+    // Gerar link de convite com raw token (not hash)
     const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:5173';
-    const inviteUrl = `${siteUrl}/auth?invite_token=${token}`;
+    const inviteUrl = `${siteUrl}/auth?invite_token=${rawToken}`;
 
     console.log(`Convite criado para ${email} pelo usuário ${user.id}`);
-    console.log(`Link de convite: ${inviteUrl}`);
 
     // Enviar email via Resend
     let emailSent = false;
