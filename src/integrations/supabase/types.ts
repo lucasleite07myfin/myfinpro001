@@ -1081,6 +1081,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_pin_reset_tokens: { Args: never; Returns: undefined }
       cleanup_rate_limit_attempts: { Args: never; Returns: undefined }
       get_business_owner_id: { Args: { _sub_user_id: string }; Returns: string }
       has_business_permission: {
