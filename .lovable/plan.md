@@ -1,95 +1,72 @@
 
-# Migrar tipos em `src/types/finance.ts` para centavos
 
-## Objetivo
+# Migrar FinanceContext.tsx e financeService.ts para centavos
 
-Adicionar campos `*Cents` (tipo `MoneyCents`) em todas as interfaces que possuem valores monetarios, mantendo os campos legado intactos para nao quebrar o codigo existente.
+## Resumo
+
+Migrar os calculos financeiros do FinanceContext para usar `amountCents` (inteiros) como fonte de verdade, mantendo `amount` (float) apenas para compatibilidade temporaria. A migracao tambem atualiza os formatters do financeService.ts para popular os novos campos `*Cents`.
 
 ## Alteracoes
 
-### 1. Novo tipo (apos linha 1)
+### 1. `src/services/financeService.ts` -- Formatters populam campos Cents
 
+Atualizar os formatters para incluir os novos campos:
+
+- **`formatTransaction`**: adicionar `amountCents: centsFromUnknownDbValue(t.amount)` e manter `amount: amountCents / 100`
+- **`formatRecurringExpense`**: adicionar `amountCents` e `monthlyValuesCents` (converter cada valor do record)
+- **`formatGoal`**: adicionar `targetAmountCents` e `currentAmountCents`
+- **`formatAsset`**: adicionar `valueCents`, `acquisitionValueCents`, `lastPriceBrlCents`
+- **`formatLiability`**: adicionar `valueCents`
+- **`formatMonthlyData`**: adicionar `incomeTotalCents` e `expenseTotalCents`
+
+Adicionar import de `centsFromUnknownDbValue` de `@/utils/formatters`.
+
+Adicionar helper local:
 ```typescript
-export type MoneyCents = number;
+function centsToDbDecimal(cents: number): string {
+  return (cents / 100).toFixed(2);
+}
 ```
 
-### 2. Interface `Transaction` (linha 17)
+Atualizar `insertTransaction` e `updateTransaction` para usar `centsToDbDecimal(transaction.amountCents)` ao enviar `amount` ao banco.
 
-Adicionar apos `amount`:
+Atualizar `insertRecurringExpense` e `updateRecurringExpense` similarmente.
 
-```typescript
-amount: number;        // legado (reais)
-amountCents: MoneyCents; // novo padrao (centavos)
-```
+### 2. `src/contexts/FinanceContext.tsx` -- Calculos usam centavos
 
-### 3. Interface `RecurringExpense` (linha 33)
+**Imports**: adicionar `centsFromUnknownDbValue` de `@/utils/formatters`.
 
-Adicionar apos `amount`:
+**`updateMonthlyData`** (linha 447-464):
+- Trocar `sum + t.amount` por `sum + (t.amountCents ?? 0)` nos reduces
+- Computar `incomeTotalCents` e `expenseTotalCents`
+- Enviar ao banco convertido: `currentMonthData.incomeTotalCents / 100` (compatibilidade com coluna decimal)
 
-```typescript
-amount: number;        // legado (reais)
-amountCents: MoneyCents; // novo padrao (centavos)
-```
+**`getMonthTotals`** (linha 467-476):
+- Usar `t.amountCents ?? 0` nos reduces
+- Retornar valores em centavos divididos por 100 para a interface (temporario ate migrar componentes)
 
-Tambem adicionar campo para `monthlyValues`:
+**`markRecurringExpenseAsPaid`** (linhas 266-280):
+- Na criacao da transacao, popular `amountCents` junto com `amount`
 
-```typescript
-monthlyValues?: Record<string, number>;        // legado
-monthlyValuesCents?: Record<string, MoneyCents>; // novo padrao
-```
+**`editRecurringExpense`** (linha 204):
+- Atualizar `amountCents` junto com `amount` ao mapear transacoes relacionadas
 
-### 4. Interface `Goal` (linhas 47-48)
+**`getMonthlyExpenseValue`**: manter retornando em reais por enquanto (usado por varios componentes)
 
-Adicionar apos cada campo monetario:
+### 3. Garantir padrao funcional de state
 
-```typescript
-targetAmount: number;            // legado
-targetAmountCents: MoneyCents;   // novo
-currentAmount: number;           // legado
-currentAmountCents: MoneyCents;  // novo
-```
+Todos os `setTransactions`, `setRecurringExpenses`, `setGoals`, `setAssets`, `setLiabilities` ja usam `prev =>` -- verificado no codigo atual. Manter esse padrao.
 
-### 5. Interface `Asset` (linhas 56, 58, 66)
+## O que NAO muda nesta etapa
 
-Adicionar apos cada campo monetario:
-
-```typescript
-value: number;                      // legado
-valueCents: MoneyCents;             // novo
-acquisitionValue?: number;          // legado
-acquisitionValueCents?: MoneyCents; // novo
-lastPriceBrl?: number;              // legado
-lastPriceBrlCents?: MoneyCents;     // novo
-```
-
-### 6. Interface `Liability` (linha 72)
-
-Adicionar apos `value`:
-
-```typescript
-value: number;          // legado
-valueCents: MoneyCents;  // novo
-```
-
-### 7. Interface `MonthlyFinanceData` (linhas 79-80)
-
-Adicionar:
-
-```typescript
-incomeTotal: number;            // legado
-incomeTotalCents: MoneyCents;   // novo
-expenseTotal: number;           // legado
-expenseTotalCents: MoneyCents;  // novo
-```
-
-## O que NAO muda
-
-- Nenhum campo existente e removido
-- `FinanceContextType` e `BusinessContextType` nao precisam de alteracao nesta etapa (os tipos das interfaces ja sao atualizados por referencia)
-- Nenhum componente ou service e modificado
+- Componentes de UI continuam recebendo `amount` (float) -- serao migrados em etapa futura
+- Colunas do banco continuam como `numeric` (decimal) -- sem alteracao de schema
+- Interface `FinanceContextType` mantem `getMonthTotals` retornando em reais (temporario)
+- `getMonthlyExpenseValue` continua retornando em reais
 
 ## Detalhes tecnicos
 
-- O tipo `MoneyCents` e declarado localmente em `finance.ts` (alem do que ja existe em `money.ts`) para que os tipos de dominio nao dependam de utils
-- Todos os novos campos sao obrigatorios nas interfaces de dados (exceto os que espelham campos opcionais como `acquisitionValue?`)
-- Os contexts (`FinanceContextType`, `BusinessContextType`) usam `Transaction`, `Goal`, etc. por referencia, entao automaticamente verao os novos campos -- mas precisarao ser populados na proxima etapa de migracao dos services
+- `centsToDbDecimal` usa divisao por 100 + `.toFixed(2)` -- seguro porque o resultado e apenas para persistencia, nao para calculo
+- `centsFromUnknownDbValue` ja existe em `formatters.ts` e trata `number` (Math.round(value*100)), `string` (decimalStringToCents) e `null` (0)
+- Os campos `*Cents` sao opcionais nos tipos (`?`), entao usamos `?? 0` como fallback nos calculos
+
