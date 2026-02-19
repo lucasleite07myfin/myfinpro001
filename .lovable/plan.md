@@ -1,34 +1,95 @@
 
-
-# Adicionar funções bridge em `src/utils/formatters.ts`
+# Migrar tipos em `src/types/finance.ts` para centavos
 
 ## Objetivo
 
-Adicionar 4 novas funções que fazem ponte entre o código existente e o novo `money.ts`, sem alterar nenhuma função atual. Isso permite migração gradual.
+Adicionar campos `*Cents` (tipo `MoneyCents`) em todas as interfaces que possuem valores monetarios, mantendo os campos legado intactos para nao quebrar o codigo existente.
 
-## Alterações em `src/utils/formatters.ts`
+## Alteracoes
 
-### 1. Novo import (linha 1)
-
-Adicionar import das funções e tipo de `./money`:
+### 1. Novo tipo (apos linha 1)
 
 ```typescript
-import { currencyStringToCents, formatBRLFromCents, decimalStringToCents, MoneyCents } from './money';
+export type MoneyCents = number;
 ```
 
-### 2. Quatro novas funções ao final do arquivo
+### 2. Interface `Transaction` (linha 17)
 
-| Função | Descrição |
-|--------|-----------|
-| `formatCurrencyFromCents(cents)` | Wrapper para `formatBRLFromCents` -- retorna "R$ 1.234,56" |
-| `parseCurrencyToCents(currencyString)` | Wrapper para `currencyStringToCents` -- retorna centavos inteiros |
-| `formatCentsForCurrencyInput(cents)` | Retorna "R$ 0,00" para 0, senão usa `formatBRLFromCents` |
-| `centsFromUnknownDbValue(value)` | Converte valor desconhecido do banco: number -> Math.round(value*100), string -> `decimalStringToCents`, null/undefined -> 0 |
+Adicionar apos `amount`:
 
-### Detalhes técnicos
+```typescript
+amount: number;        // legado (reais)
+amountCents: MoneyCents; // novo padrao (centavos)
+```
 
-- `centsFromUnknownDbValue` usa `Math.round(value * 100)` para numbers porque o banco armazena em reais com decimais -- essa é a única multiplicação de float permitida (conversão de legado)
-- `decimalStringToCents` já importado de `money.ts` para o caso de strings
-- Nenhuma função existente é modificada ou removida
-- O tipo `MoneyCents` é re-exportado via import para que consumidores possam usar
+### 3. Interface `RecurringExpense` (linha 33)
 
+Adicionar apos `amount`:
+
+```typescript
+amount: number;        // legado (reais)
+amountCents: MoneyCents; // novo padrao (centavos)
+```
+
+Tambem adicionar campo para `monthlyValues`:
+
+```typescript
+monthlyValues?: Record<string, number>;        // legado
+monthlyValuesCents?: Record<string, MoneyCents>; // novo padrao
+```
+
+### 4. Interface `Goal` (linhas 47-48)
+
+Adicionar apos cada campo monetario:
+
+```typescript
+targetAmount: number;            // legado
+targetAmountCents: MoneyCents;   // novo
+currentAmount: number;           // legado
+currentAmountCents: MoneyCents;  // novo
+```
+
+### 5. Interface `Asset` (linhas 56, 58, 66)
+
+Adicionar apos cada campo monetario:
+
+```typescript
+value: number;                      // legado
+valueCents: MoneyCents;             // novo
+acquisitionValue?: number;          // legado
+acquisitionValueCents?: MoneyCents; // novo
+lastPriceBrl?: number;              // legado
+lastPriceBrlCents?: MoneyCents;     // novo
+```
+
+### 6. Interface `Liability` (linha 72)
+
+Adicionar apos `value`:
+
+```typescript
+value: number;          // legado
+valueCents: MoneyCents;  // novo
+```
+
+### 7. Interface `MonthlyFinanceData` (linhas 79-80)
+
+Adicionar:
+
+```typescript
+incomeTotal: number;            // legado
+incomeTotalCents: MoneyCents;   // novo
+expenseTotal: number;           // legado
+expenseTotalCents: MoneyCents;  // novo
+```
+
+## O que NAO muda
+
+- Nenhum campo existente e removido
+- `FinanceContextType` e `BusinessContextType` nao precisam de alteracao nesta etapa (os tipos das interfaces ja sao atualizados por referencia)
+- Nenhum componente ou service e modificado
+
+## Detalhes tecnicos
+
+- O tipo `MoneyCents` e declarado localmente em `finance.ts` (alem do que ja existe em `money.ts`) para que os tipos de dominio nao dependam de utils
+- Todos os novos campos sao obrigatorios nas interfaces de dados (exceto os que espelham campos opcionais como `acquisitionValue?`)
+- Os contexts (`FinanceContextType`, `BusinessContextType`) usam `Transaction`, `Goal`, etc. por referencia, entao automaticamente verao os novos campos -- mas precisarao ser populados na proxima etapa de migracao dos services
