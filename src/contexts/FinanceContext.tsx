@@ -287,7 +287,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         date: parseDateFromDB(data.date)
       };
 
-      setTransactions([newTransaction, ...transactions]);
+      setTransactions(prev => [newTransaction, ...prev]);
       if (!silent) {
         toast.success('Transação adicionada com sucesso!');
       }
@@ -320,7 +320,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      setTransactions(transactions.map(t => t.id === transaction.id ? transaction : t));
+      setTransactions(prev => prev.map(t => t.id === transaction.id ? transaction : t));
       updateMonthlyData();
     } catch (error) {
       toast.error('Erro ao atualizar transação');
@@ -336,7 +336,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      setTransactions(transactions.filter(t => t.id !== id));
+      setTransactions(prev => prev.filter(t => t.id !== id));
       toast.success('Transação excluída com sucesso!');
       updateMonthlyData();
     } catch (error) {
@@ -626,27 +626,28 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       setRecurringExpenses(prev => prev.map(e => e.id === expense.id ? expense : e));
 
-      const relatedTransactions = transactions.filter(t => 
-        t.recurringExpenseId === expense.id &&
-        t.isRecurringPayment
-      );
+      setTransactions(prev => {
+        const relatedTransactions = prev.filter(t => 
+          t.recurringExpenseId === expense.id &&
+          t.isRecurringPayment
+        );
 
-      if (relatedTransactions.length > 0) {
-        const updatedTransactions = transactions.map(t => {
-          const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
-          const isCurrentOrFutureMonth = transactionMonth >= currentMonth;
+        if (relatedTransactions.length > 0) {
+          return prev.map(t => {
+            const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
+            const isCurrentOrFutureMonth = transactionMonth >= currentMonth;
 
-          if (t.recurringExpenseId === expense.id && 
-              t.isRecurringPayment && 
-              isCurrentOrFutureMonth) {
-            const monthValue = getMonthlyExpenseValue(expense.id, transactionMonth);
-            return { ...t, amount: monthValue !== null ? monthValue : expense.amount };
-          }
-          return t;
-        });
-        
-        setTransactions(updatedTransactions);
-      }
+            if (t.recurringExpenseId === expense.id && 
+                t.isRecurringPayment && 
+                isCurrentOrFutureMonth) {
+              const monthValue = getMonthlyExpenseValue(expense.id, transactionMonth);
+              return { ...t, amount: monthValue !== null ? monthValue : expense.amount };
+            }
+            return t;
+          });
+        }
+        return prev;
+      });
 
       toast.success('Despesa fixa atualizada com sucesso!');
     } catch (error) {
@@ -678,7 +679,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       // Atualiza o estado local
       setRecurringExpenses(prev => prev.filter(e => e.id !== id));
-      setTransactions(transactions.filter(t => t.recurringExpenseId !== id));
+      setTransactions(prev => prev.filter(t => t.recurringExpenseId !== id));
       
       toast.success('Despesa fixa excluída com sucesso!');
     } catch (error) {
@@ -781,7 +782,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         savingLocation: goal.savingLocation
       };
 
-      setGoals([...goals, newGoal]);
+      setGoals(prev => [...prev, newGoal]);
       toast.success('Meta adicionada com sucesso!');
     } catch (error) {
       logger.error('Erro ao adicionar meta:', error);
@@ -804,7 +805,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      setGoals(goals.map(g => g.id === goal.id ? goal : g));
+      setGoals(prev => prev.map(g => g.id === goal.id ? goal : g));
       toast.success('Meta atualizada com sucesso!');
     } catch (error) {
       logger.error('Erro ao atualizar meta:', error);
@@ -832,7 +833,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      setGoals(goals.map(g => g.id === id ? updatedGoal : g));
+      setGoals(prev => prev.map(g => g.id === id ? updatedGoal : g));
       toast.success('Meta atualizada com sucesso!');
     } catch (error) {
       logger.error('Erro ao atualizar meta:', error);
@@ -852,7 +853,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      setGoals(goals.filter(g => g.id !== id));
+      setGoals(prev => prev.filter(g => g.id !== id));
       toast.success('Meta excluída com sucesso!');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao excluir meta');
@@ -905,7 +906,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         quantity: asset.quantity
       };
 
-      setAssets([...assets, newAsset]);
+      setAssets(prev => [...prev, newAsset]);
       toast.success('Ativo adicionado com sucesso!');
     } catch (error) {
       logger.error('Erro ao adicionar ativo:', error);
@@ -937,7 +938,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      setAssets(assets.map(a => a.id === asset.id ? asset : a));
+      setAssets(prev => prev.map(a => a.id === asset.id ? asset : a));
       toast.success('Ativo atualizado com sucesso!');
     } catch (error) {
       logger.error('Erro ao atualizar ativo:', error);
@@ -954,7 +955,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      setAssets(assets.filter(a => a.id !== id));
+      setAssets(prev => prev.filter(a => a.id !== id));
       toast.success('Ativo excluído com sucesso!');
     } catch (error) {
       logger.error('Erro ao excluir ativo:', error);
@@ -987,7 +988,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         value: liability.value
       };
 
-      setLiabilities([...liabilities, newLiability]);
+      setLiabilities(prev => [...prev, newLiability]);
       toast.success('Passivo adicionado com sucesso!');
     } catch (error) {
       logger.error('Erro ao adicionar passivo:', error);
@@ -1008,7 +1009,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      setLiabilities(liabilities.map(l => l.id === liability.id ? liability : l));
+      setLiabilities(prev => prev.map(l => l.id === liability.id ? liability : l));
       toast.success('Passivo atualizado com sucesso!');
     } catch (error) {
       logger.error('Erro ao atualizar passivo:', error);
@@ -1025,7 +1026,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      setLiabilities(liabilities.filter(l => l.id !== id));
+      setLiabilities(prev => prev.filter(l => l.id !== id));
       toast.success('Passivo excluído com sucesso!');
     } catch (error) {
       logger.error('Erro ao excluir passivo:', error);

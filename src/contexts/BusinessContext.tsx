@@ -399,11 +399,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
       setTransactions(prev => prev.map(t => t.id === transaction.id ? transaction : t));
       
-      // Recalcular monthlyData localmente
-      const newMonthlyData = generateMonthlyDataFromTransactions(
-        transactions.map(t => t.id === transaction.id ? transaction : t)
-      );
-      setMonthlyData(newMonthlyData);
+      // monthlyData será recalculado pelo useEffect que observa transactions
       
       toast.success('Transação atualizada com sucesso!');
     } catch (error) {
@@ -423,11 +419,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
       setTransactions(prev => prev.filter(t => t.id !== id));
       
-      // Recalcular monthlyData localmente
-      const newMonthlyData = generateMonthlyDataFromTransactions(
-        transactions.filter(t => t.id !== id)
-      );
-      setMonthlyData(newMonthlyData);
+      // monthlyData será recalculado pelo useEffect que observa transactions
       
       toast.success('Transação excluída com sucesso!');
     } catch (error) {
@@ -678,7 +670,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   };
 
   const editGoal = (goal: Goal) => {
-    setGoals(goals.map(g => g.id === goal.id ? goal : g));
+    setGoals(prev => prev.map(g => g.id === goal.id ? goal : g));
     toast.success('Meta atualizada com sucesso!');
   };
 
@@ -951,7 +943,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
       if (error) throw error;
 
-      setLiabilities(liabilities.map(l => l.id === liability.id ? liability : l));
+      setLiabilities(prev => prev.map(l => l.id === liability.id ? liability : l));
       toast.success('Passivo atualizado com sucesso!');
     } catch (error) {
       logger.error('Erro ao atualizar passivo:', error);
@@ -968,7 +960,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
       if (error) throw error;
 
-      setLiabilities(liabilities.filter(l => l.id !== id));
+      setLiabilities(prev => prev.filter(l => l.id !== id));
       toast.success('Passivo excluído com sucesso!');
     } catch (error) {
       logger.error('Erro ao excluir passivo:', error);
