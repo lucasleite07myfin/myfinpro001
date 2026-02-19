@@ -25,7 +25,7 @@ import TooltipHelper from './TooltipHelper';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
-import { formatCurrencyInput, parseCurrencyToNumber } from '@/utils/formatters';
+import { formatNumberFromCentsForInput } from '@/utils/money';
 import { sanitizeText } from '@/utils/xssSanitizer';
 
 interface AddAssetModalProps {
@@ -53,14 +53,15 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({ open, onOpenChange }) => 
   
   const [name, setName] = useState('');
   const [type, setType] = useState('');
-  const [value, setValue] = useState('');
+  const [valueInput, setValueInput] = useState('');
+  const [valueCents, setValueCents] = useState(0);
   const [customType, setCustomType] = useState('');
   const [isCustomType, setIsCustomType] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !type || !value) {
+    if (!name || !type || valueCents <= 0) {
       return;
     }
 
@@ -69,7 +70,7 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({ open, onOpenChange }) => 
     addAsset({
       name: sanitizeText(name),
       type: finalType,
-      value: parseCurrencyToNumber(value)
+      value: valueCents / 100
     });
 
     resetForm();
@@ -79,7 +80,8 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({ open, onOpenChange }) => 
   const resetForm = () => {
     setName('');
     setType('');
-    setValue('');
+    setValueInput('');
+    setValueCents(0);
     setCustomType('');
     setIsCustomType(false);
   };
@@ -170,10 +172,12 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({ open, onOpenChange }) => 
                   </Label>
                   <Input
                     id="value"
-                    value={value ? `R$ ${value}` : ''}
+                    value={valueInput ? `R$ ${valueInput}` : ''}
                     onChange={(e) => {
-                      const inputValue = e.target.value.replace(/[^\d]/g, '');
-                      setValue(formatCurrencyInput(inputValue));
+                      const digits = e.target.value.replace(/\D/g, '');
+                      const cents = digits ? parseInt(digits, 10) : 0;
+                      setValueCents(cents);
+                      setValueInput(cents > 0 ? formatNumberFromCentsForInput(cents) : '');
                     }}
                     className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-lg"
                     placeholder="R$ 0,00"

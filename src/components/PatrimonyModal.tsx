@@ -24,7 +24,7 @@ import { useBusiness } from '@/contexts/BusinessContext';
 import { toast } from 'sonner';
 import { Asset } from '@/types/finance';
 import { format } from 'date-fns';
-import { formatNumberToCurrency, parseCurrencyToNumber, formatCurrencyInput } from '@/utils/formatters';
+import { formatNumberFromCentsForInput } from '@/utils/money';
 import { 
   CalendarIcon, 
   Wallet, 
@@ -69,8 +69,10 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
     name: '',
     type: CATEGORIES[0],
     value: 0,
+    valueCents: 0,
     evaluationDate: new Date(),
     acquisitionValue: 0,
+    acquisitionValueCents: 0,
     acquisitionDate: null as Date | null,
     location: '',
     insured: false,
@@ -90,22 +92,25 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
   // Load asset data when editing
   useEffect(() => {
     if (asset) {
+      const vCents = (asset as any).valueCents ?? Math.round((asset.value || 0) * 100);
+      const aCents = (asset as any).acquisitionValueCents ?? Math.round((asset.acquisitionValue || 0) * 100);
       setFormData({
         id: asset.id,
         name: asset.name || '',
         type: asset.type || CATEGORIES[0],
         value: asset.value || 0,
+        valueCents: vCents,
         evaluationDate: asset.evaluationDate ? new Date(asset.evaluationDate) : new Date(),
         acquisitionValue: asset.acquisitionValue || 0,
+        acquisitionValueCents: aCents,
         acquisitionDate: asset.acquisitionDate ? new Date(asset.acquisitionDate) : null,
         location: asset.location || '',
         insured: asset.insured || false,
         notes: asset.notes || '',
       });
       
-      // Format values for display
-      setFormattedValue(formatCurrencyInput((asset.value * 100).toString()));
-      setFormattedAcquisitionValue(formatCurrencyInput(((asset.acquisitionValue || 0) * 100).toString()));
+      setFormattedValue(vCents > 0 ? formatNumberFromCentsForInput(vCents) : '');
+      setFormattedAcquisitionValue(aCents > 0 ? formatNumberFromCentsForInput(aCents) : '');
     } else {
       // Reset form for new asset
       setFormData({
@@ -113,8 +118,10 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
         name: '',
         type: CATEGORIES[0],
         value: 0,
+        valueCents: 0,
         evaluationDate: new Date(),
         acquisitionValue: 0,
+        acquisitionValueCents: 0,
         acquisitionDate: null,
         location: '',
         insured: false,
@@ -181,15 +188,16 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
   };
 
   const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'value' | 'acquisitionValue') => {
-    const input = e.target.value.replace(/[^\d]/g, '');
-    const numericValue = input ? parseFloat(input) / 100 : 0;
+    const digits = e.target.value.replace(/\D/g, '');
+    const cents = digits ? parseInt(digits, 10) : 0;
+    const formatted = cents > 0 ? formatNumberFromCentsForInput(cents) : '';
     
     if (fieldName === 'value') {
-      setFormattedValue(formatCurrencyInput(input));
-      setFormData({...formData, value: numericValue});
+      setFormattedValue(formatted);
+      setFormData({...formData, value: cents / 100, valueCents: cents});
     } else {
-      setFormattedAcquisitionValue(formatCurrencyInput(input));
-      setFormData({...formData, acquisitionValue: numericValue});
+      setFormattedAcquisitionValue(formatted);
+      setFormData({...formData, acquisitionValue: cents / 100, acquisitionValueCents: cents});
     }
   };
 
@@ -202,10 +210,11 @@ const PatrimonyModal: React.FC<PatrimonyModalProps> = ({
     }
   };
 
-  // Calculate potential gain/loss for preview
-  const gainLoss = formData.value - (formData.acquisitionValue || 0);
-  const gainLossPercentage = formData.acquisitionValue > 0 
-    ? ((gainLoss / formData.acquisitionValue) * 100) 
+  // Calculate potential gain/loss for preview using cents for precision
+  const gainLossCents = formData.valueCents - (formData.acquisitionValueCents || 0);
+  const gainLoss = gainLossCents / 100;
+  const gainLossPercentage = formData.acquisitionValueCents > 0 
+    ? ((gainLossCents / formData.acquisitionValueCents) * 100) 
     : 0;
 
   return (

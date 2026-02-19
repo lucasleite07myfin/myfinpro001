@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { formatCurrency, formatCategoryForDisplay, formatCurrencyInput, parseCurrencyToNumber } from '@/utils/formatters';
+import { formatCurrency, formatCategoryForDisplay } from '@/utils/formatters';
+import { formatNumberFromCentsForInput } from '@/utils/money';
 import { RecurringExpense } from '@/types/finance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +44,8 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
   const canDeleteExpenses = mode === 'personal' || canDelete('transactions');
 
   const [editingExpense, setEditingExpense] = useState<{ id: string; month: string } | null>(null);
-  const [editAmount, setEditAmount] = useState<string>("");
+  const [editAmountInput, setEditAmountInput] = useState<string>("");
+  const [editAmountCents, setEditAmountCents] = useState(0);
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
   const [availableMonths, setAvailableMonths] = useState<string[]>([]);
 
@@ -101,14 +103,16 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
   const handleStartEdit = (expense: RecurringExpense, month: string) => {
     setEditingExpense({ id: expense.id, month });
     const value = getExpenseAmountForMonth(expense, month);
-    setEditAmount(value !== null ? formatCurrencyInput(Math.round(value * 100).toString()) : "");
+    const cents = value !== null ? Math.round(value * 100) : 0;
+    setEditAmountCents(cents);
+    setEditAmountInput(cents > 0 ? formatNumberFromCentsForInput(cents) : "");
   };
 
   const handleSaveEdit = (expense: RecurringExpense) => {
     if (!editingExpense) return;
     const { month } = editingExpense;
     try {
-      const amount = editAmount.trim() === "" ? null : parseCurrencyToNumber(editAmount);
+      const amount = editAmountInput.trim() === "" ? null : editAmountCents / 100;
       if (setMonthlyExpenseValue) {
         setMonthlyExpenseValue(expense.id, month, amount);
         toast.success(`Valor para ${formatMonth(month)} atualizado`);
@@ -123,12 +127,14 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
       toast.error("Erro ao atualizar valor.");
     }
     setEditingExpense(null);
-    setEditAmount("");
+    setEditAmountInput("");
+    setEditAmountCents(0);
   };
 
   const handleCancelEdit = () => {
     setEditingExpense(null);
-    setEditAmount("");
+    setEditAmountInput("");
+    setEditAmountCents(0);
   };
 
   const handleDelete = (id: string) => {
@@ -210,7 +216,7 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
                 <div className="flex justify-between items-center mt-2">
                    {isEditing ? (
                     <div className="flex items-center gap-2">
-                      <Input type="text" value={editAmount} onChange={(e) => { const inputValue = e.target.value.replace(/[^\d]/g, ''); setEditAmount(formatCurrencyInput(inputValue)); }} className="h-8 w-28" placeholder="0,00" autoFocus />
+                      <Input type="text" value={editAmountInput} onChange={(e) => { const digits = e.target.value.replace(/\D/g, ''); const cents = digits ? parseInt(digits, 10) : 0; setEditAmountCents(cents); setEditAmountInput(cents > 0 ? formatNumberFromCentsForInput(cents) : ''); }} className="h-8 w-28" placeholder="0,00" autoFocus />
                       <Button size="sm" onClick={() => handleSaveEdit(expense)}>Salvar</Button>
                       <Button size="sm" variant="ghost" onClick={handleCancelEdit}>Cancelar</Button>
                     </div>

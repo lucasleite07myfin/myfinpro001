@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
-import { formatCurrency, formatNumberToCurrency } from '@/utils/formatters';
+import { formatCurrency } from '@/utils/formatters';
+import { formatNumberFromCentsForInput, formatBRLFromCents } from '@/utils/money';
 import { Goal } from '@/types/finance';
 import { PlusCircle, MinusCircle, Target } from 'lucide-react';
 import { toast } from 'sonner';
@@ -30,22 +31,22 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
   const financeContext = mode === 'personal' ? personalContext : businessContext;
   const { addTransaction } = financeContext;
   
-  const [amount, setAmount] = useState('');
-  const [formattedAmount, setFormattedAmount] = useState('');
+  const [amountInput, setAmountInput] = useState('');
+  const [amountCents, setAmountCents] = useState(0);
   const [isAdding, setIsAdding] = useState(true); // true = adicionar, false = remover
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const numericValue = e.target.value.replace(/\D/g, '');
-    const floatValue = numericValue ? parseFloat(numericValue) / 100 : 0;
-    setAmount(floatValue.toString());
-    setFormattedAmount(formatNumberToCurrency(floatValue));
+    const digits = e.target.value.replace(/\D/g, '');
+    const cents = digits ? parseInt(digits, 10) : 0;
+    setAmountCents(cents);
+    setAmountInput(cents > 0 ? formatNumberFromCentsForInput(cents) : '');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!goal || !amount || parseFloat(amount) <= 0) {
+    if (!goal || amountCents <= 0) {
       toast.error('Por favor, insira um valor válido');
       return;
     }
@@ -53,7 +54,7 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
     setIsLoading(true);
     
     try {
-      const contributionAmount = parseFloat(amount);
+      const contributionAmount = amountCents / 100;
       const finalAmount = isAdding ? contributionAmount : -contributionAmount;
       
       // Verificar se não vai deixar o valor atual negativo
@@ -92,12 +93,12 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
       }
 
       toast.success(
-        `${isAdding ? 'Contribuição' : 'Retirada'} de ${formatCurrency(contributionAmount)} ${isAdding ? 'adicionada à' : 'removida da'} meta "${goal.name}"`
+        `${isAdding ? 'Contribuição' : 'Retirada'} de ${formatBRLFromCents(amountCents)} ${isAdding ? 'adicionada à' : 'removida da'} meta "${goal.name}"`
       );
       
       // Reset form
-      setAmount('');
-      setFormattedAmount('');
+      setAmountInput('');
+      setAmountCents(0);
       setIsAdding(true);
       onOpenChange(false);
       
@@ -110,17 +111,18 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
   };
 
   const handleClose = () => {
-    setAmount('');
-    setFormattedAmount('');
+    setAmountInput('');
+    setAmountCents(0);
     setIsAdding(true);
     onOpenChange(false);
   };
 
   if (!goal) return null;
 
+  const contributionFloat = amountCents / 100;
   const newAmount = isAdding 
-    ? goal.currentAmount + (parseFloat(amount) || 0)
-    : goal.currentAmount - (parseFloat(amount) || 0);
+    ? goal.currentAmount + contributionFloat
+    : goal.currentAmount - contributionFloat;
   
   const newPercentage = Math.min(100, (newAmount / goal.targetAmount) * 100);
 
@@ -179,7 +181,7 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
               </span>
               <Input
                 id="amount"
-                value={formattedAmount}
+                value={amountInput}
                 onChange={handleAmountChange}
                 placeholder="0,00"
                 required
@@ -190,7 +192,7 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
           </div>
 
           {/* Preview do resultado */}
-          {amount && parseFloat(amount) > 0 && (
+          {amountCents > 0 && (
             <div className="p-4 bg-muted/50 rounded-lg space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Novo valor:</span>
@@ -224,7 +226,7 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
             </Button>
             <Button 
               type="submit" 
-              disabled={!amount || parseFloat(amount) <= 0 || isLoading}
+              disabled={amountCents <= 0 || isLoading}
               className={cn(
                 isAdding ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
               )}
