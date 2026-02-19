@@ -1,3 +1,4 @@
+export type MoneyCents = number;
 
 export type TransactionType = 'income' | 'expense';
 
@@ -14,7 +15,8 @@ export interface Transaction {
   date: Date;
   description: string;
   category: string;
-  amount: number;
+  amount: number; // legado (reais)
+  amountCents?: MoneyCents; // novo padrão (centavos)
   type: TransactionType;
   paymentMethod?: PaymentMethod;
   isRecurringPayment?: boolean;
@@ -30,21 +32,25 @@ export interface RecurringExpense {
   id: string;
   description: string;
   category: string;
-  amount: number;
+  amount: number; // legado (reais)
+  amountCents?: MoneyCents; // novo padrão (centavos)
   dueDay: number;
   paymentMethod?: PaymentMethod;
   isPaid?: boolean;
   paidMonths?: string[];
   createdAt: Date;
   repeatMonths?: number;
-  monthlyValues?: Record<string, number>;
+  monthlyValues?: Record<string, number>; // legado
+  monthlyValuesCents?: Record<string, MoneyCents>; // novo padrão
 }
 
 export interface Goal {
   id: string;
   name: string;
-  targetAmount: number;
-  currentAmount: number;
+  targetAmount: number; // legado
+  targetAmountCents?: MoneyCents; // novo
+  currentAmount: number; // legado
+  currentAmountCents?: MoneyCents; // novo
   targetDate: Date;
   savingLocation?: string;
 }
@@ -53,9 +59,11 @@ export interface Asset {
   id: string;
   name: string;
   type: string;
-  value: number;
+  value: number; // legado
+  valueCents?: MoneyCents; // novo
   evaluationDate?: Date;
-  acquisitionValue?: number;
+  acquisitionValue?: number; // legado
+  acquisitionValueCents?: MoneyCents; // novo
   acquisitionDate?: Date | null;
   location?: string;
   insured?: boolean;
@@ -63,21 +71,25 @@ export interface Asset {
   symbol?: string;
   quantity?: number;
   wallet?: string;
-  lastPriceBrl?: number;
+  lastPriceBrl?: number; // legado
+  lastPriceBrlCents?: MoneyCents; // novo
   lastUpdated?: Date;
 }
 
 export interface Liability {
   id: string;
   name: string;
-  value: number;
+  value: number; // legado
+  valueCents?: MoneyCents; // novo
   type: string;
 }
 
 export interface MonthlyFinanceData {
   month: string;
-  incomeTotal: number;
-  expenseTotal: number;
+  incomeTotal: number; // legado
+  incomeTotalCents?: MoneyCents; // novo
+  expenseTotal: number; // legado
+  expenseTotalCents?: MoneyCents; // novo
 }
 
 // Categorias favoritas personalizadas
