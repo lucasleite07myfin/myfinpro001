@@ -1,7 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,8 +27,6 @@ interface DashboardStats {
 }
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
-  const { isAdmin, loading: roleLoading } = useUserRole();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -72,27 +67,8 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    if (user && isAdmin && !roleLoading) {
-      fetchDashboardStats();
-    }
-  }, [user, isAdmin, roleLoading]);
-
-  if (!user || roleLoading) {
-    return (
-      <AdminLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-12 w-64" />
-          <div className="grid md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32" />)}
-          </div>
-        </div>
-      </AdminLayout>
-    );
-  }
-
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
-  }
+    fetchDashboardStats();
+  }, []);
 
   return (
     <AdminLayout>
