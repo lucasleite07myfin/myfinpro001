@@ -1,36 +1,34 @@
 
 
-# Criar `src/utils/money.ts` -- Utilitario de valores monetarios em centavos
+# Adicionar funções bridge em `src/utils/formatters.ts`
 
 ## Objetivo
 
-Criar um arquivo utilitario que trata valores monetarios como inteiros em centavos, eliminando erros de ponto flutuante. Todas as funcoes usam apenas manipulacao de strings e aritmetica inteira -- nunca `parseFloat`.
+Adicionar 4 novas funções que fazem ponte entre o código existente e o novo `money.ts`, sem alterar nenhuma função atual. Isso permite migração gradual.
 
-## Arquivo a criar
+## Alterações em `src/utils/formatters.ts`
 
-### `src/utils/money.ts`
+### 1. Novo import (linha 1)
 
-Contera:
+Adicionar import das funções e tipo de `./money`:
 
-| Funcao | Entrada | Saida | Exemplo |
-|--------|---------|-------|---------|
-| `normalizeCurrencyInputToDigits` | `"R$ 1.234,56"` | `"123456"` | Remove tudo que nao e digito |
-| `currencyStringToCents` | `"R$ 1.234,56"` | `123456` | Usa normalize, converte para inteiro |
-| `decimalStringToCents` | `"1234,56"` ou `"1234.56"` | `123456` | Split no separador, pad direita |
-| `centsToDecimalString` | `123456` | `"1234.56"` | Divide string, sempre 2 casas |
-| `formatBRLFromCents` | `123456` | `"R$ 1.234,56"` | Intl.NumberFormat em cents/100 |
-| `formatNumberFromCentsForInput` | `123456` | `"1.234,56"` | Sem prefixo R$, para inputs |
+```typescript
+import { currencyStringToCents, formatBRLFromCents, decimalStringToCents, MoneyCents } from './money';
+```
 
-## Detalhes tecnicos
+### 2. Quatro novas funções ao final do arquivo
 
-- Tipo `MoneyCents = number` exportado para tipagem semantica
-- `decimalStringToCents` faz split no separador (`,` ou `.`), pega parte inteira e parte decimal, faz pad/truncate para exatamente 2 digitos, e concatena como `parseInt(intPart + fracPart)`
-- `centsToDecimalString` converte o inteiro para string, separa os 2 ultimos digitos como centavos, e monta `"parte.centavos"` -- trata sinal negativo
-- `formatBRLFromCents` usa `Intl.NumberFormat` passando `cents / 100` (divisao inteira segura pois o resultado e usado apenas para formatacao de exibicao, nao para calculo)
-- Nenhuma funcao usa `parseFloat`
+| Função | Descrição |
+|--------|-----------|
+| `formatCurrencyFromCents(cents)` | Wrapper para `formatBRLFromCents` -- retorna "R$ 1.234,56" |
+| `parseCurrencyToCents(currencyString)` | Wrapper para `currencyStringToCents` -- retorna centavos inteiros |
+| `formatCentsForCurrencyInput(cents)` | Retorna "R$ 0,00" para 0, senão usa `formatBRLFromCents` |
+| `centsFromUnknownDbValue(value)` | Converte valor desconhecido do banco: number -> Math.round(value*100), string -> `decimalStringToCents`, null/undefined -> 0 |
 
-## Impacto
+### Detalhes técnicos
 
-- Nenhum arquivo existente e modificado nesta etapa
-- Futuramente, `formatters.ts` e os services poderao migrar para usar estas funcoes
+- `centsFromUnknownDbValue` usa `Math.round(value * 100)` para numbers porque o banco armazena em reais com decimais -- essa é a única multiplicação de float permitida (conversão de legado)
+- `decimalStringToCents` já importado de `money.ts` para o caso de strings
+- Nenhuma função existente é modificada ou removida
+- O tipo `MoneyCents` é re-exportado via import para que consumidores possam usar
 
