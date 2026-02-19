@@ -1,41 +1,45 @@
 
 
-# Corrigir scroll no dropdown de categorias - Solucao definitiva
+# Corrigir scroll no dropdown - Solucao via inline styles
 
 ## Problema
-As alteracoes anteriores (overflow-visible no Command e CommandGroup) nao resolveram o problema de scroll. As classes Tailwind `overflow-y-auto` e `max-h-[300px]` no `CommandList` nao estao sendo aplicadas efetivamente ao elemento `[cmdk-list]` renderizado pela biblioteca cmdk. O conteudo e cortado sem barra de rolagem.
+A barra de rolagem aparece mas nao rola. Isso indica que o CSS `overflow-y: auto` esta sendo reconhecido (a barra e renderizada), porem a interacao de scroll esta sendo bloqueada. As classes Tailwind podem nao estar gerando o CSS correto devido a conflitos entre a configuracao Tailwind v3 (tailwind.config.ts com `require("tailwindcss-animate")`) e diretivas v4 (`@custom-variant`) presentes no `index.css`.
 
 ## Causa raiz
-A biblioteca cmdk renderiza internamente um wrapper `[cmdk-list-sizer]` dentro do `[cmdk-list]`. A combinacao do setup CSS do projeto (Tailwind v3 config + diretivas v4) com as classes utilitarias pode gerar conflitos de especificidade, fazendo com que o `overflow-y: auto` nao seja aplicado corretamente.
+As classes utilitarias Tailwind (`overflow-y-auto`, `max-h-[300px]`) aplicadas via `className` no `CommandList` podem nao estar gerando as propriedades CSS corretas ou estao sendo sobrepostas. A regra global `[cmdk-list]` com `!important` mostra a barra mas o container pode nao estar configurado corretamente para permitir scroll interativo.
 
 ## Solucao
-Aplicar estilos CSS diretamente via seletores de atributo no `index.css` com `!important`, garantindo que o scroll funcione independente de conflitos de especificidade. Tambem reverter as mudancas anteriores no `Command` que nao surtiram efeito.
+Aplicar estilos diretamente via prop `style` do React (inline styles) no componente `CommandList`. Inline styles tem a maior prioridade no CSS e nao dependem de nenhum framework de CSS para funcionar.
 
 ## Alteracoes
 
-### 1. Adicionar CSS global para cmdk-list (`src/index.css`)
-Adicionar regras CSS usando o seletor de atributo `[cmdk-list]` com `!important` para garantir o scroll:
-
-```css
-/* Fix scroll in cmdk dropdowns */
-[cmdk-list] {
-  max-height: 300px !important;
-  overflow-y: auto !important;
-}
-```
-
-### 2. Reverter overflow-visible no Command (`src/components/ui/command.tsx`)
-Reverter a mudanca na linha 16 de volta para `overflow-hidden`, pois a alteracao anterior nao resolveu e pode causar efeitos colaterais visuais:
+### 1. Alterar CommandList em `src/components/ui/command.tsx`
+Adicionar inline styles diretamente no componente para garantir scroll:
 
 ```typescript
-// Reverter para overflow-hidden (linha 16)
-"flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground"
+const CommandList = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive.List>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
+>(({ className, style, ...props }, ref) => (
+  <CommandPrimitive.List
+    ref={ref}
+    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
+    style={{
+      maxHeight: '300px',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      ...style,
+    }}
+    {...props}
+  />
+))
 ```
 
-O `CommandGroup` pode permanecer com `overflow-visible` (linha 90) pois isso e correto para nao cortar itens internos.
+### 2. Manter o CSS global como fallback
+A regra `[cmdk-list]` no `index.css` permanece como camada extra de seguranca.
 
-## Componentes beneficiados
-- CategoryCombobox (dropdown de categorias)
-- CryptoModal (selecao de criptomoedas)
-- Qualquer combobox baseado no Command do shadcn/ui
-
+## Por que isso resolve
+- Inline styles do React sao aplicados diretamente no atributo `style` do elemento DOM
+- Nao dependem do Tailwind, PostCSS, ou qualquer processamento de CSS
+- Tem a maior especificidade possivel (exceto `!important`)
+- Garantem que `overflow-y: auto` e `max-height: 300px` sejam aplicados corretamente para permitir scroll interativo
