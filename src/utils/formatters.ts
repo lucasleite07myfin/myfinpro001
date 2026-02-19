@@ -1,3 +1,4 @@
+import { currencyStringToCents, formatBRLFromCents, decimalStringToCents, MoneyCents } from './money';
 
 /**
  * Formata um valor para moeda brasileira (R$) ou dólar americano ($)
@@ -152,4 +153,31 @@ export const formatDateToDB = (date: Date): string => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+
+/**
+ * Formata centavos para "R$ 1.234,56" (wrapper sobre money.ts)
+ */
+export const formatCurrencyFromCents = (cents: MoneyCents): string => formatBRLFromCents(cents);
+
+/**
+ * Converte string formatada ("R$ 1.234,56") para centavos inteiros
+ */
+export const parseCurrencyToCents = (currencyString: string): MoneyCents => currencyStringToCents(currencyString);
+
+/**
+ * Formata centavos para exibição em input com R$
+ */
+export const formatCentsForCurrencyInput = (cents: MoneyCents): string => {
+  return formatBRLFromCents(cents);
+};
+
+/**
+ * Converte valor desconhecido do banco (number em reais, string decimal, ou null) para centavos
+ */
+export const centsFromUnknownDbValue = (value: unknown): MoneyCents => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return Math.round(value * 100);
+  if (typeof value === 'string') return decimalStringToCents(value);
+  return 0;
 };
