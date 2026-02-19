@@ -685,7 +685,13 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     }
   };
 
+  const markingPaidRef = useRef<Set<string>>(new Set());
+
   const markRecurringExpenseAsPaid = async (id: string, month: string, paid: boolean) => {
+    const lockKey = `${id}_${month}`;
+    if (markingPaidRef.current.has(lockKey)) return;
+    markingPaidRef.current.add(lockKey);
+
     try {
       const expense = recurringExpenses.find(e => e.id === id);
       if (!expense) throw new Error("Despesa recorrente não encontrada");
@@ -712,20 +718,40 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setRecurringExpenses(prev => prev.map(e => e.id === id ? { ...e, paidMonths } : e));
 
       if (paid && !isAlreadyPaid) {
-        const amount = getMonthlyExpenseValue(id, month) || expense.amount;
-        if (amount > 0) {
-          const date = new Date(`${month}-01T12:00:00`);
-          date.setDate(expense.dueDay);
-          addTransaction({
-            date,
-            description: `${expense.description} (Pagamento Fixo)`,
-            category: expense.category,
-            amount,
-            type: 'expense',
-            paymentMethod: expense.paymentMethod,
-            isRecurringPayment: true,
-            recurringExpenseId: id,
-          }, true); // silent=true to avoid double toast
+        // Verificar no banco se ja existe transacao para este recurring+mes
+        const monthStart = `${month}-01`;
+        const [yearStr, monthStr] = month.split('-');
+        const monthNum = parseInt(monthStr);
+        const yearNum = parseInt(yearStr);
+        const monthEnd = monthNum === 12
+          ? `${yearNum + 1}-01-01`
+          : `${yearStr}-${String(monthNum + 1).padStart(2, '0')}-01`;
+
+        const { data: existing } = await supabase
+          .from('transactions')
+          .select('id')
+          .eq('user_id', user!.id)
+          .eq('recurring_expense_id', id)
+          .gte('date', monthStart)
+          .lt('date', monthEnd)
+          .limit(1);
+
+        if (!existing || existing.length === 0) {
+          const amount = getMonthlyExpenseValue(id, month) || expense.amount;
+          if (amount > 0) {
+            const date = new Date(`${month}-01T12:00:00`);
+            date.setDate(expense.dueDay);
+            addTransaction({
+              date,
+              description: `${expense.description} (Pagamento Fixo)`,
+              category: expense.category,
+              amount,
+              type: 'expense',
+              paymentMethod: expense.paymentMethod,
+              isRecurringPayment: true,
+              recurringExpenseId: id,
+            }, true);
+          }
         }
       } else if (!paid && isAlreadyPaid) {
         const transactionToDelete = transactions.find(t => 
@@ -741,6 +767,8 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     } catch (error) {
       logger.error('Erro ao marcar despesa como paga:', error);
       toast.error('Erro ao marcar despesa como paga');
+    } finally {
+      markingPaidRef.current.delete(lockKey);
     }
   };
 
