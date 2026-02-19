@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Transaction, Goal, Asset, Liability, MonthlyFinanceData, RecurringExpense, CustomCategories } from '@/types/finance';
-import { getCurrentMonth } from '@/utils/formatters';
+import { getCurrentMonth, centsFromUnknownDbValue } from '@/utils/formatters';
 import { toast } from '@/components/ui/sonner';
 import { useUser } from '@/contexts/UserContext';
 import { useAppMode } from '@/contexts/AppModeContext';
@@ -201,7 +201,9 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
           const isCurrentOrFutureMonth = transactionMonth >= currentMonth;
           if (t.recurringExpenseId === expense.id && t.isRecurringPayment && isCurrentOrFutureMonth) {
             const monthValue = getMonthlyExpenseValue(expense.id, transactionMonth);
-            return { ...t, amount: monthValue !== null ? monthValue : expense.amount };
+            const newAmount = monthValue !== null ? monthValue : expense.amount;
+            const newAmountCents = centsFromUnknownDbValue(newAmount);
+            return { ...t, amount: newAmount, amountCents: newAmountCents };
           }
           return t;
         });
@@ -266,6 +268,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         if (!existingResult.error && !existingResult.data) {
           const amount = getMonthlyExpenseValue(id, month) || expense.amount;
           if (amount > 0) {
+            const amountCents = centsFromUnknownDbValue(amount);
             const date = new Date(`${month}-01T12:00:00`);
             date.setDate(expense.dueDay);
             addTransaction({
@@ -273,6 +276,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
               description: `${expense.description} (Pagamento Fixo)`,
               category: expense.category,
               amount,
+              amountCents,
               type: 'expense',
               paymentMethod: expense.paymentMethod,
               isRecurringPayment: true,
@@ -451,9 +455,9 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
         return transactionMonth === monthItem.month;
       });
-      const incomeTotal = monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-      const expenseTotal = monthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-      return { ...monthItem, incomeTotal, expenseTotal };
+      const incomeTotalCents = monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amountCents ?? 0), 0);
+      const expenseTotalCents = monthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.amountCents ?? 0), 0);
+      return { ...monthItem, incomeTotal: incomeTotalCents / 100, incomeTotalCents, expenseTotal: expenseTotalCents / 100, expenseTotalCents };
     });
 
     const currentMonthData = updatedMonthlyData.find(d => d.month === currentMonth);
@@ -469,10 +473,12 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
       return transactionMonth === currentMonth;
     });
-    const income = currentMonthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const expense = currentMonthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    const incomeCents = currentMonthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amountCents ?? 0), 0);
+    const expenseCents = currentMonthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.amountCents ?? 0), 0);
+    const income = incomeCents / 100;
+    const expense = expenseCents / 100;
     const balance = income - expense;
-    const savingRate = income > 0 ? ((income - expense) / income) * 100 : 0;
+    const savingRate = incomeCents > 0 ? ((incomeCents - expenseCents) / incomeCents) * 100 : 0;
     return { income, expense, balance, savingRate };
   };
 

@@ -2,71 +2,44 @@
 
 # Migrar FinanceContext.tsx e financeService.ts para centavos
 
+## Status: ✅ CONCLUÍDO
+
 ## Resumo
 
-Migrar os calculos financeiros do FinanceContext para usar `amountCents` (inteiros) como fonte de verdade, mantendo `amount` (float) apenas para compatibilidade temporaria. A migracao tambem atualiza os formatters do financeService.ts para popular os novos campos `*Cents`.
+Migrados os calculos financeiros do FinanceContext e formatters do financeService para usar `amountCents` (inteiros) como fonte de verdade, mantendo `amount` (float) apenas para compatibilidade temporaria.
 
-## Alteracoes
+## Alteracoes realizadas
 
-### 1. `src/services/financeService.ts` -- Formatters populam campos Cents
+### 1. `src/services/financeService.ts`
 
-Atualizar os formatters para incluir os novos campos:
+- Todos os formatters (`formatTransaction`, `formatRecurringExpense`, `formatGoal`, `formatAsset`, `formatLiability`, `formatMonthlyData`) agora populam campos `*Cents` usando `centsFromUnknownDbValue`
+- Campo `amount` legado derivado de `amountCents / 100`
+- Helper `centsToDbDecimal` adicionado para persistencia
+- `insertTransaction`, `updateTransaction`, `insertRecurringExpense`, `updateRecurringExpense` usam `centsToDbDecimal` ao enviar ao banco
+- `insertTransaction` e `updateTransaction` retornam dados via `formatTransaction` (consistente)
 
-- **`formatTransaction`**: adicionar `amountCents: centsFromUnknownDbValue(t.amount)` e manter `amount: amountCents / 100`
-- **`formatRecurringExpense`**: adicionar `amountCents` e `monthlyValuesCents` (converter cada valor do record)
-- **`formatGoal`**: adicionar `targetAmountCents` e `currentAmountCents`
-- **`formatAsset`**: adicionar `valueCents`, `acquisitionValueCents`, `lastPriceBrlCents`
-- **`formatLiability`**: adicionar `valueCents`
-- **`formatMonthlyData`**: adicionar `incomeTotalCents` e `expenseTotalCents`
+### 2. `src/contexts/FinanceContext.tsx`
 
-Adicionar import de `centsFromUnknownDbValue` de `@/utils/formatters`.
+- `updateMonthlyData`: reduces usam `t.amountCents ?? 0`
+- `getMonthTotals`: calcula em centavos, retorna em reais (temporario)
+- `savingRate`: calculado com inteiros para evitar erro de ponto flutuante
+- `markRecurringExpenseAsPaid`: popula `amountCents` na transacao criada
+- `editRecurringExpense`: popula `amountCents` ao atualizar transacoes relacionadas
 
-Adicionar helper local:
-```typescript
-function centsToDbDecimal(cents: number): string {
-  return (cents / 100).toFixed(2);
-}
-```
+### 3. `src/types/finance.ts` (etapa anterior)
 
-Atualizar `insertTransaction` e `updateTransaction` para usar `centsToDbDecimal(transaction.amountCents)` ao enviar `amount` ao banco.
+- Campos `*Cents` opcionais adicionados a todas as interfaces monetarias
+- Tipo `MoneyCents` exportado
 
-Atualizar `insertRecurringExpense` e `updateRecurringExpense` similarmente.
+## O que NAO mudou
 
-### 2. `src/contexts/FinanceContext.tsx` -- Calculos usam centavos
+- Componentes de UI continuam recebendo `amount` (float)
+- Colunas do banco continuam como `numeric` (decimal)
+- `getMonthTotals` retorna em reais (temporario)
+- `getMonthlyExpenseValue` retorna em reais
 
-**Imports**: adicionar `centsFromUnknownDbValue` de `@/utils/formatters`.
+## Proximas etapas
 
-**`updateMonthlyData`** (linha 447-464):
-- Trocar `sum + t.amount` por `sum + (t.amountCents ?? 0)` nos reduces
-- Computar `incomeTotalCents` e `expenseTotalCents`
-- Enviar ao banco convertido: `currentMonthData.incomeTotalCents / 100` (compatibilidade com coluna decimal)
-
-**`getMonthTotals`** (linha 467-476):
-- Usar `t.amountCents ?? 0` nos reduces
-- Retornar valores em centavos divididos por 100 para a interface (temporario ate migrar componentes)
-
-**`markRecurringExpenseAsPaid`** (linhas 266-280):
-- Na criacao da transacao, popular `amountCents` junto com `amount`
-
-**`editRecurringExpense`** (linha 204):
-- Atualizar `amountCents` junto com `amount` ao mapear transacoes relacionadas
-
-**`getMonthlyExpenseValue`**: manter retornando em reais por enquanto (usado por varios componentes)
-
-### 3. Garantir padrao funcional de state
-
-Todos os `setTransactions`, `setRecurringExpenses`, `setGoals`, `setAssets`, `setLiabilities` ja usam `prev =>` -- verificado no codigo atual. Manter esse padrao.
-
-## O que NAO muda nesta etapa
-
-- Componentes de UI continuam recebendo `amount` (float) -- serao migrados em etapa futura
-- Colunas do banco continuam como `numeric` (decimal) -- sem alteracao de schema
-- Interface `FinanceContextType` mantem `getMonthTotals` retornando em reais (temporario)
-- `getMonthlyExpenseValue` continua retornando em reais
-
-## Detalhes tecnicos
-
-- `centsToDbDecimal` usa divisao por 100 + `.toFixed(2)` -- seguro porque o resultado e apenas para persistencia, nao para calculo
-- `centsFromUnknownDbValue` ja existe em `formatters.ts` e trata `number` (Math.round(value*100)), `string` (decimalStringToCents) e `null` (0)
-- Os campos `*Cents` sao opcionais nos tipos (`?`), entao usamos `?? 0` como fallback nos calculos
-
+1. Migrar `BusinessContext.tsx` e `businessService.ts` similarmente
+2. Migrar componentes de UI para usar `amountCents` e `formatCurrencyFromCents`
+3. Tornar campos `*Cents` obrigatorios nos tipos e remover campos legado
