@@ -1,114 +1,72 @@
 
-# Migrar formularios de componentes para centavos (amountCents)
+
+# Criar docs/migrations_money_cents.md com SQL de migracao para centavos
 
 ## Resumo
 
-Substituir o estado `amount: number` (float) por `amountInput: string` (exibicao formatada) + `amountCents: number` (fonte de verdade inteira) em 7 componentes de formulario. Elimina `parseFloat`, `parseCurrencyToNumber` e `formatNumberToCurrency` dos formularios, usando exclusivamente funcoes de `src/utils/money.ts`.
+Criar um arquivo de documentacao contendo todos os comandos SQL necessarios para adicionar colunas `*_cents BIGINT` nas tabelas monetarias do banco, com backfill, indices e estrategia de rollback. O arquivo serve como guia para execucao manual no SQL editor.
 
-## Componentes a migrar
+## Arquivo a criar
 
-### 1. `src/components/AddTransactionModal.tsx`
+`docs/migrations_money_cents.md`
 
-**Estado atual:** `amount: string` (float como string) + `formattedAmount: string`
-**Novo estado:** remover `amount`, renomear `formattedAmount` para `amountInput`, adicionar `amountCents: number`
+## Conteudo do arquivo
 
-- **Import**: trocar `formatNumberToCurrency` por `{ currencyStringToCents, formatNumberFromCentsForInput }` de `@/utils/money`
-- **State** (linhas 77-78): `const [amountInput, setAmountInput] = useState('')` e `const [amountCents, setAmountCents] = useState(0)`
-- **handleAmountChange** (linhas 127-132): extrair digitos, montar centavos via `parseInt(digits, 10)`, formatar display via `formatNumberFromCentsForInput(cents)`
-- **useEffect edit mode** (linhas 98-109): preencher `amountCents` via `(initialData.amountCents ?? Math.round(initialData.amount * 100))` e `amountInput` via `formatNumberFromCentsForInput(amountCents)`
-- **handleSubmitTransaction** (linhas 158-212): validar `amountCents > 0` e `amountCents <= 99999999999`, passar `amount: amountCents / 100` e `amountCents` no payload
-- **handleSubmitRecurring** (linhas 214-241): idem, usar `amountCents` no payload
-- **handleSubmitGoalContribution** (linhas 244-270): idem
-- **resetForm** (linhas 112-125): `setAmountInput('')`, `setAmountCents(0)`
-- **JSX**: trocar `formattedAmount` por `amountInput` nos inputs
+O documento tera as seguintes secoes:
 
-### 2. `src/components/AddGoalContributionModal.tsx`
+### 1. Introducao e estrategia
 
-**Estado atual:** `amount: string` (float como string) + `formattedAmount: string`
-**Novo estado:** `amountInput: string` + `amountCents: number`
+- Explicar o padrao dual-column: manter coluna decimal antiga + nova coluna BIGINT em centavos
+- App ja le `amount_cents` primeiro com fallback para `ROUND(amount * 100)` via `centsFromUnknownDbValue`
+- Remocao das colunas antigas sera uma etapa futura apos estabilizacao
 
-- **Import**: adicionar `{ currencyStringToCents, formatNumberFromCentsForInput, formatBRLFromCents }` de `@/utils/money`
-- **State** (linhas 33-34): substituir por `amountInput` + `amountCents`
-- **handleAmountChange** (linhas 38-43): extrair digitos -> `parseInt` -> centavos
-- **handleSubmit** (linhas 45-110): validar `amountCents > 0`, converter `amountCents / 100` para `amount` legado, comparar com `goal.currentAmount` usando centavos se disponivel (`goal.currentAmountCents`)
-- **Preview** (linhas 121-125): calcular `newAmountCents` em inteiros, `newPercentage` com centavos
-- **Exibicao**: usar `formatBRLFromCents` no toast e no preview
+### 2. Tabelas pessoais - DDL + Backfill
 
-### 3. `src/components/AddGoalModal.tsx`
+Para cada tabela, gerar blocos SQL com:
+- `ALTER TABLE ... ADD COLUMN ... BIGINT NOT NULL DEFAULT 0`
+- `UPDATE ... SET *_cents = ROUND(amount * 100)` (backfill)
+- `CREATE INDEX` quando aplicavel
 
-**Estado atual:** `targetAmount: string` + `currentAmount: string` (formatados com `formatCurrencyInput`)
-**Novo estado:** `targetAmountInput/currentAmountInput: string` + `targetAmountCents/currentAmountCents: number`
+Tabelas cobertas:
+- **transactions**: `amount_cents`
+- **recurring_expenses**: `amount_cents`
+- **goals**: `target_amount_cents`, `current_amount_cents`
+- **assets**: `value_cents`, `acquisition_value_cents`, `last_price_brl_cents`
+- **liabilities**: `value_cents`
+- **monthly_finance_data**: `income_total_cents`, `expense_total_cents`
 
-- **Import**: trocar `formatCurrencyInput, parseCurrencyToNumber` por `{ currencyStringToCents, formatNumberFromCentsForInput }` de `@/utils/money`
-- **State** (linhas 58-59): 4 variaveis (2 input string + 2 cents number)
-- **useEffect edit** (linhas 74-93): preencher via `initialData.targetAmountCents ?? Math.round(initialData.targetAmount * 100)` e `formatNumberFromCentsForInput`
-- **onChange handlers** (linhas 291-294, 315-318): extrair digitos -> centavos -> formatar input
-- **handleSubmit** (linhas 95-158): validar usando centavos, passar `targetAmount: cents/100` e `targetAmountCents` no goalData
-- **Preview** (linhas 172-174): calcular `percentage` com centavos
+### 3. Tabelas empresariais (emp_*) - DDL + Backfill
 
-### 4. `src/components/AddAssetModal.tsx`
+Mesma estrutura para:
+- **emp_transactions**: `amount_cents`
+- **emp_recurring_expenses**: `amount_cents`
+- **emp_goals**: `target_amount_cents`, `current_amount_cents`
+- **emp_assets**: `value_cents`, `acquisition_value_cents`, `last_price_brl_cents`
+- **emp_liabilities**: `value_cents`
+- **emp_monthly_finance_data**: `income_total_cents`, `expense_total_cents`
 
-**Estado atual:** `value: string` (formatado com `formatCurrencyInput`)
-**Novo estado:** `valueInput: string` + `valueCents: number`
+### 4. Indices adicionais
 
-- **Import**: trocar `formatCurrencyInput, parseCurrencyToNumber` por `{ currencyStringToCents, formatNumberFromCentsForInput }` de `@/utils/money`
-- **State** (linha 56): `valueInput: string` + `valueCents: number`
-- **onChange** (linhas 174-177): extrair digitos -> centavos -> formatar
-- **handleSubmit** (linhas 60-77): passar `value: valueCents / 100` no payload
-- **JSX**: trocar `value ? \`R$ \${value}\`` por `valueInput ? \`R$ \${valueInput}\`` 
+- `CREATE INDEX idx_transactions_user_date ON transactions(user_id, date DESC)` (se nao existir)
+- Equivalente para `emp_transactions`
 
-### 5. `src/components/AddLiabilityModal.tsx`
+### 5. Secao de rollback
 
-**Estado atual:** `value: string` (formatado com `formatCurrencyInput`)
-**Novo estado:** `valueInput: string` + `valueCents: number`
+SQL para reverter cada alteracao:
+- `ALTER TABLE ... DROP COLUMN *_cents`
+- `DROP INDEX IF EXISTS ...`
 
-- **Import**: trocar `formatCurrencyInput, parseCurrencyToNumber` por `{ currencyStringToCents, formatNumberFromCentsForInput }` de `@/utils/money`
-- **State** (linha 41): `valueInput` + `valueCents`
-- **onChange** (linhas 127-129): extrair digitos -> centavos -> formatar
-- **handleSubmit** (linhas 48-62): `value: valueCents / 100`
+### 6. Notas de seguranca
 
-### 6. `src/components/PatrimonyModal.tsx`
+- Executar em horario de baixo uso
+- Fazer backup antes
+- Testar em ambiente de staging primeiro
+- Backfill e idempotente (pode rodar varias vezes)
+- `DEFAULT 0` garante que inserts antigos nao quebram
 
-**Estado atual:** `formData.value: number` + `formattedValue: string` + `formattedAcquisitionValue: string`
-**Novo estado:** adicionar `valueCents` e `acquisitionValueCents` ao formData, manter `formattedValue`/`formattedAcquisitionValue` como inputs formatados
+## Impacto no app
 
-- **Import**: trocar `formatNumberToCurrency, parseCurrencyToNumber, formatCurrencyInput` por `{ currencyStringToCents, formatNumberFromCentsForInput }` de `@/utils/money`
-- **formData** (linhas 67-78): adicionar `valueCents: 0` e `acquisitionValueCents: 0`
-- **useEffect load** (linhas 91-133): preencher `valueCents` via `asset.valueCents ?? Math.round(asset.value * 100)`, formatar input via `formatNumberFromCentsForInput`
-- **handleCurrencyChange** (linhas 183-194): extrair digitos -> centavos -> formatar input, atualizar `formData.valueCents` e derivar `formData.value = cents/100`
-- **handleSubmit** (linhas 145-171): manter `value: formData.value` (legado)
-- **Preview gainLoss** (linhas 206-209): calcular com centavos para precisao
+Nenhuma mudanca de codigo nesta etapa. O app ja possui fallback via `centsFromUnknownDbValue` que faz `ROUND(amount * 100)` quando `amount_cents` nao existe ou e 0. Apos rodar as migracoes:
+- Inserts futuros do app ja populam ambas colunas (feito nas migracoes anteriores de businessService/financeService)
+- Dados historicos serao backfillados pelo SQL
 
-### 7. `src/components/RecurringExpensesCard.tsx`
-
-**Estado atual:** `editAmount: string` (formatado com `formatCurrencyInput`)
-**Novo estado:** `editAmountInput: string` + `editAmountCents: number`
-
-- **Import**: trocar `formatCurrencyInput, parseCurrencyToNumber` por `{ currencyStringToCents, formatNumberFromCentsForInput }` de `@/utils/money`
-- **State** (linha 46): `editAmountInput` + `editAmountCents`
-- **handleStartEdit** (linhas 101-105): preencher via centavos do expense existente
-- **handleSaveEdit** (linhas 107-120): converter `editAmountCents / 100` para o valor em reais passado a `setMonthlyExpenseValue`
-- **JSX inline edit** (linha 213): trocar `editAmount` por `editAmountInput` e onChange para centavos
-
-## Padrao de onChange unificado
-
-Todos os campos de valor seguirao este padrao:
-
-```typescript
-const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const digits = e.target.value.replace(/\D/g, '');
-  const cents = digits ? parseInt(digits, 10) : 0;
-  setAmountCents(cents);
-  setAmountInput(cents > 0 ? formatNumberFromCentsForInput(cents) : '');
-};
-```
-
-## Componente NAO migrado nesta etapa
-
-- **AddInvestmentModal.tsx**: usa `react-hook-form` + `zod` com `type="number"` nativo. Migracao requer reestruturacao do schema zod. Sera tratado em etapa futura.
-
-## O que NAO muda
-
-- Payloads enviados aos contexts continuam incluindo `amount` (float) para compatibilidade
-- Colunas do banco nao mudam
-- `formatCurrencyInput` e `parseCurrencyToNumber` em `formatters.ts` nao sao removidos (podem ter outros usos), apenas deixam de ser usados nestes componentes
