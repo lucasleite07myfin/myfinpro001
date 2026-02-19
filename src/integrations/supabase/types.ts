@@ -18,11 +18,13 @@ export type Database = {
         Row: {
           acquisition_date: string | null
           acquisition_value: number | null
+          acquisition_value_cents: number
           created_at: string | null
           evaluation_date: string | null
           id: string
           insured: boolean | null
           last_price_brl: number | null
+          last_price_brl_cents: number
           last_updated: string | null
           location: string | null
           name: string
@@ -32,16 +34,19 @@ export type Database = {
           type: string
           user_id: string
           value: number
+          value_cents: number
           wallet: string | null
         }
         Insert: {
           acquisition_date?: string | null
           acquisition_value?: number | null
+          acquisition_value_cents?: number
           created_at?: string | null
           evaluation_date?: string | null
           id?: string
           insured?: boolean | null
           last_price_brl?: number | null
+          last_price_brl_cents?: number
           last_updated?: string | null
           location?: string | null
           name: string
@@ -51,16 +56,19 @@ export type Database = {
           type: string
           user_id: string
           value: number
+          value_cents?: number
           wallet?: string | null
         }
         Update: {
           acquisition_date?: string | null
           acquisition_value?: number | null
+          acquisition_value_cents?: number
           created_at?: string | null
           evaluation_date?: string | null
           id?: string
           insured?: boolean | null
           last_price_brl?: number | null
+          last_price_brl_cents?: number
           last_updated?: string | null
           location?: string | null
           name?: string
@@ -70,6 +78,7 @@ export type Database = {
           type?: string
           user_id?: string
           value?: number
+          value_cents?: number
           wallet?: string | null
         }
         Relationships: []
@@ -261,11 +270,13 @@ export type Database = {
         Row: {
           acquisition_date: string | null
           acquisition_value: number | null
+          acquisition_value_cents: number
           created_at: string | null
           evaluation_date: string | null
           id: string
           insured: boolean | null
           last_price_brl: number | null
+          last_price_brl_cents: number
           last_updated: string | null
           location: string | null
           name: string
@@ -275,16 +286,19 @@ export type Database = {
           type: string
           user_id: string
           value: number
+          value_cents: number
           wallet: string | null
         }
         Insert: {
           acquisition_date?: string | null
           acquisition_value?: number | null
+          acquisition_value_cents?: number
           created_at?: string | null
           evaluation_date?: string | null
           id?: string
           insured?: boolean | null
           last_price_brl?: number | null
+          last_price_brl_cents?: number
           last_updated?: string | null
           location?: string | null
           name: string
@@ -294,16 +308,19 @@ export type Database = {
           type: string
           user_id: string
           value: number
+          value_cents?: number
           wallet?: string | null
         }
         Update: {
           acquisition_date?: string | null
           acquisition_value?: number | null
+          acquisition_value_cents?: number
           created_at?: string | null
           evaluation_date?: string | null
           id?: string
           insured?: boolean | null
           last_price_brl?: number | null
+          last_price_brl_cents?: number
           last_updated?: string | null
           location?: string | null
           name?: string
@@ -313,6 +330,7 @@ export type Database = {
           type?: string
           user_id?: string
           value?: number
+          value_cents?: number
           wallet?: string | null
         }
         Relationships: []
@@ -321,30 +339,36 @@ export type Database = {
         Row: {
           created_at: string | null
           current_amount: number | null
+          current_amount_cents: number
           id: string
           name: string
           saving_location: string | null
           target_amount: number
+          target_amount_cents: number
           target_date: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           current_amount?: number | null
+          current_amount_cents?: number
           id?: string
           name: string
           saving_location?: string | null
           target_amount: number
+          target_amount_cents?: number
           target_date?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           current_amount?: number | null
+          current_amount_cents?: number
           id?: string
           name?: string
           saving_location?: string | null
           target_amount?: number
+          target_amount_cents?: number
           target_date?: string | null
           user_id?: string
         }
@@ -409,6 +433,7 @@ export type Database = {
           type: string
           user_id: string
           value: number
+          value_cents: number
         }
         Insert: {
           created_at?: string | null
@@ -417,6 +442,7 @@ export type Database = {
           type: string
           user_id: string
           value: number
+          value_cents?: number
         }
         Update: {
           created_at?: string | null
@@ -425,6 +451,7 @@ export type Database = {
           type?: string
           user_id?: string
           value?: number
+          value_cents?: number
         }
         Relationships: []
       }
@@ -432,24 +459,30 @@ export type Database = {
         Row: {
           created_at: string | null
           expense_total: number | null
+          expense_total_cents: number
           id: string
           income_total: number | null
+          income_total_cents: number
           month: string
           user_id: string
         }
         Insert: {
           created_at?: string | null
           expense_total?: number | null
+          expense_total_cents?: number
           id?: string
           income_total?: number | null
+          income_total_cents?: number
           month: string
           user_id: string
         }
         Update: {
           created_at?: string | null
           expense_total?: number | null
+          expense_total_cents?: number
           id?: string
           income_total?: number | null
+          income_total_cents?: number
           month?: string
           user_id?: string
         }
@@ -458,6 +491,7 @@ export type Database = {
       emp_recurring_expenses: {
         Row: {
           amount: number
+          amount_cents: number
           category: string
           created_at: string | null
           description: string
@@ -476,6 +510,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_cents?: number
           category: string
           created_at?: string | null
           description: string
@@ -494,6 +529,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_cents?: number
           category?: string
           created_at?: string | null
           description?: string
@@ -515,6 +551,7 @@ export type Database = {
       emp_transactions: {
         Row: {
           amount: number
+          amount_cents: number
           category: string
           created_at: string | null
           date: string
@@ -533,6 +570,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_cents?: number
           category: string
           created_at?: string | null
           date: string
@@ -551,6 +589,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_cents?: number
           category?: string
           created_at?: string | null
           date?: string
@@ -573,30 +612,36 @@ export type Database = {
         Row: {
           created_at: string | null
           current_amount: number | null
+          current_amount_cents: number
           id: string
           name: string
           saving_location: string | null
           target_amount: number
+          target_amount_cents: number
           target_date: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           current_amount?: number | null
+          current_amount_cents?: number
           id?: string
           name: string
           saving_location?: string | null
           target_amount: number
+          target_amount_cents?: number
           target_date?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           current_amount?: number | null
+          current_amount_cents?: number
           id?: string
           name?: string
           saving_location?: string | null
           target_amount?: number
+          target_amount_cents?: number
           target_date?: string | null
           user_id?: string
         }
@@ -661,6 +706,7 @@ export type Database = {
           type: string
           user_id: string
           value: number
+          value_cents: number
         }
         Insert: {
           created_at?: string | null
@@ -669,6 +715,7 @@ export type Database = {
           type: string
           user_id: string
           value: number
+          value_cents?: number
         }
         Update: {
           created_at?: string | null
@@ -677,6 +724,7 @@ export type Database = {
           type?: string
           user_id?: string
           value?: number
+          value_cents?: number
         }
         Relationships: []
       }
@@ -684,24 +732,30 @@ export type Database = {
         Row: {
           created_at: string | null
           expense_total: number | null
+          expense_total_cents: number
           id: string
           income_total: number | null
+          income_total_cents: number
           month: string
           user_id: string
         }
         Insert: {
           created_at?: string | null
           expense_total?: number | null
+          expense_total_cents?: number
           id?: string
           income_total?: number | null
+          income_total_cents?: number
           month: string
           user_id: string
         }
         Update: {
           created_at?: string | null
           expense_total?: number | null
+          expense_total_cents?: number
           id?: string
           income_total?: number | null
+          income_total_cents?: number
           month?: string
           user_id?: string
         }
@@ -797,6 +851,7 @@ export type Database = {
       recurring_expenses: {
         Row: {
           amount: number
+          amount_cents: number
           category: string
           created_at: string | null
           description: string
@@ -815,6 +870,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_cents?: number
           category: string
           created_at?: string | null
           description: string
@@ -833,6 +889,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_cents?: number
           category?: string
           created_at?: string | null
           description?: string
@@ -959,6 +1016,7 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          amount_cents: number
           category: string
           created_at: string | null
           date: string
@@ -977,6 +1035,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_cents?: number
           category: string
           created_at?: string | null
           date: string
@@ -995,6 +1054,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_cents?: number
           category?: string
           created_at?: string | null
           date?: string
