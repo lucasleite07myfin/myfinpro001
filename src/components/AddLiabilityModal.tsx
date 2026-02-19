@@ -22,7 +22,7 @@ import {
 import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
-import { formatCurrencyInput, parseCurrencyToNumber } from '@/utils/formatters';
+import { formatNumberFromCentsForInput } from '@/utils/money';
 import { sanitizeText } from '@/utils/xssSanitizer';
 
 interface AddLiabilityModalProps {
@@ -46,19 +46,20 @@ const AddLiabilityModal: React.FC<AddLiabilityModalProps> = ({ open, onOpenChang
   
   const [name, setName] = useState('');
   const [type, setType] = useState('');
-  const [value, setValue] = useState('');
+  const [valueInput, setValueInput] = useState('');
+  const [valueCents, setValueCents] = useState(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !type || !value) {
+    if (!name || !type || valueCents <= 0) {
       return;
     }
 
     addLiability({
       name: sanitizeText(name),
       type,
-      value: parseCurrencyToNumber(value)
+      value: valueCents / 100
     });
 
     resetForm();
@@ -68,7 +69,8 @@ const AddLiabilityModal: React.FC<AddLiabilityModalProps> = ({ open, onOpenChang
   const resetForm = () => {
     setName('');
     setType('');
-    setValue('');
+    setValueInput('');
+    setValueCents(0);
   };
 
   return (
@@ -123,10 +125,12 @@ const AddLiabilityModal: React.FC<AddLiabilityModalProps> = ({ open, onOpenChang
               </Label>
               <Input
                 id="value"
-                value={value ? `R$ ${value}` : ''}
+                value={valueInput ? `R$ ${valueInput}` : ''}
                 onChange={(e) => {
-                  const inputValue = e.target.value.replace(/[^\d]/g, '');
-                  setValue(formatCurrencyInput(inputValue));
+                  const digits = e.target.value.replace(/\D/g, '');
+                  const cents = digits ? parseInt(digits, 10) : 0;
+                  setValueCents(cents);
+                  setValueInput(cents > 0 ? formatNumberFromCentsForInput(cents) : '');
                 }}
                 className="col-span-3 font-inter"
                 placeholder="R$ 0,00"

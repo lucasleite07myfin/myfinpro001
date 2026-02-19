@@ -17,7 +17,8 @@ import { Separator } from '@/components/ui/separator';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
-import { formatDateForInput, formatCurrencyInput, parseCurrencyToNumber } from '@/utils/formatters';
+import { formatDateForInput } from '@/utils/formatters';
+import { formatNumberFromCentsForInput } from '@/utils/money';
 import { Goal } from '@/types/finance';
 import { Target, Calendar, PiggyBank, DollarSign, TrendingUp, Edit, Lock } from 'lucide-react';
 import { toast } from 'sonner';
@@ -55,8 +56,10 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
   const { addGoal, editGoal } = financeContext;
   
   const [name, setName] = useState('');
-  const [targetAmount, setTargetAmount] = useState('');
-  const [currentAmount, setCurrentAmount] = useState('');
+  const [targetAmountInput, setTargetAmountInput] = useState('');
+  const [targetAmountCents, setTargetAmountCents] = useState(0);
+  const [currentAmountInput, setCurrentAmountInput] = useState('');
+  const [currentAmountCents, setCurrentAmountCents] = useState(0);
   const [targetDate, setTargetDate] = useState(formatDateForInput(new Date()));
   const [savingLocation, setSavingLocation] = useState('');
   const [customSavingLocation, setCustomSavingLocation] = useState('');
@@ -74,11 +77,12 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
   useEffect(() => {
     if (mode === 'edit' && initialData && open) {
       setName(initialData.name);
-      // Corrigir formatação dos valores - multiplicar por 100 para formatCurrencyInput
-      const targetAmountCents = Math.round(initialData.targetAmount * 100).toString();
-      const currentAmountCents = Math.round(initialData.currentAmount * 100).toString();
-      setTargetAmount(formatCurrencyInput(targetAmountCents));
-      setCurrentAmount(formatCurrencyInput(currentAmountCents));
+      const tCents = (initialData as any).targetAmountCents ?? Math.round(initialData.targetAmount * 100);
+      const cCents = (initialData as any).currentAmountCents ?? Math.round(initialData.currentAmount * 100);
+      setTargetAmountCents(tCents);
+      setTargetAmountInput(tCents > 0 ? formatNumberFromCentsForInput(tCents) : '');
+      setCurrentAmountCents(cCents);
+      setCurrentAmountInput(cCents > 0 ? formatNumberFromCentsForInput(cCents) : '');
       setTargetDate(formatDateForInput(initialData.targetDate));
       
       // Handle custom saving location
@@ -95,32 +99,22 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !targetAmount || !currentAmount || !targetDate) {
+    if (!name || targetAmountCents <= 0 || !targetDate) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
-    // Validação de valores máximos
-    const targetValue = parseCurrencyToNumber(targetAmount);
-    const currentValue = parseCurrencyToNumber(currentAmount);
-
-    if (targetValue > 999999999.99) {
+    if (targetAmountCents > 99999999999) {
       toast.error('O valor da meta não pode exceder R$ 999.999.999,99');
       return;
     }
 
-    if (currentValue > 999999999.99) {
+    if (currentAmountCents > 99999999999) {
       toast.error('O valor atual não pode exceder R$ 999.999.999,99');
       return;
     }
 
-    // Validação de valores mínimos
-    if (targetValue <= 0) {
-      toast.error('O valor da meta deve ser maior que zero');
-      return;
-    }
-
-    if (currentValue < 0) {
+    if (currentAmountCents < 0) {
       toast.error('O valor atual não pode ser negativo');
       return;
     }
@@ -138,8 +132,10 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
 
     const goalData = {
       name: sanitizedName,
-      targetAmount: targetValue,
-      currentAmount: currentValue,
+      targetAmount: targetAmountCents / 100,
+      currentAmount: currentAmountCents / 100,
+      targetAmountCents,
+      currentAmountCents,
       targetDate: new Date(targetDate),
       savingLocation: finalSavingLocation
     };
@@ -159,8 +155,10 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
 
   const resetForm = () => {
     setName('');
-    setTargetAmount('');
-    setCurrentAmount('');
+    setTargetAmountInput('');
+    setTargetAmountCents(0);
+    setCurrentAmountInput('');
+    setCurrentAmountCents(0);
     setTargetDate(formatDateForInput(new Date()));
     setSavingLocation('');
     setCustomSavingLocation('');
@@ -169,9 +167,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
   const showCustomSavingLocation = savingLocation === 'Outros';
 
   // Calculate progress for preview
-  const targetValue = parseCurrencyToNumber(targetAmount);
-  const currentValue = parseCurrencyToNumber(currentAmount);
-  const percentage = targetValue > 0 ? Math.min(100, (currentValue / targetValue) * 100) : 0;
+  const percentage = targetAmountCents > 0 ? Math.min(100, (currentAmountCents / targetAmountCents) * 100) : 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -191,7 +187,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Preview Card */}
-          {(name || targetAmount || currentAmount) && (
+          {(name || targetAmountCents > 0 || currentAmountCents > 0) && (
             <Card className="bg-gradient-to-r from-[#EE680D]/10 to-[#EE680D]/5 border-[#EE680D]/20">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -212,11 +208,11 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Meta: </span>
-                    <span className="font-medium">R$ {targetAmount || '0,00'}</span>
+                    <span className="font-medium">R$ {targetAmountInput || '0,00'}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Atual: </span>
-                    <span className="font-medium text-green-600">R$ {currentAmount || '0,00'}</span>
+                    <span className="font-medium text-green-600">R$ {currentAmountInput || '0,00'}</span>
                   </div>
                 </div>
               </CardContent>
@@ -287,10 +283,12 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
                     <Input
                       id="targetAmount"
-                      value={targetAmount}
+                      value={targetAmountInput}
                       onChange={(e) => {
-                        const value = e.target.value.replace(/[^\d]/g, '');
-                        setTargetAmount(formatCurrencyInput(value));
+                        const digits = e.target.value.replace(/\D/g, '');
+                        const cents = digits ? parseInt(digits, 10) : 0;
+                        setTargetAmountCents(cents);
+                        setTargetAmountInput(cents > 0 ? formatNumberFromCentsForInput(cents) : '');
                       }}
                       placeholder="0,00"
                       required
@@ -311,10 +309,12 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
                     <Input
                       id="currentAmount"
-                      value={currentAmount}
+                      value={currentAmountInput}
                       onChange={(e) => {
-                        const value = e.target.value.replace(/[^\d]/g, '');
-                        setCurrentAmount(formatCurrencyInput(value));
+                        const digits = e.target.value.replace(/\D/g, '');
+                        const cents = digits ? parseInt(digits, 10) : 0;
+                        setCurrentAmountCents(cents);
+                        setCurrentAmountInput(cents > 0 ? formatNumberFromCentsForInput(cents) : '');
                       }}
                       placeholder="0,00"
                       required

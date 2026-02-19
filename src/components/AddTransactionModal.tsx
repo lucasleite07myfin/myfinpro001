@@ -14,7 +14,8 @@ import { useBusiness } from '@/contexts/BusinessContext';
 import { useAppMode } from '@/contexts/AppModeContext';
 import { useBusinessPermissions } from '@/hooks/useBusinessPermissions';
 import { PAYMENT_METHODS, PaymentMethod, TransactionType, Goal, FinanceContextType, BusinessContextType, Transaction } from '@/types/finance';
-import { formatCurrency, formatNumberToCurrency } from '@/utils/formatters';
+import { formatCurrency } from '@/utils/formatters';
+import { formatNumberFromCentsForInput } from '@/utils/money';
 import { toast } from 'sonner';
 import { Info, Target, TrendingUp, Calendar as CalendarIcon } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -74,8 +75,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const [date, setDate] = useState<Date>(new Date());
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [amount, setAmount] = useState('');
-  const [formattedAmount, setFormattedAmount] = useState('');
+  const [amountInput, setAmountInput] = useState('');
+  const [amountCents, setAmountCents] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank_transfer');
 
   // Recurring expense specific state
@@ -101,8 +102,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       setTransactionType(initialData.type);
       setDate(initialData.date);
       setDescription(initialData.description);
-      setAmount(initialData.amount.toString());
-      setFormattedAmount(formatNumberToCurrency(initialData.amount));
+      const cents = (initialData as any).amountCents ?? Math.round(initialData.amount * 100);
+      setAmountCents(cents);
+      setAmountInput(cents > 0 ? formatNumberFromCentsForInput(cents) : '');
       setPaymentMethod(initialData.paymentMethod);
       setCategory(initialData.category);
     }
@@ -115,8 +117,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     setDate(new Date());
     setDescription('');
     setCategory('');
-    setAmount('');
-    setFormattedAmount('');
+    setAmountInput('');
+    setAmountCents(0);
     setPaymentMethod('bank_transfer');
     setDueDay('');
     setRepeatMonths('12');
@@ -125,10 +127,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const numericValue = e.target.value.replace(/\D/g, '');
-    const floatValue = numericValue ? parseFloat(numericValue) / 100 : 0;
-    setAmount(floatValue.toString());
-    setFormattedAmount(formatNumberToCurrency(floatValue));
+    const digits = e.target.value.replace(/\D/g, '');
+    const cents = digits ? parseInt(digits, 10) : 0;
+    setAmountCents(cents);
+    setAmountInput(cents > 0 ? formatNumberFromCentsForInput(cents) : '');
   };
 
   const handleCreateCategory = async (name: string): Promise<boolean> => {
@@ -166,21 +168,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       return;
     }
 
-    if (!description || !category || !amount || !date) {
+    if (!description || !category || amountCents <= 0 || !date) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
-    // Validação de valor máximo (R$ 999.999.999,99)
-    const numericAmount = parseFloat(amount);
-    if (numericAmount > 999999999.99) {
+    // Validação de valor máximo (R$ 999.999.999,99 = 99999999999 centavos)
+    if (amountCents > 99999999999) {
       toast.error('O valor não pode exceder R$ 999.999.999,99');
-      return;
-    }
-
-    // Validação de valor mínimo
-    if (numericAmount <= 0) {
-      toast.error('O valor deve ser maior que zero');
       return;
     }
 
@@ -194,7 +189,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       date,
       description: sanitizedDescription,
       category: category,
-      amount: numericAmount,
+      amount: amountCents / 100,
+      amountCents,
       type: transactionType,
       paymentMethod
     };
@@ -217,9 +213,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         return;
     }
 
-    // Validação de valor máximo
-    const numericAmount = parseFloat(amount);
-    if (numericAmount > 999999999.99) {
+    if (amountCents > 99999999999) {
       toast.error('O valor não pode exceder R$ 999.999.999,99');
       return;
     }
@@ -233,7 +227,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     addRecurringExpense({
         description: sanitizedDescription,
         category: category,
-        amount: numericAmount,
+        amount: amountCents / 100,
+        amountCents,
         dueDay: parseInt(dueDay),
         paymentMethod,
         repeatMonths: parseInt(repeatMonths)
@@ -242,18 +237,20 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   };
 
   const handleSubmitGoalContribution = () => {
-    if (!selectedGoal || !amount) {
+    if (!selectedGoal || amountCents <= 0) {
         toast.error('Selecione uma meta e informe o valor.');
         return;
     }
     const selectedGoalObj = goals.find(g => g.id === selectedGoal);
     if (!selectedGoalObj) return;
 
+    const contributionAmount = amountCents / 100;
     addTransaction({
         date: new Date(),
         description: `Contribuição para meta: ${selectedGoalObj.name}`,
         category: 'Poupança para Metas',
-        amount: parseFloat(amount),
+        amount: contributionAmount,
+        amountCents,
         type: 'expense',
         paymentMethod,
         isGoalContribution: true,
@@ -263,7 +260,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     if ('editGoal' in financeContext) {
         financeContext.editGoal({
             ...selectedGoalObj,
-            currentAmount: selectedGoalObj.currentAmount + parseFloat(amount)
+            currentAmount: selectedGoalObj.currentAmount + contributionAmount
         });
     }
     onOpenChange(false);
@@ -339,7 +336,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             <Label htmlFor="amount">Valor (R$)</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
-                                <Input id="amount" value={formattedAmount} onChange={handleAmountChange} placeholder="0,00" required className="bg-gray-50 border-gray-200 pl-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                                <Input id="amount" value={amountInput} onChange={handleAmountChange} placeholder="0,00" required className="bg-gray-50 border-gray-200 pl-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
             </div>
           </div>
         </TooltipHelper>
@@ -388,7 +385,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             <Label htmlFor="amount">Valor (R$)</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
-              <Input id="amount" value={formattedAmount} onChange={handleAmountChange} placeholder="0,00" required className="bg-gray-50 border-gray-200 pl-10" />
+              <Input id="amount" value={amountInput} onChange={handleAmountChange} placeholder="0,00" required className="bg-gray-50 border-gray-200 pl-10" />
             </div>
           </div>
         </TooltipHelper>
@@ -442,7 +439,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             <Label htmlFor="amount">Valor da Contribuição (R$)</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
-              <Input id="amount" value={formattedAmount} onChange={handleAmountChange} placeholder="0,00" required className="bg-gray-50 border-gray-200 pl-10" />
+              <Input id="amount" value={amountInput} onChange={handleAmountChange} placeholder="0,00" required className="bg-gray-50 border-gray-200 pl-10" />
             </div>
           </div>
         </TooltipHelper>
