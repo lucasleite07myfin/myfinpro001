@@ -2,82 +2,124 @@ import { supabase } from '@/integrations/supabase/client';
 import { Transaction, RecurringExpense, Goal, Asset, Liability, MonthlyFinanceData, CustomCategories, PaymentMethod } from '@/types/finance';
 import { Investment } from '@/components/AddInvestmentModal';
 import { Supplier } from '@/types/supplier';
-import { parseDateFromDB, formatDateToDB } from '@/utils/formatters';
+import { parseDateFromDB, formatDateToDB, centsFromUnknownDbValue } from '@/utils/formatters';
 
 export type ServiceResult<T> = { data: T; error: null } | { data: null; error: string };
 
+function centsToDbDecimal(cents: number): string {
+  return (cents / 100).toFixed(2);
+}
+
 // ==================== FORMATTERS ====================
 
-const formatTransaction = (t: any): Transaction => ({
-  id: t.id,
-  date: parseDateFromDB(t.date),
-  description: t.description,
-  category: t.category,
-  amount: Number(t.amount),
-  type: t.type as 'income' | 'expense',
-  paymentMethod: t.payment_method as PaymentMethod,
-  source: t.source,
-  isRecurringPayment: t.is_recurring_payment || false,
-  isGoalContribution: t.is_goal_contribution || false,
-  isInvestmentContribution: t.is_investment_contribution || false,
-  goalId: t.goal_id,
-  investmentId: t.investment_id,
-  recurringExpenseId: t.recurring_expense_id
-});
+const formatTransaction = (t: any): Transaction => {
+  const amountCents = centsFromUnknownDbValue(t.amount);
+  return {
+    id: t.id,
+    date: parseDateFromDB(t.date),
+    description: t.description,
+    category: t.category,
+    amount: amountCents / 100,
+    amountCents,
+    type: t.type as 'income' | 'expense',
+    paymentMethod: t.payment_method as PaymentMethod,
+    source: t.source,
+    isRecurringPayment: t.is_recurring_payment || false,
+    isGoalContribution: t.is_goal_contribution || false,
+    isInvestmentContribution: t.is_investment_contribution || false,
+    goalId: t.goal_id,
+    investmentId: t.investment_id,
+    recurringExpenseId: t.recurring_expense_id
+  };
+};
 
-const formatRecurringExpense = (e: any): RecurringExpense => ({
-  id: e.id,
-  description: e.description,
-  category: e.category,
-  amount: Number(e.amount),
-  dueDay: e.due_day,
-  paymentMethod: e.payment_method as PaymentMethod,
-  repeatMonths: e.repeat_months,
-  monthlyValues: (e.monthly_values as Record<string, number>) || {},
-  isPaid: e.is_paid || false,
-  paidMonths: (e.paid_months as string[]) || [],
-  createdAt: new Date(e.created_at || new Date())
-});
+const formatRecurringExpense = (e: any): RecurringExpense => {
+  const amountCents = centsFromUnknownDbValue(e.amount);
+  const rawMonthly = (e.monthly_values as Record<string, number>) || {};
+  const monthlyValuesCents: Record<string, number> = {};
+  for (const [k, v] of Object.entries(rawMonthly)) {
+    monthlyValuesCents[k] = centsFromUnknownDbValue(v);
+  }
+  return {
+    id: e.id,
+    description: e.description,
+    category: e.category,
+    amount: amountCents / 100,
+    amountCents,
+    dueDay: e.due_day,
+    paymentMethod: e.payment_method as PaymentMethod,
+    repeatMonths: e.repeat_months,
+    monthlyValues: rawMonthly,
+    monthlyValuesCents,
+    isPaid: e.is_paid || false,
+    paidMonths: (e.paid_months as string[]) || [],
+    createdAt: new Date(e.created_at || new Date())
+  };
+};
 
-const formatGoal = (g: any): Goal => ({
-  id: g.id,
-  name: g.name,
-  targetAmount: Number(g.target_amount),
-  currentAmount: Number(g.current_amount || 0),
-  targetDate: parseDateFromDB(g.target_date),
-  savingLocation: g.saving_location
-});
+const formatGoal = (g: any): Goal => {
+  const targetAmountCents = centsFromUnknownDbValue(g.target_amount);
+  const currentAmountCents = centsFromUnknownDbValue(g.current_amount);
+  return {
+    id: g.id,
+    name: g.name,
+    targetAmount: targetAmountCents / 100,
+    targetAmountCents,
+    currentAmount: currentAmountCents / 100,
+    currentAmountCents,
+    targetDate: parseDateFromDB(g.target_date),
+    savingLocation: g.saving_location
+  };
+};
 
-const formatAsset = (a: any): Asset => ({
-  id: a.id,
-  name: a.name,
-  type: a.type,
-  value: Number(a.value),
-  evaluationDate: a.evaluation_date ? parseDateFromDB(a.evaluation_date) : undefined,
-  acquisitionValue: a.acquisition_value ? Number(a.acquisition_value) : undefined,
-  acquisitionDate: a.acquisition_date ? parseDateFromDB(a.acquisition_date) : null,
-  insured: a.insured || false,
-  wallet: a.wallet,
-  symbol: a.symbol,
-  notes: a.notes,
-  location: a.location,
-  lastUpdated: a.last_updated ? parseDateFromDB(a.last_updated) : undefined,
-  lastPriceBrl: a.last_price_brl ? Number(a.last_price_brl) : undefined,
-  quantity: a.quantity ? Number(a.quantity) : undefined
-});
+const formatAsset = (a: any): Asset => {
+  const valueCents = centsFromUnknownDbValue(a.value);
+  const acquisitionValueCents = a.acquisition_value ? centsFromUnknownDbValue(a.acquisition_value) : undefined;
+  const lastPriceBrlCents = a.last_price_brl ? centsFromUnknownDbValue(a.last_price_brl) : undefined;
+  return {
+    id: a.id,
+    name: a.name,
+    type: a.type,
+    value: valueCents / 100,
+    valueCents,
+    evaluationDate: a.evaluation_date ? parseDateFromDB(a.evaluation_date) : undefined,
+    acquisitionValue: acquisitionValueCents ? acquisitionValueCents / 100 : undefined,
+    acquisitionValueCents,
+    acquisitionDate: a.acquisition_date ? parseDateFromDB(a.acquisition_date) : null,
+    insured: a.insured || false,
+    wallet: a.wallet,
+    symbol: a.symbol,
+    notes: a.notes,
+    location: a.location,
+    lastUpdated: a.last_updated ? parseDateFromDB(a.last_updated) : undefined,
+    lastPriceBrl: lastPriceBrlCents ? lastPriceBrlCents / 100 : undefined,
+    lastPriceBrlCents,
+    quantity: a.quantity ? Number(a.quantity) : undefined
+  };
+};
 
-const formatLiability = (l: any): Liability => ({
-  id: l.id,
-  name: l.name,
-  type: l.type,
-  value: Number(l.value)
-});
+const formatLiability = (l: any): Liability => {
+  const valueCents = centsFromUnknownDbValue(l.value);
+  return {
+    id: l.id,
+    name: l.name,
+    type: l.type,
+    value: valueCents / 100,
+    valueCents
+  };
+};
 
-const formatMonthlyData = (m: any): MonthlyFinanceData => ({
-  month: m.month,
-  incomeTotal: Number(m.income_total),
-  expenseTotal: Number(m.expense_total)
-});
+const formatMonthlyData = (m: any): MonthlyFinanceData => {
+  const incomeTotalCents = centsFromUnknownDbValue(m.income_total);
+  const expenseTotalCents = centsFromUnknownDbValue(m.expense_total);
+  return {
+    month: m.month,
+    incomeTotal: incomeTotalCents / 100,
+    incomeTotalCents,
+    expenseTotal: expenseTotalCents / 100,
+    expenseTotalCents
+  };
+};
 
 const formatSupplier = (s: any): Supplier => ({
   id: s.id,
@@ -137,7 +179,7 @@ export const insertTransaction = async (userId: string, transaction: Omit<Transa
       date: formatDateToDB(transaction.date),
       description: transaction.description,
       category: transaction.category,
-      amount: transaction.amount,
+      amount: parseFloat(centsToDbDecimal(transaction.amountCents ?? Math.round(transaction.amount * 100))),
       type: transaction.type,
       payment_method: transaction.paymentMethod,
       source: transaction.source,
@@ -152,7 +194,7 @@ export const insertTransaction = async (userId: string, transaction: Omit<Transa
     .single();
 
   if (error) return { data: null, error: error.message };
-  return { data: { ...transaction, id: data.id, date: parseDateFromDB(data.date) }, error: null };
+  return { data: formatTransaction(data), error: null };
 };
 
 export const updateTransaction = async (transaction: Transaction): Promise<ServiceResult<void>> => {
@@ -162,7 +204,7 @@ export const updateTransaction = async (transaction: Transaction): Promise<Servi
       date: formatDateToDB(transaction.date),
       description: transaction.description,
       category: transaction.category,
-      amount: transaction.amount,
+      amount: parseFloat(centsToDbDecimal(transaction.amountCents ?? Math.round(transaction.amount * 100))),
       type: transaction.type,
       payment_method: transaction.paymentMethod,
       source: transaction.source,
@@ -202,7 +244,7 @@ export const insertRecurringExpense = async (
       user_id: userId,
       description: expense.description,
       category: expense.category,
-      amount: expense.amount,
+      amount: parseFloat(centsToDbDecimal(expense.amountCents ?? Math.round(expense.amount * 100))),
       due_day: expense.dueDay,
       payment_method: expense.paymentMethod,
       repeat_months: expense.repeatMonths || 12,
@@ -223,7 +265,7 @@ export const updateRecurringExpense = async (expense: RecurringExpense): Promise
     .update({
       description: expense.description,
       category: expense.category,
-      amount: expense.amount,
+      amount: parseFloat(centsToDbDecimal(expense.amountCents ?? Math.round(expense.amount * 100))),
       due_day: expense.dueDay,
       payment_method: expense.paymentMethod,
       repeat_months: expense.repeatMonths,

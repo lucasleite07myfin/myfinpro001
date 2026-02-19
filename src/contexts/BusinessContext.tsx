@@ -90,9 +90,15 @@ const generateMonthlyDataFromTransactions = (transactions: Transaction[]): Month
       const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
       return transactionMonth === monthStr;
     });
-    const incomeTotal = monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const expenseTotal = monthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-    data.push({ month: monthStr, incomeTotal, expenseTotal });
+    const incomeTotalCents = monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amountCents ?? 0), 0);
+    const expenseTotalCents = monthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.amountCents ?? 0), 0);
+    data.push({
+      month: monthStr,
+      incomeTotal: incomeTotalCents / 100,
+      incomeTotalCents,
+      expenseTotal: expenseTotalCents / 100,
+      expenseTotalCents
+    });
   }
   return data;
 };
@@ -172,12 +178,17 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     setTransactions(prev => [newTransaction, ...prev]);
 
     const monthStr = `${newTransaction.date.getFullYear()}-${String(newTransaction.date.getMonth() + 1).padStart(2, '0')}`;
+    const txCents = newTransaction.amountCents ?? Math.round(newTransaction.amount * 100);
     setMonthlyData(prev => prev.map(m => {
       if (m.month === monthStr) {
+        const newIncomeCents = (m.incomeTotalCents ?? 0) + (newTransaction.type === 'income' ? txCents : 0);
+        const newExpenseCents = (m.expenseTotalCents ?? 0) + (newTransaction.type === 'expense' ? txCents : 0);
         return {
           ...m,
-          incomeTotal: newTransaction.type === 'income' ? m.incomeTotal + newTransaction.amount : m.incomeTotal,
-          expenseTotal: newTransaction.type === 'expense' ? m.expenseTotal + newTransaction.amount : m.expenseTotal
+          incomeTotalCents: newIncomeCents,
+          incomeTotal: newIncomeCents / 100,
+          expenseTotalCents: newExpenseCents,
+          expenseTotal: newExpenseCents / 100
         };
       }
       return m;
@@ -269,6 +280,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
       if (paid && !isAlreadyPaid) {
         const amount = getMonthlyExpenseValue(id, month) || expense.amount;
+        const amountCents = Math.round(amount * 100);
         if (amount > 0) {
           const [year, monthNum] = month.split('-').map(Number);
           const dueDate = new Date(year, monthNum - 1, expense.dueDay);
@@ -277,6 +289,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
             description: `${expense.description} (Despesa Fixa)`,
             category: expense.category,
             amount,
+            amountCents,
             type: 'expense',
             paymentMethod: expense.paymentMethod,
             isRecurringPayment: true,
@@ -330,7 +343,12 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   };
 
   const addGoalContribution = (goalId: string, amount: number) => {
-    setGoals(prev => prev.map(goal => goal.id === goalId ? { ...goal, currentAmount: goal.currentAmount + amount } : goal));
+    const amountCents = Math.round(amount * 100);
+    setGoals(prev => prev.map(goal => {
+      if (goal.id !== goalId) return goal;
+      const newCurrentCents = (goal.currentAmountCents ?? 0) + amountCents;
+      return { ...goal, currentAmount: newCurrentCents / 100, currentAmountCents: newCurrentCents };
+    }));
   };
 
   const editGoal = (goal: Goal) => {
@@ -510,10 +528,12 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       const transactionMonth = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
       return transactionMonth === currentMonth;
     });
-    const income = currentMonthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const expense = currentMonthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-    const balance = income - expense;
-    const savingRate = income > 0 ? ((income - expense) / income) * 100 : 0;
+    const incomeCents = currentMonthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amountCents ?? 0), 0);
+    const expenseCents = currentMonthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.amountCents ?? 0), 0);
+    const income = incomeCents / 100;
+    const expense = expenseCents / 100;
+    const balance = (incomeCents - expenseCents) / 100;
+    const savingRate = incomeCents > 0 ? ((incomeCents - expenseCents) / incomeCents) * 100 : 0;
     return { income, expense, balance, savingRate };
   };
 
