@@ -1,76 +1,75 @@
 
 
-# Corrigir BusinessContext para Suportar Subcontas
+# Refatorar State Updates para Evitar Stale State
 
-## Resumo
+## Problema
 
-O `BusinessContext` atualmente usa `user.id` em todas as queries e inserts. Quando um funcionario (subconta) acessa o sistema, ele precisa carregar e manipular os dados do **dono** (`ownerId`), nao os seus proprios. A correcao introduz um `effectiveUserId` que aponta para o owner quando o usuario e subconta.
+Varias funcoes em `FinanceContext.tsx` e `BusinessContext.tsx` usam variaveis do closure (`transactions`, `goals`, `assets`, `liabilities`, `monthlyData`) diretamente nos setters de estado. Isso causa bugs de stale state quando multiplas atualizacoes acontecem rapidamente.
 
-## O que muda
+## Arquivos Afetados
 
-O arquivo `src/contexts/BusinessContext.tsx` sera o unico modificado:
-
-1. Importar `useSubAccount` do `SubAccountContext`
-2. Criar a variavel `effectiveUserId` baseada no estado de subconta
-3. Substituir **todas** as ocorrencias de `user.id` por `effectiveUserId` nas queries e inserts
+- `src/contexts/FinanceContext.tsx` (maioria dos problemas)
+- `src/contexts/BusinessContext.tsx` (poucos problemas restantes)
 
 ## Secao Tecnica
 
-### Nova variavel (apos linha 137)
+### FinanceContext.tsx - Correcoes
 
-```typescript
-import { useSubAccount } from '@/contexts/SubAccountContext';
+**Transactions (3 ocorrencias):**
+- Linha 290: `setTransactions([newTransaction, ...transactions])` -> `setTransactions(prev => [newTransaction, ...prev])`
+- Linha 323: `setTransactions(transactions.map(t => ...))` -> `setTransactions(prev => prev.map(t => ...))`
+- Linha 339: `setTransactions(transactions.filter(t => ...))` -> `setTransactions(prev => prev.filter(t => ...))`
 
-// Dentro do provider, apos const { user } = useUser();
-const { isSubAccount, ownerId } = useSubAccount();
-const effectiveUserId = isSubAccount && ownerId ? ownerId : user?.id;
-```
+**editRecurringExpense - transactions closure (linhas 629-648):**
+- Linhas 629, 635: Usa `transactions` diretamente para filtrar e mapear. Trocar por `setTransactions(prev => { ... })` com toda a logica dentro do callback.
 
-### Substituicoes de `user.id` por `effectiveUserId`
+**deleteRecurringExpense (linha 681):**
+- `setTransactions(transactions.filter(...))` -> `setTransactions(prev => prev.filter(...))`
 
-Todas as ocorrencias em `BusinessContext.tsx` onde `user.id` e usado para queries ou inserts serao substituidas. Sao aproximadamente 25 ocorrencias em:
+**Goals (4 ocorrencias):**
+- Linha 784: `setGoals([...goals, newGoal])` -> `setGoals(prev => [...prev, newGoal])`
+- Linha 807: `setGoals(goals.map(...))` -> `setGoals(prev => prev.map(...))`
+- Linha 835: `setGoals(goals.map(...))` -> `setGoals(prev => prev.map(...))`
+- Linha 855: `setGoals(goals.filter(...))` -> `setGoals(prev => prev.filter(...))`
 
-**Queries (SELECT/loadData) - linhas 158-187:**
-- `profiles` query: manter `user.id` (perfil e do usuario logado, nao do owner) -- EXCECAO
-- `emp_transactions`: `user.id` -> `effectiveUserId`
-- `emp_recurring_expenses`: `user.id` -> `effectiveUserId`
-- `emp_goals`: `user.id` -> `effectiveUserId`
-- `emp_assets`: `user.id` -> `effectiveUserId`
-- `suppliers`: `user.id` -> `effectiveUserId`
-- `emp_liabilities`: `user.id` -> `effectiveUserId`
-- `emp_monthly_finance_data`: `user.id` -> `effectiveUserId`
-- `custom_categories`: `user.id` -> `effectiveUserId`
+**Assets (3 ocorrencias):**
+- Linha 908: `setAssets([...assets, newAsset])` -> `setAssets(prev => [...prev, newAsset])`
+- Linha 940: `setAssets(assets.map(...))` -> `setAssets(prev => prev.map(...))`
+- Linha 957: `setAssets(assets.filter(...))` -> `setAssets(prev => prev.filter(...))`
 
-**Inserts (CREATE) - substituir `user_id: user.id` por `user_id: effectiveUserId`:**
-- `addTransaction` (linha 326)
-- `addRecurringExpense` (linha 444)
-- `addGoal` (linha 612)
-- `addAsset` (linha 690)
-- `addSupplier` (linha 797)
-- `addLiability` (linha 913)
-- `addInvestment` (linha 984)
-- `addCustomCategory` (linha 1115)
+**Liabilities (3 ocorrencias):**
+- Linha 990: `setLiabilities([...liabilities, newLiability])` -> `setLiabilities(prev => [...prev, newLiability])`
+- Linha 1011: `setLiabilities(liabilities.map(...))` -> `setLiabilities(prev => prev.map(...))`
+- Linha 1028: `setLiabilities(liabilities.filter(...))` -> `setLiabilities(prev => prev.filter(...))`
 
-**Updates com filtro `user_id` - substituir `.eq('user_id', user.id)` por `.eq('user_id', effectiveUserId)`:**
-- `deleteGoal` (linha 653)
-- `editCustomCategory` (linhas 1172, 1183, 1192)
-- `deleteCustomCategory` (linhas 1225, 1233, 1247)
+**updateMonthlyData (linhas 1042-1079):**
+- Usa `monthlyData` e `transactions` do closure. Refatorar para usar `setMonthlyData(prev => ...)` e obter `transactions` via `setTransactions` ou mover o calculo para um useEffect reativo (que ja existe na linha 1108).
 
-**Excecao importante:** A query do `profiles` (linha 161) deve continuar usando `user.id` pois o perfil exibido e do usuario logado.
+### BusinessContext.tsx - Correcoes
 
-### Atualizacao do useEffect
+A maioria ja usa `prev =>`, mas restam:
 
-O `useEffect` que dispara `loadData` precisa reagir tambem a mudancas em `effectiveUserId`:
+**updateTransaction (linhas 403-406):**
+- `generateMonthlyDataFromTransactions(transactions.map(...))` usa `transactions` do closure. Trocar por `setTransactions(prev => { const updated = prev.map(...); setMonthlyData(generateMonthlyDataFromTransactions(updated)); return updated; })` -- porem ja existe useEffect na linha 149 que recalcula monthlyData quando transactions muda, entao basta remover o calculo manual.
 
-```typescript
-useEffect(() => {
-  if (user && effectiveUserId) {
-    loadData();
-  }
-}, [user?.id, effectiveUserId]);
-```
+**deleteTransaction (linhas 427-430):**
+- Mesmo problema: `transactions.filter(...)` no calculo de monthlyData. Remover calculo manual, confiar no useEffect existente.
 
-### Guard nas funcoes de escrita
+**editGoal (linha 681):**
+- `setGoals(goals.map(...))` -> `setGoals(prev => prev.map(...))`
 
-Substituir `if (!user) throw new Error(...)` por `if (!user || !effectiveUserId) throw new Error(...)` nas funcoes de criacao.
+**editLiability (linha 954):**
+- `setLiabilities(liabilities.map(...))` -> `setLiabilities(prev => prev.map(...))`
+
+**deleteLiability (linha 971):**
+- `setLiabilities(liabilities.filter(...))` -> `setLiabilities(prev => prev.filter(...))`
+
+## Resumo de Mudancas
+
+| Arquivo | Ocorrencias | Tipo |
+|---------|-------------|------|
+| FinanceContext.tsx | ~16 | transactions, goals, assets, liabilities, monthlyData |
+| BusinessContext.tsx | ~5 | transactions (monthlyData calc), goals, liabilities |
+
+Total: ~21 state updates corrigidos para usar o padrao funcional `prev => ...`.
 
