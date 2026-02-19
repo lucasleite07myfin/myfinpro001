@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { getCurrentMonth, parseDateFromDB, formatDateToDB } from '@/utils/formatters';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
+import { useSubAccount } from '@/contexts/SubAccountContext';
 import { logger } from '@/utils/logger';
 
 // Add Investment to the interface
@@ -135,12 +136,14 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Carregar dados do Supabase
   // Usar useUser para obter o user autenticado
   const { user } = useUser();
+  const { isSubAccount, ownerId } = useSubAccount();
+  const effectiveUserId = isSubAccount && ownerId ? ownerId : user?.id;
 
   useEffect(() => {
-    if (user) {
+    if (user && effectiveUserId) {
       loadData();
     }
-  }, [user?.id]);
+  }, [user?.id, effectiveUserId]);
 
   // Atualizar dados mensais quando as transações mudarem
   useEffect(() => {
@@ -176,14 +179,14 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
         monthlyResult,
         categoriesResult
       ] = await Promise.all([
-        (supabase.from('emp_transactions') as any).select('*').eq('user_id', user.id),
-        (supabase.from('emp_recurring_expenses') as any).select('*').eq('user_id', user.id),
-        (supabase.from('emp_goals') as any).select('*').eq('user_id', user.id),
-        (supabase.from('emp_assets') as any).select('*').eq('user_id', user.id),
-        (supabase.from('suppliers') as any).select('*').eq('user_id', user.id),
-        (supabase.from('emp_liabilities') as any).select('*').eq('user_id', user.id),
-        (supabase.from('emp_monthly_finance_data') as any).select('*').eq('user_id', user.id),
-        supabase.from('custom_categories').select('*').eq('user_id', user.id)
+        (supabase.from('emp_transactions') as any).select('*').eq('user_id', effectiveUserId),
+        (supabase.from('emp_recurring_expenses') as any).select('*').eq('user_id', effectiveUserId),
+        (supabase.from('emp_goals') as any).select('*').eq('user_id', effectiveUserId),
+        (supabase.from('emp_assets') as any).select('*').eq('user_id', effectiveUserId),
+        (supabase.from('suppliers') as any).select('*').eq('user_id', effectiveUserId),
+        (supabase.from('emp_liabilities') as any).select('*').eq('user_id', effectiveUserId),
+        (supabase.from('emp_monthly_finance_data') as any).select('*').eq('user_id', effectiveUserId),
+        supabase.from('custom_categories').select('*').eq('user_id', effectiveUserId)
       ]);
 
       if (transactionsResult.data) {
@@ -318,12 +321,12 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Transaction functions
   const addTransaction = async (transaction: Omit<Transaction, 'id'>, silent: boolean = false) => {
     try {
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user || !effectiveUserId) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
         .from('emp_transactions')
         .insert({
-          user_id: user.id,
+          user_id: effectiveUserId,
           date: formatDateToDB(transaction.date),
           description: transaction.description,
           category: transaction.category,
@@ -436,12 +439,12 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Recurring expense functions
   const addRecurringExpense = async (expense: Omit<RecurringExpense, 'id' | 'isPaid' | 'paidMonths' | 'createdAt'>) => {
     try {
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user || !effectiveUserId) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
         .from('emp_recurring_expenses')
         .insert({
-          user_id: user.id,
+          user_id: effectiveUserId,
           description: expense.description,
           category: expense.category,
           amount: expense.amount,
@@ -604,12 +607,12 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Goal functions
   const addGoal = async (goal: Omit<Goal, 'id'>) => {
     try {
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user || !effectiveUserId) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
         .from('emp_goals')
         .insert({
-          user_id: user.id,
+          user_id: effectiveUserId,
           name: goal.name,
           target_amount: goal.targetAmount,
           current_amount: goal.currentAmount || 0,
@@ -644,13 +647,13 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
   const deleteGoal = async (id: string) => {
     try {
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user || !effectiveUserId) throw new Error('Usuário não autenticado');
 
       const { error } = await supabase
         .from('emp_goals')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', effectiveUserId);
 
       if (error) throw error;
 
@@ -682,12 +685,12 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Asset functions
   const addAsset = async (asset: Omit<Asset, 'id'>) => {
     try {
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user || !effectiveUserId) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
         .from('emp_assets')
         .insert({
-          user_id: user.id,
+          user_id: effectiveUserId,
           name: asset.name,
           type: asset.type,
           value: asset.value,
@@ -789,12 +792,12 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Supplier functions
   const addSupplier = async (supplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user || !effectiveUserId) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
         .from('suppliers')
         .insert({
-          user_id: user.id,
+          user_id: effectiveUserId,
           name: supplier.name,
           document: supplier.document,
           state_registration: supplier.stateRegistration,
@@ -905,12 +908,12 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Liability functions
   const addLiability = async (liability: Omit<Liability, 'id'>) => {
     try {
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user || !effectiveUserId) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
         .from('emp_liabilities')
         .insert({
-          user_id: user.id,
+          user_id: effectiveUserId,
           name: liability.name,
           type: liability.type,
           value: liability.value
@@ -976,12 +979,12 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Functions for managing investments (salvando no banco de dados)
   const addInvestment = async (investment: Investment) => {
     try {
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user || !effectiveUserId) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
         .from('emp_assets')
         .insert({
-          user_id: user.id,
+          user_id: effectiveUserId,
           name: investment.name,
           type: 'Investimento',
           value: investment.value,
@@ -1088,12 +1091,12 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     try {
       logger.info('🔵 [addCustomCategory] Iniciando...', { type, category });
       
-      if (!user) {
+      if (!user || !effectiveUserId) {
         logger.error('❌ [addCustomCategory] Usuário não autenticado');
         throw new Error('Usuário não autenticado');
       }
 
-      logger.info('🔵 [addCustomCategory] Usuário:', { userId: user.id });
+      logger.info('🔵 [addCustomCategory] Usuário:', { userId: effectiveUserId });
 
       const categoryToAdd = category.startsWith('Crie sua categoria: ') ? category : `Crie sua categoria: ${category}`;
       logger.info('🔵 [addCustomCategory] Categoria formatada:', { categoryToAdd });
@@ -1105,7 +1108,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       }
 
       logger.info('🔵 [addCustomCategory] Tentando inserir no banco...', {
-        user_id: user.id,
+        user_id: effectiveUserId,
         type,
         name: categoryToAdd
       });
@@ -1113,7 +1116,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       const { data, error } = await supabase
         .from('custom_categories')
         .insert({
-          user_id: user.id,
+          user_id: effectiveUserId,
           type,
           name: categoryToAdd
         })
@@ -1161,7 +1164,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     newName: string
   ) => {
     try {
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user || !effectiveUserId) throw new Error('Usuário não autenticado');
 
       const categoryToUpdate = newName.startsWith('Crie sua categoria: ') ? newName : `Crie sua categoria: ${newName}`;
       
@@ -1169,7 +1172,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       const { error: updateError } = await supabase
         .from('custom_categories')
         .update({ name: categoryToUpdate })
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .eq('type', type)
         .eq('name', oldName);
 
@@ -1179,7 +1182,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       const { error: transError } = await supabase
         .from('emp_transactions')
         .update({ category: categoryToUpdate })
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .eq('category', oldName);
 
       if (transError) logger.error('Erro ao atualizar transações:', transError);
@@ -1188,7 +1191,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       const { error: recurringError } = await supabase
         .from('emp_recurring_expenses')
         .update({ category: categoryToUpdate })
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .eq('category', oldName);
 
       if (recurringError) logger.error('Erro ao atualizar despesas recorrentes:', recurringError);
@@ -1216,20 +1219,20 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
   const deleteCustomCategory = async (type: 'income' | 'expense', categoryName: string): Promise<boolean> => {
     try {
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user || !effectiveUserId) throw new Error('Usuário não autenticado');
 
       // Verificar se categoria está em uso
       const { data: transactionsInUse } = await supabase
         .from('emp_transactions')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .eq('category', categoryName)
         .limit(1);
 
       const { data: recurringInUse } = await supabase
         .from('emp_recurring_expenses')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .eq('category', categoryName)
         .limit(1);
 
@@ -1243,7 +1246,7 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
       const { error } = await supabase
         .from('custom_categories')
         .delete()
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .eq('type', type)
         .eq('name', categoryName);
 
