@@ -9,6 +9,7 @@ import { CalendarIcon, Plus, TrendingUp } from 'lucide-react';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
+import { formatNumberFromCentsForInput } from '@/utils/money';
 
 import {
   Dialog,
@@ -53,13 +54,13 @@ import { tooltipContent } from '@/data/tooltipContent';
 import { cn } from '@/lib/utils';
 import { sanitizeText } from '@/utils/xssSanitizer';
 
-// Definir o schema de validação para o formulário
+// Schema valida centavos (inteiros)
 const investmentFormSchema = z.object({
   name: z.string().min(1, 'O nome é obrigatório'),
   type: z.string().min(1, 'O tipo é obrigatório'),
-  value: z.coerce.number().min(1, 'O valor deve ser maior que zero'),
+  valueCents: z.number().int().min(1, 'O valor deve ser maior que zero'),
   installments: z.coerce.number().int().min(1, 'Mínimo de 1 parcela'),
-  installmentValue: z.coerce.number().min(1, 'O valor da parcela deve ser maior que zero'),
+  installmentValueCents: z.number().int().min(1, 'O valor da parcela deve ser maior que zero'),
   startDate: z.date(),
   customType: z.string().optional(),
   description: z.string().optional(),
@@ -78,8 +79,10 @@ export interface Investment {
   name: string;
   type: string;
   value: number;
+  valueCents?: number;
   installments: number;
   installmentValue: number;
+  installmentValueCents?: number;
   startDate: Date;
   paidInstallments: number;
   description?: string;
@@ -98,6 +101,17 @@ const INVESTMENT_TYPES = [
   'Outros'
 ];
 
+/** Extrai dígitos e converte para centavos */
+function inputToCents(raw: string): number {
+  const digits = raw.replace(/\D/g, '');
+  return digits ? parseInt(digits, 10) : 0;
+}
+
+/** Formata centavos para string de input */
+function centsToInput(cents: number): string {
+  return cents > 0 ? formatNumberFromCentsForInput(cents) : '';
+}
+
 const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
   open,
   onOpenChange,
@@ -106,23 +120,18 @@ const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
   const { addInvestment, updateInvestment } = useBusiness();
   const [isCustomType, setIsCustomType] = useState(false);
 
-  // Inicializar o formulário
+  // Inputs formatados (display only)
+  const [valueInput, setValueInput] = useState('');
+  const [installmentValueInput, setInstallmentValueInput] = useState('');
+
   const form = useForm<InvestmentFormValues>({
     resolver: zodResolver(investmentFormSchema),
-    defaultValues: editingInvestment ? {
-      name: editingInvestment.name,
-      type: editingInvestment.type,
-      value: editingInvestment.value,
-      installments: editingInvestment.installments,
-      installmentValue: editingInvestment.installmentValue,
-      startDate: editingInvestment.startDate,
-      description: editingInvestment.description,
-    } : {
+    defaultValues: {
       name: '',
       type: '',
-      value: 0,
+      valueCents: 0,
       installments: 1,
-      installmentValue: 0,
+      installmentValueCents: 0,
       startDate: new Date(),
     }
   });
@@ -134,42 +143,76 @@ const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
         form.reset({
           name: '',
           type: '',
-          value: 0,
+          valueCents: 0,
           installments: 1,
-          installmentValue: 0,
+          installmentValueCents: 0,
           startDate: new Date(),
         });
+        setValueInput('');
+        setInstallmentValueInput('');
         setIsCustomType(false);
       } else {
+        const vCents = editingInvestment.valueCents ?? Math.round(editingInvestment.value * 100);
+        const ivCents = editingInvestment.installmentValueCents ?? Math.round(editingInvestment.installmentValue * 100);
         form.reset({
           name: editingInvestment.name,
           type: editingInvestment.type,
-          value: editingInvestment.value,
+          valueCents: vCents,
           installments: editingInvestment.installments,
-          installmentValue: editingInvestment.installmentValue,
+          installmentValueCents: ivCents,
           startDate: editingInvestment.startDate,
           description: editingInvestment.description || '',
         });
+        setValueInput(centsToInput(vCents));
+        setInstallmentValueInput(centsToInput(ivCents));
         setIsCustomType(editingInvestment.type === 'custom');
       }
     }
   }, [open, form, editingInvestment]);
 
-  // Função para ajustar valores relacionados quando um campo é alterado
-  const handleValueChange = (value: number, field: 'value' | 'installments' | 'installmentValue') => {
-    const currentInstallments = field === 'installments' ? value : form.getValues('installments');
-    const currentValue = field === 'value' ? value : form.getValues('value');
-    const currentInstallmentValue = field === 'installmentValue' ? value : form.getValues('installmentValue');
+  // Recalcula parcela ou total quando um campo muda
+  const recalculate = (field: 'value' | 'installments' | 'installmentValue', newCents?: number) => {
+    const installments = field === 'installments'
+      ? (newCents ?? form.getValues('installments'))
+      : form.getValues('installments');
+    const totalCents = field === 'value'
+      ? (newCents ?? form.getValues('valueCents'))
+      : form.getValues('valueCents');
+    const partCents = field === 'installmentValue'
+      ? (newCents ?? form.getValues('installmentValueCents'))
+      : form.getValues('installmentValueCents');
 
     if (field === 'value' || field === 'installments') {
-      // Se alterar valor total ou número de parcelas, recalcula valor da parcela
-      if (currentInstallments > 0) {
-        form.setValue('installmentValue', parseFloat((currentValue / currentInstallments).toFixed(2)));
+      if (installments > 0 && totalCents > 0) {
+        const newPartCents = Math.round(totalCents / installments);
+        form.setValue('installmentValueCents', newPartCents);
+        setInstallmentValueInput(centsToInput(newPartCents));
       }
     } else if (field === 'installmentValue') {
-      // Se alterar valor da parcela, recalcula valor total
-      form.setValue('value', parseFloat((currentInstallmentValue * currentInstallments).toFixed(2)));
+      const newTotalCents = partCents * installments;
+      form.setValue('valueCents', newTotalCents);
+      setValueInput(centsToInput(newTotalCents));
     }
+  };
+
+  const handleValueInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const cents = inputToCents(e.target.value);
+    form.setValue('valueCents', cents);
+    setValueInput(cents > 0 ? formatNumberFromCentsForInput(cents) : '');
+    recalculate('value', cents);
+  };
+
+  const handleInstallmentValueInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const cents = inputToCents(e.target.value);
+    form.setValue('installmentValueCents', cents);
+    setInstallmentValueInput(cents > 0 ? formatNumberFromCentsForInput(cents) : '');
+    recalculate('installmentValue', cents);
+  };
+
+  const handleInstallmentsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(e.target.value) || 0;
+    form.setValue('installments', val);
+    recalculate('installments', val);
   };
 
   // Enviar o formulário
@@ -183,9 +226,11 @@ const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
         id: editingInvestment?.id || uuidv4(),
         name: sanitizeText(data.name),
         type: finalType,
-        value: data.value,
+        value: data.valueCents / 100,
+        valueCents: data.valueCents,
         installments: data.installments,
-        installmentValue: data.installmentValue,
+        installmentValue: data.installmentValueCents / 100,
+        installmentValueCents: data.installmentValueCents,
         startDate: data.startDate,
         paidInstallments: editingInvestment?.paidInstallments || 0,
         description: data.description ? sanitizeText(data.description) : undefined,
@@ -322,25 +367,20 @@ const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
                       </Label>
                       <FormField
                         control={form.control}
-                        name="value"
-                        render={({ field }) => (
+                        name="valueCents"
+                        render={() => (
                           <FormItem>
                             <FormControl>
                               <div className="relative">
                                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
                                 <Input 
                                   id="value"
-                                  type="number" 
-                                  step="0.01" 
-                                  min="0" 
+                                  type="text"
+                                  inputMode="numeric"
                                   placeholder="0,00"
                                   className="text-right bg-gray-50 border-gray-200 pl-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                  {...field}
-                                  onChange={(e) => {
-                                    const value = parseFloat(e.target.value);
-                                    field.onChange(value);
-                                    handleValueChange(value, 'value');
-                                  }}
+                                  value={valueInput}
+                                  onChange={handleValueInputChange}
                                 />
                               </div>
                             </FormControl>
@@ -368,11 +408,10 @@ const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
                                 min="1"
                                 placeholder="1"
                                 className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                {...field}
+                                value={field.value || ''}
                                 onChange={(e) => {
-                                  const value = parseInt(e.target.value);
-                                  field.onChange(value);
-                                  handleValueChange(value, 'installments');
+                                  field.onChange(parseInt(e.target.value) || 0);
+                                  handleInstallmentsChange(e);
                                 }}
                               />
                             </FormControl>
@@ -392,25 +431,20 @@ const AddInvestmentModal: React.FC<AddInvestmentModalProps> = ({
                       </Label>
                       <FormField
                         control={form.control}
-                        name="installmentValue"
-                        render={({ field }) => (
+                        name="installmentValueCents"
+                        render={() => (
                           <FormItem>
                             <FormControl>
                               <div className="relative">
                                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
                                 <Input 
                                   id="installmentValue"
-                                  type="number" 
-                                  step="0.01" 
-                                  min="0"
+                                  type="text"
+                                  inputMode="numeric"
                                   placeholder="0,00"
                                   className="text-right bg-gray-50 border-gray-200 pl-10"
-                                  {...field}
-                                  onChange={(e) => {
-                                    const value = parseFloat(e.target.value);
-                                    field.onChange(value);
-                                    handleValueChange(value, 'installmentValue');
-                                  }}
+                                  value={installmentValueInput}
+                                  onChange={handleInstallmentValueInputChange}
                                 />
                               </div>
                             </FormControl>
