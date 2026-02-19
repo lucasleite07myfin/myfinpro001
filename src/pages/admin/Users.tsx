@@ -1,7 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,8 +35,6 @@ interface UserData {
 }
 
 const AdminUsers = () => {
-  const { user } = useAuth();
-  const { isAdmin, loading: roleLoading } = useUserRole();
   const [users, setUsers] = useState<UserData[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,10 +65,8 @@ const AdminUsers = () => {
   };
 
   useEffect(() => {
-    if (user && isAdmin && !roleLoading) {
-      fetchUsers();
-    }
-  }, [user, isAdmin, roleLoading]);
+    fetchUsers();
+  }, []);
 
   useEffect(() => {
     let filtered = users;
@@ -107,18 +100,6 @@ const AdminUsers = () => {
         return <Badge variant="secondary">Inativo</Badge>;
     }
   };
-
-  if (!user || roleLoading) {
-    return (
-      <AdminLayout>
-        <Skeleton className="h-96" />
-      </AdminLayout>
-    );
-  }
-
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
-  }
 
   return (
     <AdminLayout>

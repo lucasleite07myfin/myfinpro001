@@ -1,7 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import type { DiscountCoupon } from '@/types/subscription';
 import { logger } from '@/utils/logger';
@@ -36,9 +33,6 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const AdminCoupons = () => {
-  const { user } = useAuth();
-  const { isAdmin, loading: roleLoading } = useUserRole();
-  const navigate = useNavigate();
   const [coupons, setCoupons] = useState<DiscountCoupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -68,10 +62,8 @@ const AdminCoupons = () => {
   };
 
   useEffect(() => {
-    if (user && isAdmin && !roleLoading) {
-      fetchCoupons();
-    }
-  }, [user, isAdmin, roleLoading]);
+    fetchCoupons();
+  }, []);
 
   const handleCreateCoupon = async () => {
     if (!code.trim()) {
@@ -139,20 +131,6 @@ const AdminCoupons = () => {
     if (!dateString) return 'Sem limite';
     return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
   };
-
-  // Aguardar tanto user quanto roleLoading
-  if (!user || roleLoading) {
-    return (
-      <div className="container mx-auto max-w-6xl p-4 space-y-6">
-        <Skeleton className="h-12 w-64" />
-        <Skeleton className="h-96" />
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
-  }
 
   return (
     <AdminLayout>
