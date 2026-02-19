@@ -1,74 +1,91 @@
 
-# Deduplicar updateMonthlyData com Debounce
+# Evitar Duplicacao de Transacao ao Marcar Despesa Recorrente como Paga
 
 ## Problema
 
-`updateMonthlyData()` e chamada multiplas vezes por operacao:
-
-- `addTransaction`: chamada direta (linha 294) + useEffect (linha 1109) = **2x**
-- `editTransaction`: chamada direta (linha 324) + useEffect = **2x**
-- `deleteTransaction`: chamada direta (linha 341) + useEffect = **2x**
-- `markRecurringExpenseAsPaid`: chama addTransaction/deleteTransaction (que ja chamam updateMonthlyData) + chamada propria (linha 744) + useEffect = **ate 3x**
-
-Isso gera writes desnecessarios no banco e lag na UI.
+Quando o usuario clica rapidamente no botao de marcar despesa recorrente como paga, a funcao `markRecurringExpenseAsPaid` pode ser chamada multiplas vezes antes que o estado `transactions` atualize, criando transacoes duplicadas.
 
 ## Solucao
 
-1. Remover todas as 4 chamadas diretas de `updateMonthlyData()` apos CRUD
-2. Manter somente o `useEffect` (linha 1109) como unico ponto de atualizacao
-3. Adicionar debounce de 500ms no useEffect, com cancelamento se `transactions` mudar novamente
-4. Nao executar durante `loading === true`
+### Frente 1: Guard no front-end (FinanceContext.tsx)
+
+Antes de chamar `addTransaction` dentro de `markRecurringExpenseAsPaid`, consultar o banco para verificar se ja existe uma transacao com `recurring_expense_id = id` no mes em questao. Se existir, pular a criacao.
+
+Alem disso, adicionar um flag `useRef` de "em processamento" para bloquear chamadas concorrentes na mesma despesa.
+
+### Frente 2: Unique index no banco (protecao definitiva)
+
+Criar um indice parcial unico para garantir que, mesmo com race conditions, o banco rejeite duplicatas.
 
 ## Secao Tecnica
 
-### Passo 1: Remover chamadas diretas
+### Arquivo: `src/contexts/FinanceContext.tsx`
 
-Remover `updateMonthlyData();` nas linhas:
-- 294 (apos addTransaction)
-- 324 (apos editTransaction)
-- 341 (apos deleteTransaction)
-- 744 (apos markRecurringExpenseAsPaid)
-
-### Passo 2: Adicionar useRef para debounce e refatorar useEffect
+**1. Adicionar ref de lock (junto aos outros useRef):**
 
 ```typescript
-import { useRef } from 'react';
-
-// Dentro do provider, junto com os outros estados:
-const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-// Substituir o useEffect atual (linhas 1108-1111):
-useEffect(() => {
-  if (loading) return;
-
-  if (debounceTimerRef.current) {
-    clearTimeout(debounceTimerRef.current);
-  }
-
-  debounceTimerRef.current = setTimeout(() => {
-    updateMonthlyData();
-  }, 500);
-
-  return () => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-  };
-}, [transactions, currentMonth]);
+const markingPaidRef = useRef<Set<string>>(new Set());
 ```
 
-### Passo 3: Cleanup no unmount
+**2. Refatorar `markRecurringExpenseAsPaid` (linhas 686-745):**
 
-O `return` do useEffect ja cuida do cleanup. Nenhuma acao adicional necessaria.
+No bloco `if (paid && !isAlreadyPaid)` (linha 714), antes de chamar `addTransaction`:
 
-### Resultado
+```typescript
+// Lock para evitar duplo-clique
+const lockKey = `${id}_${month}`;
+if (markingPaidRef.current.has(lockKey)) return;
+markingPaidRef.current.add(lockKey);
 
-| Antes | Depois |
-|-------|--------|
-| 2-3 chamadas por operacao | 1 chamada com debounce de 500ms |
-| Writes duplicados no banco | Write unico apos estabilizacao |
-| Lag na UI por reprocessamento | UI responsiva |
+try {
+  // ... logica existente de paidMonths ...
 
-### Arquivo afetado
+  if (paid && !isAlreadyPaid) {
+    // Verificar no banco se ja existe transacao para este recurring+mes
+    const monthStart = `${month}-01`;
+    const monthEnd = month.split('-')[1] === '12' 
+      ? `${parseInt(month.split('-')[0]) + 1}-01-01`
+      : `${month.split('-')[0]}-${String(parseInt(month.split('-')[1]) + 1).padStart(2, '0')}-01`;
 
-- `src/contexts/FinanceContext.tsx`
+    const { data: existing } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('recurring_expense_id', id)
+      .gte('date', monthStart)
+      .lt('date', monthEnd)
+      .limit(1);
+
+    if (!existing || existing.length === 0) {
+      // Criar transacao apenas se nao existir
+      const amount = getMonthlyExpenseValue(id, month) || expense.amount;
+      if (amount > 0) {
+        // ... addTransaction como ja esta ...
+      }
+    }
+  }
+  // ... resto da logica (desmarcar) ...
+} finally {
+  markingPaidRef.current.delete(lockKey);
+}
+```
+
+**3. Mover o lock para o inicio da funcao**, antes de qualquer operacao, e o `finally` ao final do bloco try/catch principal.
+
+### Migracao SQL: Unique index parcial
+
+```sql
+CREATE UNIQUE INDEX idx_unique_recurring_transaction_per_month
+ON public.transactions (user_id, recurring_expense_id, date_trunc('month', date::timestamp))
+WHERE recurring_expense_id IS NOT NULL;
+```
+
+Isso garante que mesmo com race conditions no front, o banco rejeita a segunda insercao.
+
+### Resumo
+
+| Camada | Protecao |
+|--------|----------|
+| Front-end (ref lock) | Bloqueia duplo-clique na mesma sessao |
+| Front-end (query check) | Verifica no banco antes de inserir |
+| Banco (unique index) | Rejeita duplicata mesmo com concorrencia |
