@@ -10,10 +10,20 @@ function centsToDbDecimal(cents: number): string {
   return (cents / 100).toFixed(2);
 }
 
+/**
+ * Resolve centavos preferindo a coluna _cents (BIGINT) quando disponível e > 0,
+ * com fallback para ROUND(legacyDecimal * 100).
+ */
+function resolveDbCents(centsCol: unknown, legacyCol: unknown): number {
+  const fromCents = typeof centsCol === 'number' && centsCol > 0 ? centsCol : 0;
+  if (fromCents > 0) return fromCents;
+  return centsFromUnknownDbValue(legacyCol);
+}
+
 // ==================== FORMATTERS ====================
 
 const formatTransaction = (t: any): Transaction => {
-  const amountCents = centsFromUnknownDbValue(t.amount);
+  const amountCents = resolveDbCents(t.amount_cents, t.amount);
   return {
     id: t.id,
     date: parseDateFromDB(t.date),
@@ -34,7 +44,7 @@ const formatTransaction = (t: any): Transaction => {
 };
 
 const formatRecurringExpense = (e: any): RecurringExpense => {
-  const amountCents = centsFromUnknownDbValue(e.amount);
+  const amountCents = resolveDbCents(e.amount_cents, e.amount);
   const rawMonthly = (e.monthly_values as Record<string, number>) || {};
   const monthlyValuesCents: Record<string, number> = {};
   for (const [k, v] of Object.entries(rawMonthly)) {
@@ -58,8 +68,8 @@ const formatRecurringExpense = (e: any): RecurringExpense => {
 };
 
 const formatGoal = (g: any): Goal => {
-  const targetAmountCents = centsFromUnknownDbValue(g.target_amount);
-  const currentAmountCents = centsFromUnknownDbValue(g.current_amount);
+  const targetAmountCents = resolveDbCents(g.target_amount_cents, g.target_amount);
+  const currentAmountCents = resolveDbCents(g.current_amount_cents, g.current_amount);
   return {
     id: g.id,
     name: g.name,
@@ -73,9 +83,13 @@ const formatGoal = (g: any): Goal => {
 };
 
 const formatAsset = (a: any): Asset => {
-  const valueCents = centsFromUnknownDbValue(a.value);
-  const acquisitionValueCents = a.acquisition_value ? centsFromUnknownDbValue(a.acquisition_value) : undefined;
-  const lastPriceBrlCents = a.last_price_brl ? centsFromUnknownDbValue(a.last_price_brl) : undefined;
+  const valueCents = resolveDbCents(a.value_cents, a.value);
+  const acquisitionValueCents = a.acquisition_value != null
+    ? resolveDbCents(a.acquisition_value_cents, a.acquisition_value)
+    : undefined;
+  const lastPriceBrlCents = a.last_price_brl != null
+    ? resolveDbCents(a.last_price_brl_cents, a.last_price_brl)
+    : undefined;
   return {
     id: a.id,
     name: a.name,
@@ -83,7 +97,7 @@ const formatAsset = (a: any): Asset => {
     value: valueCents / 100,
     valueCents,
     evaluationDate: a.evaluation_date ? parseDateFromDB(a.evaluation_date) : undefined,
-    acquisitionValue: acquisitionValueCents ? acquisitionValueCents / 100 : undefined,
+    acquisitionValue: acquisitionValueCents !== undefined ? acquisitionValueCents / 100 : undefined,
     acquisitionValueCents,
     acquisitionDate: a.acquisition_date ? parseDateFromDB(a.acquisition_date) : null,
     insured: a.insured || false,
@@ -92,14 +106,14 @@ const formatAsset = (a: any): Asset => {
     notes: a.notes,
     location: a.location,
     lastUpdated: a.last_updated ? parseDateFromDB(a.last_updated) : undefined,
-    lastPriceBrl: lastPriceBrlCents ? lastPriceBrlCents / 100 : undefined,
+    lastPriceBrl: lastPriceBrlCents !== undefined ? lastPriceBrlCents / 100 : undefined,
     lastPriceBrlCents,
     quantity: a.quantity ? Number(a.quantity) : undefined
   };
 };
 
 const formatLiability = (l: any): Liability => {
-  const valueCents = centsFromUnknownDbValue(l.value);
+  const valueCents = resolveDbCents(l.value_cents, l.value);
   return {
     id: l.id,
     name: l.name,
@@ -110,8 +124,8 @@ const formatLiability = (l: any): Liability => {
 };
 
 const formatMonthlyData = (m: any): MonthlyFinanceData => {
-  const incomeTotalCents = centsFromUnknownDbValue(m.income_total);
-  const expenseTotalCents = centsFromUnknownDbValue(m.expense_total);
+  const incomeTotalCents = resolveDbCents(m.income_total_cents, m.income_total);
+  const expenseTotalCents = resolveDbCents(m.expense_total_cents, m.expense_total);
   return {
     month: m.month,
     incomeTotal: incomeTotalCents / 100,
@@ -172,6 +186,7 @@ export const fetchTransactions = async (userId: string): Promise<ServiceResult<T
 };
 
 export const insertTransaction = async (userId: string, transaction: Omit<Transaction, 'id'>): Promise<ServiceResult<Transaction>> => {
+  const amountCents = transaction.amountCents ?? centsFromUnknownDbValue(transaction.amount);
   const { data, error } = await supabase
     .from('emp_transactions')
     .insert({
@@ -179,7 +194,8 @@ export const insertTransaction = async (userId: string, transaction: Omit<Transa
       date: formatDateToDB(transaction.date),
       description: transaction.description,
       category: transaction.category,
-      amount: parseFloat(centsToDbDecimal(transaction.amountCents ?? Math.round(transaction.amount * 100))),
+      amount: Number(centsToDbDecimal(amountCents)),
+      amount_cents: amountCents,
       type: transaction.type,
       payment_method: transaction.paymentMethod,
       source: transaction.source,
@@ -198,13 +214,15 @@ export const insertTransaction = async (userId: string, transaction: Omit<Transa
 };
 
 export const updateTransaction = async (transaction: Transaction): Promise<ServiceResult<void>> => {
+  const amountCents = transaction.amountCents ?? centsFromUnknownDbValue(transaction.amount);
   const { error } = await supabase
     .from('emp_transactions')
     .update({
       date: formatDateToDB(transaction.date),
       description: transaction.description,
       category: transaction.category,
-      amount: parseFloat(centsToDbDecimal(transaction.amountCents ?? Math.round(transaction.amount * 100))),
+      amount: Number(centsToDbDecimal(amountCents)),
+      amount_cents: amountCents,
       type: transaction.type,
       payment_method: transaction.paymentMethod,
       source: transaction.source,
@@ -238,13 +256,15 @@ export const fetchRecurringExpenses = async (userId: string): Promise<ServiceRes
 export const insertRecurringExpense = async (
   userId: string, expense: Omit<RecurringExpense, 'id' | 'isPaid' | 'paidMonths' | 'createdAt'>
 ): Promise<ServiceResult<RecurringExpense>> => {
+  const amountCents = expense.amountCents ?? centsFromUnknownDbValue(expense.amount);
   const { data, error } = await supabase
     .from('emp_recurring_expenses')
     .insert({
       user_id: userId,
       description: expense.description,
       category: expense.category,
-      amount: parseFloat(centsToDbDecimal(expense.amountCents ?? Math.round(expense.amount * 100))),
+      amount: Number(centsToDbDecimal(amountCents)),
+      amount_cents: amountCents,
       due_day: expense.dueDay,
       payment_method: expense.paymentMethod,
       repeat_months: expense.repeatMonths || 12,
@@ -260,12 +280,14 @@ export const insertRecurringExpense = async (
 };
 
 export const updateRecurringExpense = async (expense: RecurringExpense): Promise<ServiceResult<void>> => {
+  const amountCents = expense.amountCents ?? centsFromUnknownDbValue(expense.amount);
   const { error } = await supabase
     .from('emp_recurring_expenses')
     .update({
       description: expense.description,
       category: expense.category,
-      amount: parseFloat(centsToDbDecimal(expense.amountCents ?? Math.round(expense.amount * 100))),
+      amount: Number(centsToDbDecimal(amountCents)),
+      amount_cents: amountCents,
       due_day: expense.dueDay,
       payment_method: expense.paymentMethod,
       repeat_months: expense.repeatMonths,
@@ -312,13 +334,17 @@ export const fetchGoals = async (userId: string): Promise<ServiceResult<Goal[]>>
 };
 
 export const insertGoal = async (userId: string, goal: Omit<Goal, 'id'>): Promise<ServiceResult<Goal>> => {
+  const targetCents = goal.targetAmountCents ?? centsFromUnknownDbValue(goal.targetAmount);
+  const currentCents = goal.currentAmountCents ?? centsFromUnknownDbValue(goal.currentAmount || 0);
   const { data, error } = await supabase
     .from('emp_goals')
     .insert({
       user_id: userId,
       name: goal.name,
-      target_amount: goal.targetAmount,
-      current_amount: goal.currentAmount || 0,
+      target_amount: Number(centsToDbDecimal(targetCents)),
+      target_amount_cents: targetCents,
+      current_amount: Number(centsToDbDecimal(currentCents)),
+      current_amount_cents: currentCents,
       target_date: formatDateToDB(goal.targetDate),
       saving_location: goal.savingLocation
     })
@@ -326,7 +352,7 @@ export const insertGoal = async (userId: string, goal: Omit<Goal, 'id'>): Promis
     .single();
 
   if (error) return { data: null, error: error.message };
-  return { data: { ...goal, id: data.id }, error: null };
+  return { data: formatGoal(data), error: null };
 };
 
 export const removeGoal = async (id: string, userId: string): Promise<ServiceResult<void>> => {
@@ -344,47 +370,59 @@ export const fetchAssets = async (userId: string): Promise<ServiceResult<Asset[]
 };
 
 export const insertAsset = async (userId: string, asset: Omit<Asset, 'id'>): Promise<ServiceResult<Asset>> => {
+  const vCents = asset.valueCents ?? centsFromUnknownDbValue(asset.value);
+  const avCents = asset.acquisitionValueCents ?? (asset.acquisitionValue != null ? centsFromUnknownDbValue(asset.acquisitionValue) : 0);
+  const lpCents = asset.lastPriceBrlCents ?? (asset.lastPriceBrl != null ? centsFromUnknownDbValue(asset.lastPriceBrl) : 0);
   const { data, error } = await supabase
     .from('emp_assets')
     .insert({
       user_id: userId,
       name: asset.name,
       type: asset.type,
-      value: asset.value,
+      value: Number(centsToDbDecimal(vCents)),
+      value_cents: vCents,
       evaluation_date: asset.evaluationDate ? formatDateToDB(asset.evaluationDate) : null,
-      acquisition_value: asset.acquisitionValue,
+      acquisition_value: avCents > 0 ? Number(centsToDbDecimal(avCents)) : asset.acquisitionValue ?? null,
+      acquisition_value_cents: avCents,
       acquisition_date: asset.acquisitionDate ? formatDateToDB(asset.acquisitionDate) : null,
       insured: asset.insured || false,
       wallet: asset.wallet,
       symbol: asset.symbol,
       notes: asset.notes,
       location: asset.location,
-      last_price_brl: asset.lastPriceBrl,
+      last_price_brl: lpCents > 0 ? Number(centsToDbDecimal(lpCents)) : asset.lastPriceBrl ?? null,
+      last_price_brl_cents: lpCents,
       quantity: asset.quantity
     })
     .select()
     .single();
 
   if (error) return { data: null, error: error.message };
-  return { data: { ...asset, id: data.id, lastUpdated: new Date() }, error: null };
+  return { data: formatAsset(data), error: null };
 };
 
 export const updateAssetDB = async (asset: Asset): Promise<ServiceResult<void>> => {
+  const vCents = asset.valueCents ?? centsFromUnknownDbValue(asset.value);
+  const avCents = asset.acquisitionValueCents ?? (asset.acquisitionValue != null ? centsFromUnknownDbValue(asset.acquisitionValue) : 0);
+  const lpCents = asset.lastPriceBrlCents ?? (asset.lastPriceBrl != null ? centsFromUnknownDbValue(asset.lastPriceBrl) : 0);
   const { error } = await supabase
     .from('emp_assets')
     .update({
       name: asset.name,
       type: asset.type,
-      value: asset.value,
+      value: Number(centsToDbDecimal(vCents)),
+      value_cents: vCents,
       evaluation_date: asset.evaluationDate ? formatDateToDB(asset.evaluationDate) : null,
-      acquisition_value: asset.acquisitionValue,
+      acquisition_value: avCents > 0 ? Number(centsToDbDecimal(avCents)) : asset.acquisitionValue ?? null,
+      acquisition_value_cents: avCents,
       acquisition_date: asset.acquisitionDate ? formatDateToDB(asset.acquisitionDate) : null,
       insured: asset.insured,
       wallet: asset.wallet,
       symbol: asset.symbol,
       notes: asset.notes,
       location: asset.location,
-      last_price_brl: asset.lastPriceBrl,
+      last_price_brl: lpCents > 0 ? Number(centsToDbDecimal(lpCents)) : asset.lastPriceBrl ?? null,
+      last_price_brl_cents: lpCents,
       quantity: asset.quantity,
       last_updated: new Date().toISOString()
     })
@@ -409,20 +447,33 @@ export const fetchLiabilities = async (userId: string): Promise<ServiceResult<Li
 };
 
 export const insertLiability = async (userId: string, liability: Omit<Liability, 'id'>): Promise<ServiceResult<Liability>> => {
+  const vCents = liability.valueCents ?? centsFromUnknownDbValue(liability.value);
   const { data, error } = await supabase
     .from('emp_liabilities')
-    .insert({ user_id: userId, name: liability.name, type: liability.type, value: liability.value })
+    .insert({
+      user_id: userId,
+      name: liability.name,
+      type: liability.type,
+      value: Number(centsToDbDecimal(vCents)),
+      value_cents: vCents
+    })
     .select()
     .single();
 
   if (error) return { data: null, error: error.message };
-  return { data: { id: data.id, name: liability.name, type: liability.type, value: liability.value }, error: null };
+  return { data: formatLiability(data), error: null };
 };
 
 export const updateLiabilityDB = async (liability: Liability): Promise<ServiceResult<void>> => {
+  const vCents = liability.valueCents ?? centsFromUnknownDbValue(liability.value);
   const { error } = await supabase
     .from('emp_liabilities')
-    .update({ name: liability.name, type: liability.type, value: liability.value })
+    .update({
+      name: liability.name,
+      type: liability.type,
+      value: Number(centsToDbDecimal(vCents)),
+      value_cents: vCents
+    })
     .eq('id', liability.id);
 
   if (error) return { data: null, error: error.message };
@@ -503,16 +554,19 @@ export const removeSupplier = async (id: string): Promise<ServiceResult<void>> =
 // ==================== INVESTMENTS ====================
 
 export const insertInvestment = async (userId: string, investment: Investment): Promise<ServiceResult<void>> => {
+  const vCents = investment.valueCents ?? Math.round(investment.value * 100);
   const { error } = await supabase
     .from('emp_assets')
     .insert({
       user_id: userId,
       name: investment.name,
       type: 'Investimento',
-      value: investment.value,
+      value: Number(centsToDbDecimal(vCents)),
+      value_cents: vCents,
       notes: JSON.stringify({
         installments: investment.installments,
         installmentValue: investment.installmentValue,
+        installmentValueCents: investment.installmentValueCents,
         startDate: investment.startDate.toISOString(),
         paidInstallments: investment.paidInstallments,
         description: investment.description,
@@ -527,14 +581,17 @@ export const insertInvestment = async (userId: string, investment: Investment): 
 };
 
 export const updateInvestmentDB = async (investment: Investment): Promise<ServiceResult<void>> => {
+  const vCents = investment.valueCents ?? Math.round(investment.value * 100);
   const { error } = await supabase
     .from('emp_assets')
     .update({
       name: investment.name,
-      value: investment.value,
+      value: Number(centsToDbDecimal(vCents)),
+      value_cents: vCents,
       notes: JSON.stringify({
         installments: investment.installments,
         installmentValue: investment.installmentValue,
+        installmentValueCents: investment.installmentValueCents,
         startDate: investment.startDate.toISOString(),
         paidInstallments: investment.paidInstallments,
         description: investment.description,
@@ -560,6 +617,7 @@ export const updateInvestmentInstallments = async (id: string, investment: Inves
       notes: JSON.stringify({
         installments: investment.installments,
         installmentValue: investment.installmentValue,
+        installmentValueCents: investment.installmentValueCents,
         startDate: investment.startDate.toISOString(),
         paidInstallments,
         description: investment.description,
