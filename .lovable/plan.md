@@ -1,40 +1,27 @@
 
-
-# Corrigir exibicao de "&#x2F;" no lugar de "/" em categorias e descricoes
+# Corrigir scroll em dropdowns e listas com barra de rolagem
 
 ## Problema
-A funcao `sanitizeText` em `src/utils/xssSanitizer.ts` codifica a barra `/` como `&#x2F;`. Como o React ja faz escape automatico de texto em JSX, essa codificacao dupla faz com que `&#x2F;` apareca literalmente na tela em vez de `/`.
-
-Isso afeta qualquer texto que contenha `/` e passe por `sanitizeText()`, como:
-- Categorias: "Receita Federal / Prefeitura" aparece como "Receita Federal &#x2F; Prefeitura"
-- Descricoes: "Jardinagem/ Sr. Raimundo" aparece como "Jardinagem&#x2F; Sr. Raimundo"
+O dropdown de categorias (e potencialmente outros que usam `CommandList`) nao permite rolar para ver todas as opcoes. A causa raiz esta no componente `CommandGroup` em `src/components/ui/command.tsx`, que aplica `overflow-hidden` e corta o conteudo rolavel do `CommandList`.
 
 ## Solucao
-Remover a linha `.replace(/\//g, '&#x2F;')` da funcao `sanitizeText`. A barra `/` nao representa risco de XSS em contexto de texto, e o React ja protege automaticamente contra injecao de HTML.
+Alterar o `CommandGroup` para usar `overflow-visible` em vez de `overflow-hidden`, permitindo que o scroll do `CommandList` funcione corretamente.
 
 ## Detalhes tecnicos
 
-**Arquivo:** `src/utils/xssSanitizer.ts`
+**Arquivo:** `src/components/ui/command.tsx`
 
-Remover a ultima linha do bloco de replace na funcao `sanitizeText` (linha 25):
+Na linha 90, dentro do `CommandGroup`, trocar `overflow-hidden` por `overflow-visible`:
+
 ```typescript
-// ANTES
-return sanitized
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#x27;')
-  .replace(/\//g, '&#x2F;');  // <-- remover esta linha
+// ANTES (linha 90)
+"overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 ..."
 
 // DEPOIS
-return sanitized
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#x27;');
+"overflow-visible p-1 text-foreground [&_[cmdk-group-heading]]:px-2 ..."
 ```
 
-Nenhum outro arquivo precisa ser alterado. A correcao resolve o problema em todos os locais que usam `sanitizeText()`.
-
+Essa unica alteracao resolve o problema em todos os componentes que usam `CommandGroup` dentro de um `CommandList`, incluindo:
+- `CategoryCombobox` (dropdown de categorias)
+- `CryptoModal` (selecao de criptomoedas)
+- Qualquer outro combobox que use o padrao Command do shadcn/ui
