@@ -1,91 +1,88 @@
 
-# Evitar Duplicacao de Transacao ao Marcar Despesa Recorrente como Paga
+
+# Lazy Loading dos Providers por Modo
 
 ## Problema
 
-Quando o usuario clica rapidamente no botao de marcar despesa recorrente como paga, a funcao `markRecurringExpenseAsPaid` pode ser chamada multiplas vezes antes que o estado `transactions` atualize, criando transacoes duplicadas.
+`FinanceProvider` e `BusinessProvider` carregam todos os dados do banco ao montar, independente do modo ativo. Se o usuario esta no modo pessoal, o `BusinessProvider` faz queries desnecessarias (transacoes, fornecedores, investimentos, etc), e vice-versa.
 
-## Solucao
+## Restricao Importante
 
-### Frente 1: Guard no front-end (FinanceContext.tsx)
+24 componentes chamam `useFinance()` e `useBusiness()` incondicionalmente (regra de hooks do React). Remover um provider da arvore quebraria esses hooks. Por isso, os dois providers continuam montados, mas so carregam dados quando o modo correspondente esta ativo.
 
-Antes de chamar `addTransaction` dentro de `markRecurringExpenseAsPaid`, consultar o banco para verificar se ja existe uma transacao com `recurring_expense_id = id` no mes em questao. Se existir, pular a criacao.
-
-Alem disso, adicionar um flag `useRef` de "em processamento" para bloquear chamadas concorrentes na mesma despesa.
-
-### Frente 2: Unique index no banco (protecao definitiva)
-
-Criar um indice parcial unico para garantir que, mesmo com race conditions, o banco rejeite duplicatas.
-
-## Secao Tecnica
+## Solucao: Providers Lazy por Modo
 
 ### Arquivo: `src/contexts/FinanceContext.tsx`
 
-**1. Adicionar ref de lock (junto aos outros useRef):**
+1. Importar `useAppMode` de `@/contexts/AppModeContext`
+2. No `useEffect` de `loadData` (linha ~95), adicionar condicao: so carregar se `mode === 'personal'`
+3. Quando `mode` mudar para `personal`, disparar `loadData`
+4. Quando `mode` mudar para `business`, limpar estado (reset arrays para `[]`, `loading` para `true`)
 
 ```typescript
-const markingPaidRef = useRef<Set<string>>(new Set());
-```
+const { mode } = useAppMode();
 
-**2. Refatorar `markRecurringExpenseAsPaid` (linhas 686-745):**
-
-No bloco `if (paid && !isAlreadyPaid)` (linha 714), antes de chamar `addTransaction`:
-
-```typescript
-// Lock para evitar duplo-clique
-const lockKey = `${id}_${month}`;
-if (markingPaidRef.current.has(lockKey)) return;
-markingPaidRef.current.add(lockKey);
-
-try {
-  // ... logica existente de paidMonths ...
-
-  if (paid && !isAlreadyPaid) {
-    // Verificar no banco se ja existe transacao para este recurring+mes
-    const monthStart = `${month}-01`;
-    const monthEnd = month.split('-')[1] === '12' 
-      ? `${parseInt(month.split('-')[0]) + 1}-01-01`
-      : `${month.split('-')[0]}-${String(parseInt(month.split('-')[1]) + 1).padStart(2, '0')}-01`;
-
-    const { data: existing } = await supabase
-      .from('transactions')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('recurring_expense_id', id)
-      .gte('date', monthStart)
-      .lt('date', monthEnd)
-      .limit(1);
-
-    if (!existing || existing.length === 0) {
-      // Criar transacao apenas se nao existir
-      const amount = getMonthlyExpenseValue(id, month) || expense.amount;
-      if (amount > 0) {
-        // ... addTransaction como ja esta ...
-      }
-    }
+useEffect(() => {
+  if (user && mode === 'personal') {
+    loadData();
+    const timer = setTimeout(() => loadSecondaryData(), 500);
+    return () => clearTimeout(timer);
+  } else if (mode !== 'personal') {
+    // Reset state quando sai do modo pessoal
+    setTransactions([]);
+    setRecurringExpenses([]);
+    setGoals([]);
+    setAssets([]);
+    setLiabilities([]);
+    setMonthlyData(generateMonthlyData());
+    setLoading(true);
+    setSecondaryDataLoaded(false);
   }
-  // ... resto da logica (desmarcar) ...
-} finally {
-  markingPaidRef.current.delete(lockKey);
-}
+}, [user?.id, mode]);
 ```
 
-**3. Mover o lock para o inicio da funcao**, antes de qualquer operacao, e o `finally` ao final do bloco try/catch principal.
+### Arquivo: `src/contexts/BusinessContext.tsx`
 
-### Migracao SQL: Unique index parcial
+1. Importar `useAppMode` de `@/contexts/AppModeContext`
+2. No `useEffect` de `loadData` (linha ~142), adicionar condicao: so carregar se `mode === 'business'`
+3. Quando `mode` mudar para `business`, disparar `loadData`
+4. Quando `mode` mudar para `personal`, limpar estado
 
-```sql
-CREATE UNIQUE INDEX idx_unique_recurring_transaction_per_month
-ON public.transactions (user_id, recurring_expense_id, date_trunc('month', date::timestamp))
-WHERE recurring_expense_id IS NOT NULL;
+```typescript
+const { mode } = useAppMode();
+
+useEffect(() => {
+  if (user && effectiveUserId && mode === 'business') {
+    loadData();
+  } else if (mode !== 'business') {
+    setTransactions([]);
+    setRecurringExpenses([]);
+    setGoals([]);
+    setAssets([]);
+    setLiabilities([]);
+    setSuppliers([]);
+    setInvestments([]);
+    setMonthlyData([]);
+    setLoading(true);
+  }
+}, [user?.id, effectiveUserId, mode]);
 ```
 
-Isso garante que mesmo com race conditions no front, o banco rejeita a segunda insercao.
+### Debounce existente no FinanceContext
 
-### Resumo
+O `useEffect` com debounce que chama `updateMonthlyData` (ja implementado) precisa tambem respeitar o modo. Adicionar guard `if (mode !== 'personal') return;` antes do debounce.
 
-| Camada | Protecao |
-|--------|----------|
-| Front-end (ref lock) | Bloqueia duplo-clique na mesma sessao |
-| Front-end (query check) | Verifica no banco antes de inserir |
-| Banco (unique index) | Rejeita duplicata mesmo com concorrencia |
+## Resultado
+
+| Cenario | Antes | Depois |
+|---------|-------|--------|
+| Modo pessoal | 2 providers carregam dados | Apenas FinanceProvider carrega |
+| Modo empresarial | 2 providers carregam dados | Apenas BusinessProvider carrega |
+| Troca de modo | Dados ja carregados (mas stale) | Recarrega dados frescos do banco |
+| Memoria | 2x dados em RAM | 1x dados em RAM |
+
+## Arquivos Afetados
+
+- `src/contexts/FinanceContext.tsx`
+- `src/contexts/BusinessContext.tsx`
+
