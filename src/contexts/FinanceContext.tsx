@@ -4,6 +4,7 @@ import { getCurrentMonth, parseDateFromDB, formatDateToDB } from '@/utils/format
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
+import { useAppMode } from '@/contexts/AppModeContext';
 import { logger } from '@/utils/logger';
 
 // Gerar dados de 12 meses para o gráfico
@@ -78,6 +79,7 @@ interface FinanceProviderProps {
 
 export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) => {
   const { user } = useUser();
+  const { mode } = useAppMode();
   
   // Estado principal da aplicação
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -91,9 +93,9 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const [secondaryDataLoaded, setSecondaryDataLoaded] = useState(false);
 
-  // Carregar dados do Supabase quando user estiver disponível
+  // Carregar dados do Supabase apenas quando modo pessoal está ativo
   useEffect(() => {
-    if (user) {
+    if (user && mode === 'personal') {
       loadData();
       
       // Carrega dados secundários após 500ms
@@ -102,8 +104,18 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       }, 500);
       
       return () => clearTimeout(timer);
+    } else if (mode !== 'personal') {
+      // Reset state quando sai do modo pessoal
+      setTransactions([]);
+      setRecurringExpenses([]);
+      setGoals([]);
+      setAssets([]);
+      setLiabilities([]);
+      setMonthlyData(generateMonthlyData());
+      setLoading(true);
+      setSecondaryDataLoaded(false);
     }
-  }, [user?.id]);
+  }, [user?.id, mode]);
 
   // Carrega dados ESSENCIAIS (apenas o que é necessário para a tela inicial)
   const loadData = async () => {
@@ -1134,7 +1146,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
   // Atualiza os dados quando as transações mudam (com debounce)
   useEffect(() => {
-    if (loading) return;
+    if (loading || mode !== 'personal') return;
 
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);

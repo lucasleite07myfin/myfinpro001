@@ -7,6 +7,7 @@ import { getCurrentMonth, parseDateFromDB, formatDateToDB } from '@/utils/format
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
 import { useSubAccount } from '@/contexts/SubAccountContext';
+import { useAppMode } from '@/contexts/AppModeContext';
 import { logger } from '@/utils/logger';
 
 // Add Investment to the interface
@@ -137,13 +138,26 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Usar useUser para obter o user autenticado
   const { user } = useUser();
   const { isSubAccount, ownerId } = useSubAccount();
+  const { mode } = useAppMode();
   const effectiveUserId = isSubAccount && ownerId ? ownerId : user?.id;
 
+  // Carregar dados apenas quando modo business está ativo
   useEffect(() => {
-    if (user && effectiveUserId) {
+    if (user && effectiveUserId && mode === 'business') {
       loadData();
+    } else if (mode !== 'business') {
+      // Reset state quando sai do modo business
+      setTransactions([]);
+      setRecurringExpenses([]);
+      setGoals([]);
+      setAssets([]);
+      setLiabilities([]);
+      setSuppliers([]);
+      setInvestments([]);
+      setMonthlyData([]);
+      setLoading(true);
     }
-  }, [user?.id, effectiveUserId]);
+  }, [user?.id, effectiveUserId, mode]);
 
   // Atualizar dados mensais quando as transações mudarem
   useEffect(() => {
