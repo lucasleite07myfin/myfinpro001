@@ -256,7 +256,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   // Funções para manipular transações
   const addTransaction = async (transaction: Omit<Transaction, 'id'>, silent = false) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -367,10 +366,8 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       }
 
       // Obter usuário atual do Supabase para garantir sessão válida
-      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !currentUser) {
-        logger.error('Falha ao obter usuário do Supabase Auth:', authError);
+      if (!user?.id) {
+        logger.error('Falha ao obter usuário');
         toast.error('Sessão inválida. Faça login novamente.');
         return false;
       }
@@ -378,7 +375,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       const { error: insertError } = await supabase
         .from('custom_categories')
         .insert({
-          user_id: currentUser.id,
+          user_id: user.id,
           type,
           name: categoryToAdd
         });
@@ -520,7 +517,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   // Funções para manipular despesas recorrentes
   const addRecurringExpense = async (expense: Omit<RecurringExpense, 'id' | 'isPaid' | 'paidMonths' | 'createdAt'>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -759,7 +755,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   // Funções para manipular metas
   const addGoal = async (goal: Omit<Goal, 'id'>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -847,7 +842,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
   const deleteGoal = async (id: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { error } = await supabase
@@ -868,7 +862,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   // Funções para manipular ativos
   const addAsset = async (asset: Omit<Asset, 'id'>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -972,7 +965,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   // Funções para manipular passivos
   const addLiability = async (liability: Omit<Liability, 'id'>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -1044,7 +1036,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   // Função auxiliar para atualizar dados mensais
   const updateMonthlyData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       // Recalcular dados para todos os meses com base nas transações

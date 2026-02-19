@@ -23,7 +23,7 @@ const Header: React.FC = () => {
   const { mode } = useAppMode();
   const { user, signOut } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
-  const business = mode === 'business' ? useBusiness() : null;
+  const business = useBusiness();
 
   const handleTabChange = (value: string) => {
     navigate(value);

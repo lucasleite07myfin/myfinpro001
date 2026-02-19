@@ -152,7 +152,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
   const loadData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       // Buscar nome da empresa do perfil
@@ -319,7 +318,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Transaction functions
   const addTransaction = async (transaction: Omit<Transaction, 'id'>, silent: boolean = false) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -438,7 +436,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Recurring expense functions
   const addRecurringExpense = async (expense: Omit<RecurringExpense, 'id' | 'isPaid' | 'paidMonths' | 'createdAt'>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -607,7 +604,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Goal functions
   const addGoal = async (goal: Omit<Goal, 'id'>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -648,7 +644,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
   const deleteGoal = async (id: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { error } = await supabase
@@ -687,7 +682,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Asset functions
   const addAsset = async (asset: Omit<Asset, 'id'>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -795,7 +789,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Supplier functions
   const addSupplier = async (supplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -912,7 +905,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Liability functions
   const addLiability = async (liability: Omit<Liability, 'id'>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -984,7 +976,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
   // Functions for managing investments (salvando no banco de dados)
   const addInvestment = async (investment: Investment) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -1097,18 +1088,12 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     try {
       logger.info('🔵 [addCustomCategory] Iniciando...', { type, category });
       
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      logger.info('🔵 [addCustomCategory] Usuário:', { userId: user?.id, email: user?.email });
-      
-      if (authError) {
-        logger.error('❌ [addCustomCategory] Erro de autenticação:', authError);
-        throw new Error('Erro ao verificar autenticação');
-      }
-
       if (!user) {
         logger.error('❌ [addCustomCategory] Usuário não autenticado');
         throw new Error('Usuário não autenticado');
       }
+
+      logger.info('🔵 [addCustomCategory] Usuário:', { userId: user.id });
 
       const categoryToAdd = category.startsWith('Crie sua categoria: ') ? category : `Crie sua categoria: ${category}`;
       logger.info('🔵 [addCustomCategory] Categoria formatada:', { categoryToAdd });
@@ -1176,7 +1161,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
     newName: string
   ) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       const categoryToUpdate = newName.startsWith('Crie sua categoria: ') ? newName : `Crie sua categoria: ${newName}`;
@@ -1232,7 +1216,6 @@ export const BusinessProvider = ({ children }: BusinessProviderProps) => {
 
   const deleteCustomCategory = async (type: 'income' | 'expense', categoryName: string): Promise<boolean> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
       // Verificar se categoria está em uso
