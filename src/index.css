@@ -193,6 +193,12 @@
   }
 }
 
+/* Fix scroll in cmdk dropdowns */
+[cmdk-list] {
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
