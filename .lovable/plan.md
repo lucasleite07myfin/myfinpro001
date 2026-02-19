@@ -1,88 +1,114 @@
 
-
-# Migrar BusinessContext.tsx e businessService.ts para centavos
+# Migrar formularios de componentes para centavos (amountCents)
 
 ## Resumo
 
-Aplicar o mesmo padrao ja implementado no FinanceContext/financeService ao lado empresarial: formatters populam campos `*Cents`, calculos usam inteiros, persistencia converte de volta para decimal.
+Substituir o estado `amount: number` (float) por `amountInput: string` (exibicao formatada) + `amountCents: number` (fonte de verdade inteira) em 7 componentes de formulario. Elimina `parseFloat`, `parseCurrencyToNumber` e `formatNumberToCurrency` dos formularios, usando exclusivamente funcoes de `src/utils/money.ts`.
 
-## Alteracoes
+## Componentes a migrar
 
-### 1. `src/services/businessService.ts` -- Formatters e persistencia
+### 1. `src/components/AddTransactionModal.tsx`
 
-**Import** (linha 5): adicionar `centsFromUnknownDbValue`
+**Estado atual:** `amount: string` (float como string) + `formattedAmount: string`
+**Novo estado:** remover `amount`, renomear `formattedAmount` para `amountInput`, adicionar `amountCents: number`
+
+- **Import**: trocar `formatNumberToCurrency` por `{ currencyStringToCents, formatNumberFromCentsForInput }` de `@/utils/money`
+- **State** (linhas 77-78): `const [amountInput, setAmountInput] = useState('')` e `const [amountCents, setAmountCents] = useState(0)`
+- **handleAmountChange** (linhas 127-132): extrair digitos, montar centavos via `parseInt(digits, 10)`, formatar display via `formatNumberFromCentsForInput(cents)`
+- **useEffect edit mode** (linhas 98-109): preencher `amountCents` via `(initialData.amountCents ?? Math.round(initialData.amount * 100))` e `amountInput` via `formatNumberFromCentsForInput(amountCents)`
+- **handleSubmitTransaction** (linhas 158-212): validar `amountCents > 0` e `amountCents <= 99999999999`, passar `amount: amountCents / 100` e `amountCents` no payload
+- **handleSubmitRecurring** (linhas 214-241): idem, usar `amountCents` no payload
+- **handleSubmitGoalContribution** (linhas 244-270): idem
+- **resetForm** (linhas 112-125): `setAmountInput('')`, `setAmountCents(0)`
+- **JSX**: trocar `formattedAmount` por `amountInput` nos inputs
+
+### 2. `src/components/AddGoalContributionModal.tsx`
+
+**Estado atual:** `amount: string` (float como string) + `formattedAmount: string`
+**Novo estado:** `amountInput: string` + `amountCents: number`
+
+- **Import**: adicionar `{ currencyStringToCents, formatNumberFromCentsForInput, formatBRLFromCents }` de `@/utils/money`
+- **State** (linhas 33-34): substituir por `amountInput` + `amountCents`
+- **handleAmountChange** (linhas 38-43): extrair digitos -> `parseInt` -> centavos
+- **handleSubmit** (linhas 45-110): validar `amountCents > 0`, converter `amountCents / 100` para `amount` legado, comparar com `goal.currentAmount` usando centavos se disponivel (`goal.currentAmountCents`)
+- **Preview** (linhas 121-125): calcular `newAmountCents` em inteiros, `newPercentage` com centavos
+- **Exibicao**: usar `formatBRLFromCents` no toast e no preview
+
+### 3. `src/components/AddGoalModal.tsx`
+
+**Estado atual:** `targetAmount: string` + `currentAmount: string` (formatados com `formatCurrencyInput`)
+**Novo estado:** `targetAmountInput/currentAmountInput: string` + `targetAmountCents/currentAmountCents: number`
+
+- **Import**: trocar `formatCurrencyInput, parseCurrencyToNumber` por `{ currencyStringToCents, formatNumberFromCentsForInput }` de `@/utils/money`
+- **State** (linhas 58-59): 4 variaveis (2 input string + 2 cents number)
+- **useEffect edit** (linhas 74-93): preencher via `initialData.targetAmountCents ?? Math.round(initialData.targetAmount * 100)` e `formatNumberFromCentsForInput`
+- **onChange handlers** (linhas 291-294, 315-318): extrair digitos -> centavos -> formatar input
+- **handleSubmit** (linhas 95-158): validar usando centavos, passar `targetAmount: cents/100` e `targetAmountCents` no goalData
+- **Preview** (linhas 172-174): calcular `percentage` com centavos
+
+### 4. `src/components/AddAssetModal.tsx`
+
+**Estado atual:** `value: string` (formatado com `formatCurrencyInput`)
+**Novo estado:** `valueInput: string` + `valueCents: number`
+
+- **Import**: trocar `formatCurrencyInput, parseCurrencyToNumber` por `{ currencyStringToCents, formatNumberFromCentsForInput }` de `@/utils/money`
+- **State** (linha 56): `valueInput: string` + `valueCents: number`
+- **onChange** (linhas 174-177): extrair digitos -> centavos -> formatar
+- **handleSubmit** (linhas 60-77): passar `value: valueCents / 100` no payload
+- **JSX**: trocar `value ? \`R$ \${value}\`` por `valueInput ? \`R$ \${valueInput}\`` 
+
+### 5. `src/components/AddLiabilityModal.tsx`
+
+**Estado atual:** `value: string` (formatado com `formatCurrencyInput`)
+**Novo estado:** `valueInput: string` + `valueCents: number`
+
+- **Import**: trocar `formatCurrencyInput, parseCurrencyToNumber` por `{ currencyStringToCents, formatNumberFromCentsForInput }` de `@/utils/money`
+- **State** (linha 41): `valueInput` + `valueCents`
+- **onChange** (linhas 127-129): extrair digitos -> centavos -> formatar
+- **handleSubmit** (linhas 48-62): `value: valueCents / 100`
+
+### 6. `src/components/PatrimonyModal.tsx`
+
+**Estado atual:** `formData.value: number` + `formattedValue: string` + `formattedAcquisitionValue: string`
+**Novo estado:** adicionar `valueCents` e `acquisitionValueCents` ao formData, manter `formattedValue`/`formattedAcquisitionValue` como inputs formatados
+
+- **Import**: trocar `formatNumberToCurrency, parseCurrencyToNumber, formatCurrencyInput` por `{ currencyStringToCents, formatNumberFromCentsForInput }` de `@/utils/money`
+- **formData** (linhas 67-78): adicionar `valueCents: 0` e `acquisitionValueCents: 0`
+- **useEffect load** (linhas 91-133): preencher `valueCents` via `asset.valueCents ?? Math.round(asset.value * 100)`, formatar input via `formatNumberFromCentsForInput`
+- **handleCurrencyChange** (linhas 183-194): extrair digitos -> centavos -> formatar input, atualizar `formData.valueCents` e derivar `formData.value = cents/100`
+- **handleSubmit** (linhas 145-171): manter `value: formData.value` (legado)
+- **Preview gainLoss** (linhas 206-209): calcular com centavos para precisao
+
+### 7. `src/components/RecurringExpensesCard.tsx`
+
+**Estado atual:** `editAmount: string` (formatado com `formatCurrencyInput`)
+**Novo estado:** `editAmountInput: string` + `editAmountCents: number`
+
+- **Import**: trocar `formatCurrencyInput, parseCurrencyToNumber` por `{ currencyStringToCents, formatNumberFromCentsForInput }` de `@/utils/money`
+- **State** (linha 46): `editAmountInput` + `editAmountCents`
+- **handleStartEdit** (linhas 101-105): preencher via centavos do expense existente
+- **handleSaveEdit** (linhas 107-120): converter `editAmountCents / 100` para o valor em reais passado a `setMonthlyExpenseValue`
+- **JSX inline edit** (linha 213): trocar `editAmount` por `editAmountInput` e onChange para centavos
+
+## Padrao de onChange unificado
+
+Todos os campos de valor seguirao este padrao:
 
 ```typescript
-import { parseDateFromDB, formatDateToDB, centsFromUnknownDbValue } from '@/utils/formatters';
+const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const digits = e.target.value.replace(/\D/g, '');
+  const cents = digits ? parseInt(digits, 10) : 0;
+  setAmountCents(cents);
+  setAmountInput(cents > 0 ? formatNumberFromCentsForInput(cents) : '');
+};
 ```
 
-**Helper local** (apos linha 7): adicionar `centsToDbDecimal`
+## Componente NAO migrado nesta etapa
 
-```typescript
-function centsToDbDecimal(cents: number): string {
-  return (cents / 100).toFixed(2);
-}
-```
-
-**`formatTransaction`** (linhas 11-26): computar `amountCents` via `centsFromUnknownDbValue(t.amount)`, derivar `amount: amountCents / 100`
-
-**`formatRecurringExpense`** (linhas 28-40): computar `amountCents`, converter `monthlyValues` para `monthlyValuesCents` (loop idêntico ao financeService)
-
-**`formatGoal`** (linhas 42-49): adicionar `targetAmountCents` e `currentAmountCents`
-
-**`formatAsset`** (linhas 51-67): adicionar `valueCents`, `acquisitionValueCents`, `lastPriceBrlCents`
-
-**`formatLiability`** (linhas 69-74): adicionar `valueCents`
-
-**`formatMonthlyData`** (linhas 76-80): adicionar `incomeTotalCents` e `expenseTotalCents`
-
-**`insertTransaction`** (linha 140): trocar `amount: transaction.amount` por `amount: centsToDbDecimal(transaction.amountCents ?? Math.round(transaction.amount * 100))`
-
-**`updateTransaction`** (linha 165): idem
-
-**`insertRecurringExpense`** (linha 205): idem para `amount`
-
-**`updateRecurringExpense`** (linha 226): idem para `amount`
-
-**`insertTransaction` retorno** (linha 155): retornar via `formatTransaction(data)` em vez de spread manual, garantindo campos Cents populados
-
-### 2. `src/contexts/BusinessContext.tsx` -- Calculos em centavos
-
-**`generateMonthlyDataFromTransactions`** (linhas 83-98):
-- Trocar `sum + t.amount` por `sum + (t.amountCents ?? 0)` nos dois reduces
-- Popular `incomeTotalCents` e `expenseTotalCents` nos objetos retornados
-- Derivar `incomeTotal` e `expenseTotal` legados como `cents / 100`
-
-**`addTransaction` -- atualizacao de monthlyData** (linhas 175-184):
-- Trocar `m.incomeTotal + newTransaction.amount` por operacoes em centavos
-- Atualizar tanto `*Cents` quanto campos legado
-
-**`getMonthTotals`** (linhas 508-518):
-- Trocar `sum + t.amount` por `sum + (t.amountCents ?? 0)` nos reduces
-- Calcular `savingRate` com inteiros
-- Retornar em reais (centavos / 100) -- temporario ate migrar componentes
-
-**`markRecurringExpenseAsPaid`** (linhas 270-284):
-- Popular `amountCents` junto com `amount` na transacao criada
-- Usar `centsFromUnknownDbValue` ou calcular a partir do valor em reais
-
-**`getMonthlyExpenseValue`** (linhas 227-232):
-- Manter retorno em reais por enquanto (compatibilidade com componentes)
-
-**`addGoalContribution`** (linha 332-334):
-- Atualizar `currentAmountCents` junto com `currentAmount`
+- **AddInvestmentModal.tsx**: usa `react-hook-form` + `zod` com `type="number"` nativo. Migracao requer reestruturacao do schema zod. Sera tratado em etapa futura.
 
 ## O que NAO muda
 
-- Componentes de UI continuam recebendo `amount` (float)
-- Colunas do banco continuam como `numeric` (decimal)
-- Suppliers e Investments nao tem campos monetarios padrao (usam `value` em Asset, ja coberto pelo formatter)
-- `setMonthlyExpenseValue` continua operando em reais (valor vindo de input do usuario, sera migrado com os componentes)
-
-## Detalhes tecnicos
-
-- Todos os `setState` ja usam `prev =>` no BusinessContext -- apenas confirmar e manter
-- O padrao e identico ao aplicado em `financeService.ts` / `FinanceContext.tsx`
-- Campos `*Cents` sao opcionais nos tipos, entao usamos `?? 0` como fallback
-- `insertTransaction` passa a retornar `formatTransaction(data)` para garantir consistencia dos campos Cents
-
+- Payloads enviados aos contexts continuam incluindo `amount` (float) para compatibilidade
+- Colunas do banco nao mudam
+- `formatCurrencyInput` e `parseCurrencyToNumber` em `formatters.ts` nao sao removidos (podem ter outros usos), apenas deixam de ser usados nestes componentes
