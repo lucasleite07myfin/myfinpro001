@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Transaction, Goal, Asset, Liability, MonthlyFinanceData, RecurringExpense, CustomCategories, PaymentMethod } from '@/types/finance';
 import { getCurrentMonth, parseDateFromDB, formatDateToDB } from '@/utils/formatters';
 import { toast } from '@/components/ui/sonner';
@@ -291,7 +291,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       if (!silent) {
         toast.success('Transação adicionada com sucesso!');
       }
-      updateMonthlyData();
     } catch (error) {
       toast.error('Erro ao adicionar transação');
     }
@@ -321,7 +320,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       if (error) throw error;
 
       setTransactions(prev => prev.map(t => t.id === transaction.id ? transaction : t));
-      updateMonthlyData();
     } catch (error) {
       toast.error('Erro ao atualizar transação');
     }
@@ -338,7 +336,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
       setTransactions(prev => prev.filter(t => t.id !== id));
       toast.success('Transação excluída com sucesso!');
-      updateMonthlyData();
     } catch (error) {
       toast.error('Erro ao excluir transação');
     }
@@ -741,7 +738,6 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       }
 
       toast.success(`Despesa marcada como ${paid ? 'paga' : 'não paga'}!`);
-      updateMonthlyData();
     } catch (error) {
       logger.error('Erro ao marcar despesa como paga:', error);
       toast.error('Erro ao marcar despesa como paga');
@@ -1105,9 +1101,26 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     return { income, expense, balance, savingRate };
   };
 
-  // Atualiza os dados quando as transações mudam
+  // Debounce ref para updateMonthlyData
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Atualiza os dados quando as transações mudam (com debounce)
   useEffect(() => {
-    updateMonthlyData();
+    if (loading) return;
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      updateMonthlyData();
+    }, 500);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [transactions, currentMonth]);
 
   const calculateHealthSnapshot = async () => {
