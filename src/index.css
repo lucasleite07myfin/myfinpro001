@@ -197,6 +197,14 @@
 [cmdk-list] {
   max-height: 300px !important;
   overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  pointer-events: auto !important;
+}
+
+[cmdk-list-sizer] {
+  overflow: visible !important;
 }
 
 @layer base {
