@@ -1,62 +1,28 @@
 
-
-# Correcao: Acesso ao Gerenciador de Categorias
+# Correção: Barras de Rolagem Lateral na Tabela de Transações
 
 ## Problema
 
-Ao clicar em "Gerenciar minhas categorias" no dropdown de categorias, o modal de gerenciamento nao aparece. Isso acontece porque o `ManageCategoriesModal` (um Dialog Radix) tenta abrir enquanto o `AddTransactionModal` (outro Dialog Radix) ainda esta aberto. O overlay do primeiro Dialog bloqueia/esconde o segundo.
+Barras de rolagem horizontais aparecem em cada linha da tabela de transações recentes. Isso acontece porque cada linha virtualizada cria seu próprio elemento `<Table>`, que pode ter uma largura diferente da tabela do cabeçalho.
 
 ## Causa Raiz
 
-O Radix UI tem um comportamento conhecido onde dois `Dialog` abertos simultaneamente causam conflito de foco e sobreposicao de overlays. O `ManageCategoriesModal` renderiza atras do overlay do `AddTransactionModal`, ficando inacessivel.
+A virtualização cria um `<Table>` separado para cada linha visível. Cada tabela independente calcula sua própria largura, gerando overflow horizontal individual — resultando nas barras de rolagem indesejadas.
 
-## Solucao
+## Solução
 
-Ao clicar em "Gerenciar minhas categorias", **fechar primeiro o AddTransactionModal** e so entao abrir o ManageCategoriesModal. Quando o ManageCategoriesModal fechar, reabrir o AddTransactionModal.
+Duas alterações no arquivo `src/components/TransactionsTable.tsx`:
 
-## Detalhes Tecnicos
+1. Adicionar `overflow-hidden` no div wrapper de cada linha virtualizada (linha 140) para impedir que o conteúdo excedente gere scrollbar.
 
-**Arquivo:** `src/components/AddTransactionModal.tsx`
+2. Adicionar `table-fixed w-full` nas tabelas (tanto no header quanto nas linhas) para forçar larguras fixas e consistentes entre cabeçalho e corpo.
 
-### Alteracoes:
+## Detalhes Técnicos
 
-1. **Fechar o Dialog pai ao abrir o gerenciador** - Modificar o callback `onManageCategories` para fechar o modal de transacao antes de abrir o gerenciador:
+**Arquivo:** `src/components/TransactionsTable.tsx`
 
-```tsx
-onManageCategories={() => {
-  onOpenChange(false); // fecha o AddTransactionModal
-  setTimeout(() => setShowManageModal(true), 150); // abre o gerenciador apos animacao
-}}
-```
+- **Linha 98 (tabela do header):** Adicionar `className="table-fixed w-full"` no componente `<Table>`.
+- **Linha 140 (div wrapper da linha):** Adicionar `overflow-hidden` ao className do div.
+- **Linha 151 (tabela de cada linha):** Adicionar `className="table-fixed w-full"` no componente `<Table>`.
 
-2. **Reabrir o AddTransactionModal ao fechar o gerenciador** - Alterar o `onOpenChange` do `ManageCategoriesModal` para reabrir o modal pai quando o gerenciador fechar:
-
-```tsx
-<ManageCategoriesModal
-  open={showManageModal}
-  onOpenChange={(open) => {
-    setShowManageModal(open);
-    if (!open) {
-      setTimeout(() => onOpenChange(true), 150); // reabre o modal de transacao
-    }
-  }}
-  ...
-/>
-```
-
-3. **Preservar o estado do formulario** - Ajustar o `useEffect` de reset para nao limpar o formulario quando o modal fecha temporariamente para abrir o gerenciador. Adicionar uma flag `isManagingCategories`:
-
-```tsx
-const [isManagingCategories, setIsManagingCategories] = useState(false);
-
-useEffect(() => {
-  if (!open && !isManagingCategories) {
-    resetForm();
-  }
-}, [open, isManagingCategories]);
-```
-
-4. **Aplicar a mesma correcao** nas duas instancias do `CategoryCombobox` dentro do componente (transacao normal na linha 330 e despesa recorrente na linha 379).
-
-Estas mudancas garantem que o gerenciador de categorias sempre sera visivel e acessivel, sem conflito de Dialogs sobrepostos, e que o formulario do usuario nao sera perdido durante a navegacao.
-
+Estas mudanças garantem que todas as tabelas usem o mesmo layout fixo e que nenhum overflow horizontal apareça nas linhas.
