@@ -1,117 +1,59 @@
 
-# Relatorio de Bugs e Erros Encontrados
 
-## Bug 1: CORS - API Binance bloqueada (CRITICO)
+# Fix: Texto sobreposto na tabela de Transacoes Recentes
 
-**Arquivo:** `src/components/BitcoinHeaderButton.tsx` (linhas 19-22)
+## Problema
 
-O componente `BitcoinHeaderButton` faz chamadas diretas a `https://api.binance.com/api/v3/ticker/24hr` que sao bloqueadas por CORS em producao. Isso gera dezenas de erros no console em TODAS as paginas, pois o componente esta no Header global.
+Na tabela de transacoes do Dashboard, descricoes longas, badges "Despesa Fixa" e categorias com nomes extensos estao se sobrepondo entre linhas. Isso acontece porque cada linha da tabela virtualizada tem altura fixa de 60px, mas o conteudo frequentemente precisa de mais espaco.
 
-**Impacto:** O botao de Bitcoin no header mostra dados fallback estaticos ($105.0k, +2.5%) em vez de dados reais. Os erros CORS se repetem a cada 30 segundos (intervalo configurado na linha 49), poluindo o console continuamente.
+## Causa Raiz
 
-**Solucao:** Migrar as chamadas da Binance API para usar a mesma CoinGecko API que ja e usada com sucesso no `BTCNowCard.tsx` e `useCryptoPriceUpdater.ts`. CoinGecko permite CORS de qualquer origem. Alternativamente, criar uma backend function (edge function) que faz proxy das chamadas Binance.
+O componente `TransactionsTable.tsx` usa virtualizacao (`@tanstack/react-virtual`) com `estimateSize: () => 60`, mas:
+- Descricoes longas como "Documento de arrecadacao Municipal/ DAM" ocupam 2 linhas
+- O badge "Despesa Fixa" adiciona uma linha extra dentro da celula
+- Categorias como "Receita Federal / Prefeitura" quebram em 2 linhas
+- Metodos de pagamento como "Transferencia Bancaria" tambem quebram
 
----
+## Solucao
 
-## Bug 2: Duplicacao de chamadas Binance (useEffect sem cleanup adequado)
+Combinar duas estrategias:
 
-**Arquivo:** `src/components/BitcoinHeaderButton.tsx` (linhas 47-51)
+1. **Aumentar a altura estimada das linhas** de 60px para 72px para acomodar melhor o conteudo
+2. **Truncar textos longos** com `truncate` para evitar que ultrapassem o espaco disponivel
+3. **Limitar o badge** a ficar na mesma linha que a descricao, sem adicionar altura extra
 
-Os logs mostram chamadas DUPLICADAS para a Binance API (4 erros simultaneos ao inves de 2). Isso sugere que o componente esta sendo montado duas vezes (React StrictMode) e o efeito nao esta cancelando chamadas fetch pendentes ao desmontar.
+## Detalhes Tecnicos
 
-**Solucao:** Adicionar AbortController no useEffect para cancelar fetch pendentes, similar ao padrao ja usado em `useCryptoPriceUpdater.ts`.
+**Arquivo:** `src/components/TransactionsTable.tsx`
 
----
+### Alteracoes:
 
-## Bug 3: Inconsistencia de APIs para dados Bitcoin
+1. **Linha 89** - Aumentar `estimateSize` de 60 para 72:
+   ```
+   estimateSize: () => 72
+   ```
 
-**Arquivos:**
-- `BitcoinHeaderButton.tsx` - usa Binance API (com CORS)
-- `BTCNowCard.tsx` - usa CoinGecko API (funciona)
-- `useCryptoPriceUpdater.ts` - usa CoinGecko API (funciona)
-- `useCryptoPrice.ts` - usa CoinGecko API (funciona)
+2. **Linha 169** - Descricao: trocar layout vertical por horizontal com truncamento:
+   ```
+   <div className="flex items-center gap-2 min-w-0">
+     <span className="font-medium text-neutral-900 text-sm truncate">{sanitizeText(transaction.description)}</span>
+     {renderBadge ? renderBadge(transaction) : defaultRenderBadge(transaction)}
+   </div>
+   ```
 
-**Impacto:** Tres componentes usam CoinGecko (que funciona) e um usa Binance (que nao funciona). Isso cria inconsistencia nos dados mostrados e erros desnecessarios.
+3. **Linha 64** - Badge: tornar mais compacto, sem quebra de linha:
+   ```
+   <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap shrink-0">
+   ```
 
-**Solucao:** Unificar todas as chamadas de preco Bitcoin para usar CoinGecko API, eliminando a dependencia da Binance.
+4. **Linha 174** - Categoria: adicionar truncamento:
+   ```
+   <span className="text-sm text-neutral-600 bg-neutral-100 px-2 py-1 rounded-md truncate block max-w-[140px]">
+   ```
 
----
+5. **Linha 184** - Pagamento: adicionar `whitespace-nowrap`:
+   ```
+   <span className="text-xs text-neutral-500 bg-neutral-50 px-2 py-1 rounded-md whitespace-nowrap">
+   ```
 
-## Bug 4: Dados hardcoded no fallback do Bitcoin Header
-
-**Arquivo:** `src/components/BitcoinHeaderButton.tsx` (linhas 41-42)
-
-Quando a API Binance falha (que e SEMPRE em producao por causa do CORS), o componente usa valores fixos:
-```
-setPrices({ brl: 600000, usd: 105000 });
-setPercentChange(2.5);
-```
-
-O usuario ve "$105.0k +2.5%" que parece real mas e totalmente falso e nunca muda. Isso pode induzir o usuario a erro sobre o preco atual do Bitcoin.
-
-**Solucao:** Alem de corrigir a API, o fallback deveria mostrar um indicador visual de que os dados nao estao atualizados (ex: icone de aviso ou texto "dados indisponiveis").
-
----
-
-## Bug 5: `symbolToIdMap` duplicado
-
-**Arquivo:** `src/hooks/useCryptoPriceUpdater.ts`
-
-O mapeamento `symbolToIdMap` e definido duas vezes identico no mesmo arquivo (linhas 44-74 e linhas 136-146). Isso e codigo duplicado que aumenta a manutencao e risco de divergencia.
-
-**Solucao:** Extrair o mapeamento para uma constante no topo do arquivo ou em um arquivo utilitario compartilhado.
-
----
-
-## Bug 6: CSS hardcoded para tema claro no CategoryCombobox
-
-**Arquivo:** `src/components/CategoryCombobox.tsx` (linha 100)
-
-```
-className="w-full justify-between bg-white border-gray-300..."
-```
-
-Usa `bg-white` e `border-gray-300` hardcoded em vez de tokens de tema como `bg-background` e `border-border`. Se dark mode for implementado, este componente nao respeitara o tema.
-
----
-
-## Resumo de Prioridades
-
-| # | Bug | Severidade | Esforco |
-|---|-----|-----------|---------|
-| 1 | CORS Binance API | Critico | Baixo |
-| 2 | Fetch duplicado | Medio | Baixo |
-| 3 | APIs inconsistentes | Medio | Baixo |
-| 4 | Fallback enganoso | Medio | Baixo |
-| 5 | Codigo duplicado | Baixo | Baixo |
-| 6 | CSS hardcoded | Baixo | Baixo |
-
-## Plano de Correcao
-
-### Passo 1: Corrigir BitcoinHeaderButton.tsx
-- Substituir chamadas Binance API por CoinGecko API (mesma usada em BTCNowCard)
-- Adicionar AbortController para cleanup do useEffect
-- Melhorar fallback com indicador visual de dados indisponiveis
-
-### Passo 2: Extrair symbolToIdMap
-- Criar constante compartilhada em `src/utils/cryptoMappings.ts`
-- Atualizar `useCryptoPriceUpdater.ts` para usar a constante
-
-### Passo 3: Corrigir CSS do CategoryCombobox
-- Substituir `bg-white` por `bg-background`
-- Substituir `border-gray-300` por `border-border`
-
-## Detalhes Tecnicos da Correcao Principal
-
-O `BitcoinHeaderButton.tsx` sera alterado para usar:
-```
-https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl,usd&include_24hr_change=true
-```
-
-Em vez de:
-```
-https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT
-https://api.binance.com/api/v3/ticker/24hr?symbol=BTCBRL
-```
-
-Isso reduz de 2 chamadas para 1 e elimina completamente os erros CORS.
+Estas mudancas garantem que nenhum texto ultrapasse os limites da linha, eliminando a sobreposicao visual.
