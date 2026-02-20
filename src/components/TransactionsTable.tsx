@@ -61,7 +61,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   const defaultRenderBadge = (transaction: Transaction) => {
     if (transaction.isRecurringPayment) {
       return (
-        <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200">
+        <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap shrink-0">
           <Clock className="h-3 w-3" />
           <span className="text-xs">Despesa Fixa</span>
         </Badge>
@@ -86,7 +86,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   const rowVirtualizer = useVirtualizer({
     count: transactions.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 60,
+    estimateSize: () => 72,
     overscan: 5,
   });
 
@@ -165,13 +165,13 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                           </div>
                         </TableCell>
                         <TableCell className={`${columnWidths.descricao} py-4 px-6`}>
-                          <div className="flex flex-col gap-2">
-                            <span className="font-medium text-neutral-900 text-sm">{sanitizeText(transaction.description)}</span>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-medium text-neutral-900 text-sm truncate">{sanitizeText(transaction.description)}</span>
                             {renderBadge ? renderBadge(transaction) : defaultRenderBadge(transaction)}
                           </div>
                         </TableCell>
                         <TableCell className={`${columnWidths.categoria} py-4 px-6`}>
-                          <span className="text-sm text-neutral-600 bg-neutral-100 px-2 py-1 rounded-md">
+                          <span className="text-sm text-neutral-600 bg-neutral-100 px-2 py-1 rounded-md truncate block max-w-[140px]">
                             {sanitizeText(formatCategoryForDisplay(transaction.category))}
                           </span>
                         </TableCell>
@@ -181,7 +181,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                           </span>
                         </TableCell>
                         <TableCell className={`${columnWidths.pagamento} py-4 px-6`}>
-                          <span className="text-xs text-neutral-500 bg-neutral-50 px-2 py-1 rounded-md">
+                          <span className="text-xs text-neutral-500 bg-neutral-50 px-2 py-1 rounded-md whitespace-nowrap">
                             {transaction.paymentMethod ? PAYMENT_METHODS[transaction.paymentMethod] : 'N/A'}
                           </span>
                         </TableCell>
