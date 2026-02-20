@@ -95,7 +95,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
       <div className="rounded-xl border border-neutral-200 overflow-hidden shadow-sm bg-white min-w-[320px] md:min-w-0">
       {/* Fixed Header */}
       <div className="border-b border-neutral-200">
-        <Table>
+        <Table className="table-fixed w-full">
           <TableHeader>
             <TableRow className="bg-gradient-to-r from-neutral-50 to-neutral-100 border-b border-neutral-200">
               <TableHead className={`${columnWidths.data} font-semibold text-neutral-700 py-4 px-6`}>Data</TableHead>
@@ -139,6 +139,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
               return (
                 <div
                   key={transaction.id}
+                  className="overflow-hidden"
                   style={{
                     position: 'absolute',
                     top: 0,
@@ -148,7 +149,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
-                  <Table>
+                  <Table className="table-fixed w-full">
                     <TableBody>
                       <TableRow 
                         className={`hover:bg-neutral-50/50 transition-colors border-b border-neutral-100 ${index % 2 === 0 ? 'bg-white' : 'bg-neutral-25'}`}
