@@ -89,12 +89,13 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   
   // Modal state
   const [showManageModal, setShowManageModal] = useState(false);
+  const [isManagingCategories, setIsManagingCategories] = useState(false);
 
   useEffect(() => {
-    if (!open) {
+    if (!open && !isManagingCategories) {
       resetForm();
     }
-  }, [open]);
+  }, [open, isManagingCategories]);
 
   useEffect(() => {
     if (mode === 'edit' && initialData && open) {
@@ -327,7 +328,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               type={transactionType}
               customCategories={customCategories[transactionType]}
               onCreateCategory={handleCreateCategory}
-              onManageCategories={() => setShowManageModal(true)}
+              onManageCategories={() => {
+                setIsManagingCategories(true);
+                onOpenChange(false);
+                setTimeout(() => setShowManageModal(true), 150);
+              }}
             />
           </div>
         </TooltipHelper>
@@ -376,7 +381,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               type="expense"
               customCategories={customCategories.expense}
               onCreateCategory={handleCreateCategory}
-              onManageCategories={() => setShowManageModal(true)}
+              onManageCategories={() => {
+                setIsManagingCategories(true);
+                onOpenChange(false);
+                setTimeout(() => setShowManageModal(true), 150);
+              }}
             />
           </div>
         </TooltipHelper>
@@ -572,7 +581,13 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
       <ManageCategoriesModal
         open={showManageModal}
-        onOpenChange={setShowManageModal}
+        onOpenChange={(open) => {
+          setShowManageModal(open);
+          if (!open) {
+            setIsManagingCategories(false);
+            setTimeout(() => onOpenChange(true), 150);
+          }
+        }}
         categories={customCategories[transactionType]}
         type={transactionType}
         onEdit={(id, oldName, newName) => editCustomCategory ? editCustomCategory(id, transactionType, oldName, newName) : Promise.resolve()}
