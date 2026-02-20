@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Asset } from '@/types/finance';
 import { logger } from '@/utils/logger';
+import { SYMBOL_TO_COINGECKO_ID } from '@/utils/cryptoMappings';
 
 interface CryptoPriceData {
   [coinId: string]: {
@@ -40,45 +41,11 @@ export const useCryptoPriceUpdater = (
   const CACHE_DURATION = 15000; // 15 segundos de cache
 
   const getCoinIds = useCallback(() => {
-    // Mapeamento de símbolos para IDs do CoinGecko (principais moedas)
-    const symbolToIdMap: { [key: string]: string } = {
-      'BTC': 'bitcoin',
-      'ETH': 'ethereum',
-      'BNB': 'binancecoin',
-      'XRP': 'ripple',
-      'ADA': 'cardano',
-      'SOL': 'solana',
-      'DOT': 'polkadot',
-      'DOGE': 'dogecoin',
-      'AVAX': 'avalanche-2',
-      'SHIB': 'shiba-inu',
-      'MATIC': 'matic-network',
-      'LTC': 'litecoin',
-      'UNI': 'uniswap',
-      'LINK': 'chainlink',
-      'ATOM': 'cosmos',
-      'BCH': 'bitcoin-cash',
-      'NEAR': 'near',
-      'ALGO': 'algorand',
-      'VET': 'vechain',
-      'ICP': 'internet-computer',
-      'FIL': 'filecoin',
-      'HBAR': 'hedera-hashgraph',
-      'APE': 'apecoin',
-      'MANA': 'decentraland',
-      'SAND': 'the-sandbox',
-      'CRV': 'curve-dao-token',
-      'GRT': 'the-graph',
-      'ENJ': 'enjincoin',
-      'CHZ': 'chiliz',
-      'BAT': 'basic-attention-token'
-    };
-
     return cryptoAssets
       .filter(asset => asset.type === 'Cripto' && asset.symbol)
-      .map(asset => symbolToIdMap[asset.symbol!.toUpperCase()] || asset.symbol!.toLowerCase())
-      .filter((id, index, array) => array.indexOf(id) === index) // remover duplicatas
-      .slice(0, 250); // Limitar a 250 para não sobrecarregar a API
+      .map(asset => SYMBOL_TO_COINGECKO_ID[asset.symbol!.toUpperCase()] || asset.symbol!.toLowerCase())
+      .filter((id, index, array) => array.indexOf(id) === index)
+      .slice(0, 250);
   }, [cryptoAssets]);
 
   const updatePrices = useCallback(async () => {
@@ -132,23 +99,12 @@ export const useCryptoPriceUpdater = (
           });
         });
 
-        // Criar mapeamento reverso de ID para símbolo
-        const symbolToIdMap: { [key: string]: string } = {
-          'BTC': 'bitcoin', 'ETH': 'ethereum', 'BNB': 'binancecoin', 'XRP': 'ripple',
-          'ADA': 'cardano', 'SOL': 'solana', 'DOT': 'polkadot', 'DOGE': 'dogecoin',
-          'AVAX': 'avalanche-2', 'SHIB': 'shiba-inu', 'MATIC': 'matic-network',
-          'LTC': 'litecoin', 'UNI': 'uniswap', 'LINK': 'chainlink', 'ATOM': 'cosmos',
-          'BCH': 'bitcoin-cash', 'NEAR': 'near', 'ALGO': 'algorand', 'VET': 'vechain',
-          'ICP': 'internet-computer', 'FIL': 'filecoin', 'HBAR': 'hedera-hashgraph',
-          'APE': 'apecoin', 'MANA': 'decentraland', 'SAND': 'the-sandbox',
-          'CRV': 'curve-dao-token', 'GRT': 'the-graph', 'ENJ': 'enjincoin',
-          'CHZ': 'chiliz', 'BAT': 'basic-attention-token'
-        };
+        // Usar mapeamento compartilhado
 
         // Atualizar preços dos assets
         cryptoAssets.forEach(asset => {
           if (asset.type === 'Cripto' && asset.symbol) {
-            const coinId = symbolToIdMap[asset.symbol.toUpperCase()] || asset.symbol.toLowerCase();
+            const coinId = SYMBOL_TO_COINGECKO_ID[asset.symbol.toUpperCase()] || asset.symbol.toLowerCase();
             const priceData = data[coinId];
             
             if (priceData) {

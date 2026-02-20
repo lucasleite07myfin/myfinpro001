@@ -97,7 +97,7 @@ export function CategoryCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between bg-white border-gray-300 focus:border-primary focus:ring-primary"
+          className="w-full justify-between bg-background border-border focus:border-primary focus:ring-primary"
           disabled={disabled}
         >
           <span className="truncate">{displayValue || placeholder}</span>
