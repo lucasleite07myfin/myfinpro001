@@ -331,7 +331,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               onManageCategories={() => {
                 setIsManagingCategories(true);
                 onOpenChange(false);
-                setTimeout(() => setShowManageModal(true), 150);
+                setTimeout(() => setShowManageModal(true), 300);
               }}
             />
           </div>
@@ -384,7 +384,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               onManageCategories={() => {
                 setIsManagingCategories(true);
                 onOpenChange(false);
-                setTimeout(() => setShowManageModal(true), 150);
+                setTimeout(() => setShowManageModal(true), 300);
               }}
             />
           </div>
@@ -585,7 +585,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           setShowManageModal(open);
           if (!open) {
             setIsManagingCategories(false);
-            setTimeout(() => onOpenChange(true), 150);
+            setTimeout(() => onOpenChange(true), 300);
           }
         }}
         categories={customCategories[transactionType]}
