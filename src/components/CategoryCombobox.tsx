@@ -204,9 +204,11 @@ export function CategoryCombobox({
             <Button
               variant="ghost"
               className="w-full justify-start text-muted-foreground hover:text-foreground"
-              onClick={() => {
+            onClick={() => {
                 setOpen(false);
-                onManageCategories();
+                setTimeout(() => {
+                  onManageCategories?.();
+                }, 150);
               }}
             >
               <Settings className="mr-2 h-4 w-4" />
