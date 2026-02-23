@@ -1,66 +1,29 @@
 
-# Correcao: Gerenciamento de Categorias Nao Abre
+# Correcao: Lista de Despesas Recorrentes Cortada
 
 ## Problema
 
-Ao clicar em "Gerenciar minhas categorias" no dropdown de categorias, o modal de gerenciamento nao abre. O fluxo envolve fechar 3 componentes em sequencia rapida (Popover -> Dialog -> abrir novo Dialog), causando conflitos de foco e eventos no Radix UI.
+A lista de despesas recorrentes dentro do card tem uma altura fixa de 320px (`h-80`), o que corta os itens no meio e forca um scroll desnecessario. O card deveria expandir e a lista deveria ocupar todo o espaco disponivel.
 
 ## Causa Raiz
 
-No `CategoryCombobox`, o click handler fecha o Popover (`setOpen(false)`) e chama `onManageCategories()` no mesmo ciclo sincrono. O Popover ao fechar pode interferir na propagacao do callback, pois o Radix UI gerencia foco e eventos internamente. Alem disso, o delay de 150ms pode nao ser suficiente para o Radix UI completar suas animacoes e liberacao de focus trap.
+Na linha 193 do `RecurringExpensesCard.tsx`, o container da lista usa `h-80` (altura fixa de 320px). O card ja usa `h-full flex flex-col` e o `CardContent` ja usa `flex-1`, mas o `div` interno ignora isso por ter altura fixa.
 
 ## Solucao
 
-Duas alteracoes:
+Trocar `h-80` por `h-full` no container da lista, para que ele ocupe todo o espaco disponivel dentro do `CardContent`. Manter o `overflow-y-auto` para os casos em que o conteudo exceda o espaco do card.
 
-### Arquivo 1: `src/components/CategoryCombobox.tsx`
+## Detalhes Tecnicos
 
-Adicionar um delay entre fechar o Popover e chamar `onManageCategories()`, garantindo que o Popover finalize sua limpeza antes do callback ser executado.
+### Arquivo: `src/components/RecurringExpensesCard.tsx`
 
-**Linha ~207-210 (onClick do botao Gerenciar):**
+**Linha 193:**
 ```tsx
 // ANTES
-onClick={() => {
-  setOpen(false);
-  onManageCategories();
-}}
+<div className="h-80 overflow-y-auto space-y-2">
 
 // DEPOIS
-onClick={() => {
-  setOpen(false);
-  setTimeout(() => {
-    onManageCategories?.();
-  }, 150);
-}}
+<div className="h-full overflow-y-auto space-y-2">
 ```
 
-### Arquivo 2: `src/components/AddTransactionModal.tsx`
-
-Aumentar o delay para abrir o ManageCategoriesModal (de 150ms para 300ms) para garantir que o Dialog principal tenha completado seu fechamento antes de abrir o novo Dialog.
-
-**Linhas ~334 e ~387 (onManageCategories callbacks, ambos):**
-```tsx
-// ANTES
-setTimeout(() => setShowManageModal(true), 150);
-
-// DEPOIS
-setTimeout(() => setShowManageModal(true), 300);
-```
-
-**Linha ~588 (reabrir modal principal apos fechar gerenciador):**
-```tsx
-// ANTES
-setTimeout(() => onOpenChange(true), 150);
-
-// DEPOIS
-setTimeout(() => onOpenChange(true), 300);
-```
-
-## Resumo dos Delays
-
-O fluxo completo fica:
-1. Click em "Gerenciar" -> fecha o Popover
-2. Apos 150ms -> fecha o Dialog principal e agenda abertura do gerenciador
-3. Apos 300ms do passo 2 -> abre o ManageCategoriesModal
-
-Isso garante que cada componente Radix UI tenha tempo suficiente para completar sua animacao de saida e liberar seu focus trap antes do proximo componente ser manipulado.
+Essa unica alteracao faz a lista preencher todo o espaco vertical disponivel no card, eliminando o corte prematuro dos itens.
