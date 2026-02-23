@@ -190,7 +190,7 @@ const RecurringExpensesCard: React.FC<RecurringExpensesCardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="p-3 flex-1 overflow-hidden">
-        <div className="h-80 overflow-y-auto space-y-2">
+        <div className="h-full overflow-y-auto space-y-2">
           {sortedExpenses.filter(expense => shouldDisplayExpense(expense, selectedMonth)).map(expense => {
             const paid = isPaid(expense.id, selectedMonth);
             const overdue = !paid && isOverdue(expense.dueDay, selectedMonth);
