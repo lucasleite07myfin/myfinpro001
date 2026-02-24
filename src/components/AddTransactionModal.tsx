@@ -483,7 +483,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold flex items-center gap-2">
               {getModalTitle()}
