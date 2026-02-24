@@ -1,29 +1,40 @@
 
-# Correcao: Lista de Despesas Recorrentes Cortada
 
-## Problema
+# Correcao: Botao "Gerenciar Categorias" Nao Funciona
 
-A lista de despesas recorrentes dentro do card tem uma altura fixa de 320px (`h-80`), o que corta os itens no meio e forca um scroll desnecessario. O card deveria expandir e a lista deveria ocupar todo o espaco disponivel.
+## Problema Real
+
+O problema nao e apenas timing/delays. A causa raiz e que o **Popover dentro do Dialog** portala seu conteudo para o `<body>`. Quando o usuario clica em qualquer item do Popover (incluindo "Gerenciar minhas categorias"), o Radix UI Dialog interpreta isso como um clique **fora** do Dialog e fecha o modal inteiro antes que o handler do botao execute.
 
 ## Causa Raiz
 
-Na linha 193 do `RecurringExpensesCard.tsx`, o container da lista usa `h-80` (altura fixa de 320px). O card ja usa `h-full flex flex-col` e o `CardContent` ja usa `flex-1`, mas o `div` interno ignora isso por ter altura fixa.
+1. O `PopoverContent` e renderizado via portal no `<body>` (comportamento padrao do Radix)
+2. O `DialogContent` detecta cliques fora de si e fecha o Dialog
+3. O clique no Popover e interpretado como "fora do Dialog"
+4. O Dialog fecha, desmonta o Popover, e o `onClick` do botao nunca executa completamente
 
 ## Solucao
 
-Trocar `h-80` por `h-full` no container da lista, para que ele ocupe todo o espaco disponivel dentro do `CardContent`. Manter o `overflow-y-auto` para os casos em que o conteudo exceda o espaco do card.
+Adicionar `onInteractOutside` no `DialogContent` do `AddTransactionModal` para prevenir que o Dialog feche quando o usuario interage com conteudo portalado (como o Popover de categorias).
 
 ## Detalhes Tecnicos
 
-### Arquivo: `src/components/RecurringExpensesCard.tsx`
+### Arquivo: `src/components/AddTransactionModal.tsx`
 
-**Linha 193:**
+**Linha 486 - Adicionar handler no DialogContent:**
+
 ```tsx
 // ANTES
-<div className="h-80 overflow-y-auto space-y-2">
+<DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto">
 
 // DEPOIS
-<div className="h-full overflow-y-auto space-y-2">
+<DialogContent 
+  className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto"
+  onInteractOutside={(e) => e.preventDefault()}
+>
 ```
 
-Essa unica alteracao faz a lista preencher todo o espaco vertical disponivel no card, eliminando o corte prematuro dos itens.
+Essa unica alteracao impede que o Dialog feche ao clicar em conteudo portalado (Popover, Select, etc.), mantendo o botao "Gerenciar minhas categorias" funcional.
+
+Os delays adicionados anteriormente (150ms no CategoryCombobox e 300ms no AddTransactionModal) continuam uteis para a transicao entre o fechamento intencional do Dialog e a abertura do ManageCategoriesModal.
+
