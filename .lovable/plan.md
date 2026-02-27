@@ -1,40 +1,39 @@
 
+# Correcao: Calendario nao responde a cliques dentro de modais
 
-# Correcao: Botao "Gerenciar Categorias" Nao Funciona
+## Problema
 
-## Problema Real
-
-O problema nao e apenas timing/delays. A causa raiz e que o **Popover dentro do Dialog** portala seu conteudo para o `<body>`. Quando o usuario clica em qualquer item do Popover (incluindo "Gerenciar minhas categorias"), o Radix UI Dialog interpreta isso como um clique **fora** do Dialog e fecha o modal inteiro antes que o handler do botao execute.
+O calendario dentro do modal de transacoes (e em todos os outros modais do sistema) nao permite selecionar datas. O usuario ve o calendario aberto mas nao consegue clicar nos dias.
 
 ## Causa Raiz
 
-1. O `PopoverContent` e renderizado via portal no `<body>` (comportamento padrao do Radix)
-2. O `DialogContent` detecta cliques fora de si e fecha o Dialog
-3. O clique no Popover e interpretado como "fora do Dialog"
-4. O Dialog fecha, desmonta o Popover, e o `onClick` do botao nunca executa completamente
+Quando um `Calendar` (DayPicker) e renderizado dentro de um `Dialog` ou `Popover` do Radix UI, os eventos de ponteiro (cliques) sao bloqueados pelo overlay do componente pai. A solucao padrao e adicionar `pointer-events-auto` ao calendario.
+
+O componente `Calendar` em `src/components/ui/calendar.tsx` usa apenas `cn("p-3", className)` -- faltando `pointer-events-auto`. Nenhum dos 5 arquivos que usam o Calendar passa essa classe manualmente.
 
 ## Solucao
 
-Adicionar `onInteractOutside` no `DialogContent` do `AddTransactionModal` para prevenir que o Dialog feche quando o usuario interage com conteudo portalado (como o Popover de categorias).
+Adicionar `pointer-events-auto` diretamente no componente base `Calendar`, corrigindo o problema em todo o sistema de uma vez.
+
+## Locais afetados (corrigidos automaticamente)
+
+- `AddTransactionModal.tsx` - datepicker de transacoes
+- `PatrimonyModal.tsx` - datas de avaliacao e aquisicao
+- `BatchUpdateModal.tsx` - data de avaliacao em lote
+- `AddInvestmentModal.tsx` - data do investimento
+- `CalendarWithDropdown.tsx` - calendario standalone
 
 ## Detalhes Tecnicos
 
-### Arquivo: `src/components/AddTransactionModal.tsx`
+### Arquivo: `src/components/ui/calendar.tsx`
 
-**Linha 486 - Adicionar handler no DialogContent:**
-
+**Linha 21:**
 ```tsx
 // ANTES
-<DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto">
+className={cn("p-3", className)}
 
 // DEPOIS
-<DialogContent 
-  className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto"
-  onInteractOutside={(e) => e.preventDefault()}
->
+className={cn("p-3 pointer-events-auto", className)}
 ```
 
-Essa unica alteracao impede que o Dialog feche ao clicar em conteudo portalado (Popover, Select, etc.), mantendo o botao "Gerenciar minhas categorias" funcional.
-
-Os delays adicionados anteriormente (150ms no CategoryCombobox e 300ms no AddTransactionModal) continuam uteis para a transicao entre o fechamento intencional do Dialog e a abertura do ManageCategoriesModal.
-
+Essa unica alteracao garante que o calendario sempre receba eventos de clique, independentemente de estar dentro de um Dialog, Popover ou qualquer outro componente com overlay.
